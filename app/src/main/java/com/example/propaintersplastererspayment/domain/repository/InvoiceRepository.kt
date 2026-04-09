@@ -15,5 +15,10 @@ interface InvoiceRepository {
     suspend fun deleteInvoice(invoice: InvoiceEntity)
     suspend fun deleteInvoiceLine(line: InvoiceLineEntity)
     suspend fun getInvoiceLine(lineId: Long): InvoiceLineEntity?
-    suspend fun getNextInvoiceNumber(prefix: String): String
+    /**
+     * Generates an invoice number that is guaranteed to be unique in the database.
+     * Format: PREFIX-ABC123456 (3 random uppercase letters + 6 random digits).
+     * Retries until a unique value is found.
+     */
+    suspend fun generateUniqueInvoiceNumber(prefix: String): String
 }

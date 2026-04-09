@@ -1,6 +1,6 @@
 package com.example.propaintersplastererspayment.data.repository
 
-import com.example.propaintersplastererspayment.core.util.InvoiceUtils
+import com.example.propaintersplastererspayment.core.util.InvoiceNumberGenerator
 import com.example.propaintersplastererspayment.data.local.dao.InvoiceDao
 import com.example.propaintersplastererspayment.data.local.entity.InvoiceEntity
 import com.example.propaintersplastererspayment.data.local.entity.InvoiceLineEntity
@@ -20,7 +20,6 @@ class OfflineInvoiceRepository(
     override fun observeInvoicesForJob(jobId: Long): Flow<List<InvoiceEntity>> =
         invoiceDao.observeInvoicesForJob(jobId)
 
-    // Returns the single invoice for a job (null if none has been created yet)
     override fun observeInvoiceForJob(jobId: Long): Flow<InvoiceEntity?> =
         invoiceDao.observeInvoiceForJob(jobId)
 
@@ -30,10 +29,6 @@ class OfflineInvoiceRepository(
     override fun observeInvoiceLines(invoiceId: Long): Flow<List<InvoiceLineEntity>> =
         invoiceDao.observeInvoiceLines(invoiceId)
 
-    /**
-     * Inserts a new invoice (invoiceId == 0) or updates an existing one.
-     * Returns the final invoiceId in both cases.
-     */
     override suspend fun saveInvoice(invoice: InvoiceEntity): Long {
         return if (invoice.invoiceId == 0L) {
             invoiceDao.insertInvoice(invoice)
@@ -43,10 +38,6 @@ class OfflineInvoiceRepository(
         }
     }
 
-    /**
-     * Inserts a new invoice line (lineId == 0) or updates an existing one.
-     * Returns the final lineId in both cases.
-     */
     override suspend fun saveInvoiceLine(line: InvoiceLineEntity): Long {
         return if (line.lineId == 0L) {
             invoiceDao.insertInvoiceLine(line)
@@ -56,7 +47,6 @@ class OfflineInvoiceRepository(
         }
     }
 
-    // Deleting an invoice also deletes all its lines via the CASCADE foreign key rule
     override suspend fun deleteInvoice(invoice: InvoiceEntity) =
         invoiceDao.deleteInvoice(invoice)
 
@@ -67,11 +57,15 @@ class OfflineInvoiceRepository(
         invoiceDao.getInvoiceLineById(lineId)
 
     /**
-     * Generates the next invoice number based on how many invoices are stored.
-     * Example: if there are 5 invoices, the next number is "INV-0006".
+     * Generates a random invoice number in the format PREFIX-ABC123456 that is
+     * guaranteed not to already exist in the database. Retries until unique.
      */
-    override suspend fun getNextInvoiceNumber(prefix: String): String {
-        val count = invoiceDao.getInvoiceCount()
-        return InvoiceUtils.generateInvoiceNumber(count, prefix)
+    override suspend fun generateUniqueInvoiceNumber(prefix: String): String {
+        var number: String
+        do {
+            number = InvoiceNumberGenerator.generate(prefix)
+        } while (invoiceDao.invoiceNumberExists(number) > 0)
+        return number
     }
 }
+

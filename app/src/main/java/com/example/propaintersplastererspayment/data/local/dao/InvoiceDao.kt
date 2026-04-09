@@ -38,6 +38,13 @@ interface InvoiceDao {
     @Query("SELECT COUNT(*) FROM invoices")
     suspend fun getInvoiceCount(): Int
 
+    /**
+     * Returns 1 if an invoice with the given number already exists, 0 otherwise.
+     * Used by the unique invoice number generator to guarantee no duplicates.
+     */
+    @Query("SELECT COUNT(*) FROM invoices WHERE invoiceNumber = :invoiceNumber")
+    suspend fun invoiceNumberExists(invoiceNumber: String): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertInvoice(invoice: InvoiceEntity): Long
 

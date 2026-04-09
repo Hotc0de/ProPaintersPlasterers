@@ -267,7 +267,7 @@ class InvoiceViewModel(
         viewModelScope.launch {
             val settings = settingsRepository.observeSettings().first()
             val prefix = settings?.invoiceNumberPrefix?.ifBlank { "INV-" } ?: "INV-"
-            val invoiceNumber = invoiceRepository.getNextInvoiceNumber(prefix)
+            val invoiceNumber = invoiceRepository.generateUniqueInvoiceNumber(prefix)
             headerFormState.value = InvoiceHeaderFormState(
                 invoiceNumber = invoiceNumber,
                 includeGst = settings?.gstEnabledByDefault ?: true,

@@ -11,9 +11,12 @@ import androidx.room.PrimaryKey
 data class ClientEntity(
     @PrimaryKey(autoGenerate = true)
     val clientId: Long = 0,
+    /** "PRIVATE" or "BUSINESS" */
+    val clientType: String = "PRIVATE",
     val name: String,
     val address: String = "",
     val phoneNumber: String = "",
-    val email: String = ""
+    val email: String = "",
+    val notes: String = ""
 )
 

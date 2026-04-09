@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -45,6 +46,7 @@ fun HomeRoute(
     onOpenSettings: () -> Unit,
     onAddJob: () -> Unit,
     onOpenJob: (Long) -> Unit,
+    onOpenClients: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val application = LocalContext.current.applicationContext as ProPaintersApplication
@@ -58,6 +60,7 @@ fun HomeRoute(
         onOpenSettings = onOpenSettings,
         onAddJob = onAddJob,
         onOpenJob = onOpenJob,
+        onOpenClients = onOpenClients,
         onDeleteJob = viewModel::deleteJob,
         modifier = modifier
     )
@@ -71,6 +74,7 @@ fun HomeScreen(
     onAddJob: () -> Unit,
     onOpenJob: (Long) -> Unit,
     onDeleteJob: (JobEntity) -> Unit,
+    onOpenClients: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -79,6 +83,9 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text(text = stringResource(R.string.home_title)) },
                 actions = {
+                    IconButton(onClick = onOpenClients) {
+                        Icon(Icons.Default.People, contentDescription = "Clients")
+                    }
                     IconButton(onClick = onAddJob) {
                         Icon(Icons.Default.Add, contentDescription = stringResource(R.string.home_add_job))
                     }

@@ -5,11 +5,15 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.propaintersplastererspayment.data.local.entity.AppSettingsEntity
 import com.example.propaintersplastererspayment.domain.repository.SettingsRepository
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -18,11 +22,6 @@ import kotlinx.coroutines.launch
 // Form state
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Holds the editable form values for app settings.
- * Each field is a separate mutable string (not the final database model) to support
- * real-time validation and preview without immediately saving to the database.
- */
 data class SettingsFormState(
     val businessName: String = "",
     val address: String = "",
@@ -30,27 +29,26 @@ data class SettingsFormState(
     val email: String = "",
     val gstNumber: String = "",
     val bankAccountNumber: String = "",
-    val invoiceNumberPrefix: String = "INV-",
+    val invoiceNumberPrefix: String = "INV",
     val defaultLabourRateText: String = "",
     val defaultGstPercentText: String = "15",
     val gstEnabledByDefault: Boolean = true,
     val errorMessage: String? = null
 ) {
-    // Parse labour rate safely
     val parsedLabourRate: Double?
         get() = defaultLabourRateText.trim().replace(",", "").toDoubleOrNull()
 
     val parsedGstPercent: Double?
         get() = defaultGstPercentText.trim().replace(",", "").toDoubleOrNull()
 
-    // Validation check
     val isValid: Boolean
         get() = businessName.isNotBlank() &&
                 address.isNotBlank() &&
                 phoneNumber.isNotBlank() &&
                 email.isNotBlank() &&
+                bankAccountNumber.isNotBlank() &&
                 parsedLabourRate != null &&
-                parsedLabourRate!! >= 0 &&
+                parsedLabourRate!! > 0 &&
                 parsedGstPercent != null &&
                 parsedGstPercent!! >= 0
 }
@@ -59,9 +57,6 @@ data class SettingsFormState(
 // UI state
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Single source of truth for the Settings screen.
- */
 data class SettingsUiState(
     val settings: AppSettingsEntity? = null,
     val formState: SettingsFormState = SettingsFormState(),
@@ -75,16 +70,6 @@ data class SettingsUiState(
 // ViewModel
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Manages the Settings screen state and logic.
- *
- * Responsibilities:
- *  - Load the current settings from the database
- *  - Populate the form with current values
- *  - Validate user input before saving
- *  - Save changes back to the database
- *  - Show success/error messages
- */
 class SettingsViewModel(
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
@@ -94,12 +79,16 @@ class SettingsViewModel(
     private val userMessage = MutableStateFlow<String?>(null)
     private val lastSavedAt = MutableStateFlow<String?>(null)
 
-    /**
-     * Combine the database stream with the form state to produce the UI state.
-     * When settings load from the database, automatically populate the form.
-     */
+    /** Fires once after a successful save — used by InitialSetupScreen for navigation. */
+    private val _settingsSaved = MutableSharedFlow<Unit>()
+    val settingsSaved: SharedFlow<Unit> = _settingsSaved.asSharedFlow()
+
+    // Tracks whether the settings flow has emitted at least once (even if null).
+    // This prevents showing a permanent loading spinner on first-run setup.
+    private var settingsLoaded = false
+
     val uiState: StateFlow<SettingsUiState> = combine(
-        settingsRepository.observeSettings(),
+        settingsRepository.observeSettings().onEach { settingsLoaded = true },
         formState,
         isSaving,
         userMessage,
@@ -108,7 +97,7 @@ class SettingsViewModel(
         SettingsUiState(
             settings = settings,
             formState = form,
-            isLoading = settings == null,
+            isLoading = !settingsLoaded,
             isSaving = saving,
             userMessage = message,
             lastSavedAt = savedAt
@@ -120,7 +109,6 @@ class SettingsViewModel(
     )
 
     init {
-        // When settings are first loaded, populate the form
         viewModelScope.launch {
             val firstSettings = settingsRepository.observeSettings().first()
             if (firstSettings != null && formState.value.businessName.isEmpty()) {
@@ -131,13 +119,13 @@ class SettingsViewModel(
                     email = firstSettings.email,
                     gstNumber = firstSettings.gstNumber,
                     bankAccountNumber = firstSettings.bankAccountNumber,
-                    invoiceNumberPrefix = firstSettings.invoiceNumberPrefix,
+                    invoiceNumberPrefix = firstSettings.invoiceNumberPrefix.trimEnd('-').ifBlank { "INV" },
                     defaultLabourRateText = if (firstSettings.defaultLabourRate > 0) {
                         firstSettings.defaultLabourRate.toString()
                     } else {
                         ""
                     },
-                    defaultGstPercentText = (firstSettings.defaultGstRate * 100).toString(),
+                    defaultGstPercentText = (firstSettings.defaultGstRate * 100).toInt().toString(),
                     gstEnabledByDefault = firstSettings.gstEnabledByDefault
                 )
             }
@@ -192,14 +180,8 @@ class SettingsViewModel(
     // Save action
     // ─────────────────────────────────────────────────────────────────────
 
-    /**
-     * Validates the form and saves all settings to the database.
-     * Shows a snackbar message on success or error.
-     */
     fun saveSettings() {
         val form = formState.value
-
-        // Validate
         val validationError = validateForm(form)
         if (validationError != null) {
             formState.update { it.copy(errorMessage = validationError) }
@@ -215,14 +197,14 @@ class SettingsViewModel(
 
                 settingsRepository.saveSettings(
                     AppSettingsEntity(
-                        settingsId = 1, // Always ID 1 (singleton)
+                        settingsId = 1,
                         businessName = form.businessName.trim(),
                         address = form.address.trim(),
                         phoneNumber = form.phoneNumber.trim(),
                         email = form.email.trim(),
                         gstNumber = form.gstNumber.trim(),
                         bankAccountNumber = form.bankAccountNumber.trim(),
-                        invoiceNumberPrefix = form.invoiceNumberPrefix.trim().ifBlank { "INV-" },
+                        invoiceNumberPrefix = form.invoiceNumberPrefix.trim().trimEnd('-').ifBlank { "INV" },
                         defaultLabourRate = labourRate,
                         defaultGstRate = gstRate,
                         gstEnabledByDefault = form.gstEnabledByDefault
@@ -232,6 +214,7 @@ class SettingsViewModel(
                 userMessage.value = "Settings saved successfully."
                 lastSavedAt.value = getCurrentTimeString()
                 formState.update { it.copy(errorMessage = null) }
+                _settingsSaved.emit(Unit)
             } catch (e: Exception) {
                 userMessage.value = "Error saving settings: ${e.message}"
             } finally {
@@ -248,29 +231,25 @@ class SettingsViewModel(
     // Private helpers
     // ─────────────────────────────────────────────────────────────────────
 
-    /**
-     * Validates the entire form.
-     * Returns an error message if something is wrong, or null if valid.
-     */
     private fun validateForm(form: SettingsFormState): String? = when {
         form.businessName.isBlank() -> "Business name is required."
         form.address.isBlank() -> "Address is required."
         form.phoneNumber.isBlank() -> "Phone number is required."
         form.email.isBlank() -> "Email is required."
         !isValidEmail(form.email) -> "Please enter a valid email address."
+        form.bankAccountNumber.isBlank() -> "Bank account number is required."
         form.invoiceNumberPrefix.isBlank() -> "Invoice prefix is required."
         form.defaultLabourRateText.isBlank() -> "Default labour rate is required."
         form.parsedLabourRate == null -> "Labour rate must be a valid number."
-        form.parsedLabourRate!! < 0 -> "Labour rate cannot be negative."
+        form.parsedLabourRate!! <= 0 -> "Labour rate must be greater than 0."
         form.defaultGstPercentText.isBlank() -> "Default GST percent is required."
         form.parsedGstPercent == null -> "GST percent must be a valid number."
         form.parsedGstPercent!! < 0 -> "GST percent cannot be negative."
         else -> null
     }
 
-    /** Very basic email validation. A production app would use a regex. */
     private fun isValidEmail(email: String): Boolean =
-        email.contains("@") && email.contains(".")
+        android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
 
     private fun getCurrentTimeString(): String =
         java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
@@ -291,4 +270,3 @@ class SettingsViewModel(
         }
     }
 }
-
