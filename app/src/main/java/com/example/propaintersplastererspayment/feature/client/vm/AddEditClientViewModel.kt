@@ -3,6 +3,7 @@ package com.example.propaintersplastererspayment.feature.client.vm
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.propaintersplastererspayment.core.util.PhoneFormatUtils
 import com.example.propaintersplastererspayment.data.local.entity.ClientEntity
 import com.example.propaintersplastererspayment.domain.repository.ClientRepository
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -26,6 +27,13 @@ data class ClientFormState(
     val errorMessage: String? = null
 ) {
     val isValid: Boolean get() = name.isNotBlank()
+
+    val phoneFormatError: String?
+        get() = if (phoneNumber.isNotBlank() && !PhoneFormatUtils.isValid(phoneNumber)) {
+            "Use format 000-0000000"
+        } else {
+            null
+        }
 }
 
 data class AddEditClientUiState(
@@ -46,8 +54,8 @@ class AddEditClientViewModel(
     private val userMessage = MutableStateFlow<String?>(null)
     private val isExistingClient = MutableStateFlow(false)
 
-    private val _savedEvent = MutableSharedFlow<Unit>()
-    val savedEvent: SharedFlow<Unit> = _savedEvent.asSharedFlow()
+    private val _savedEvent = MutableSharedFlow<Long>()
+    val savedEvent: SharedFlow<Long> = _savedEvent.asSharedFlow()
 
     val uiState: StateFlow<AddEditClientUiState> = combine(
         formState, isSaving, userMessage, isExistingClient
@@ -74,7 +82,7 @@ class AddEditClientViewModel(
                         name = client.name,
                         clientType = client.clientType,
                         address = client.address,
-                        phoneNumber = client.phoneNumber,
+                        phoneNumber = PhoneFormatUtils.formatInput(client.phoneNumber),
                         email = client.email,
                         notes = client.notes
                     )
@@ -86,7 +94,8 @@ class AddEditClientViewModel(
     fun onNameChange(value: String) = formState.update { it.copy(name = value, errorMessage = null) }
     fun onClientTypeChange(value: String) = formState.update { it.copy(clientType = value) }
     fun onAddressChange(value: String) = formState.update { it.copy(address = value) }
-    fun onPhoneChange(value: String) = formState.update { it.copy(phoneNumber = value) }
+    fun onPhoneChange(value: String) =
+        formState.update { it.copy(phoneNumber = PhoneFormatUtils.formatInput(value)) }
     fun onEmailChange(value: String) = formState.update { it.copy(email = value) }
     fun onNotesChange(value: String) = formState.update { it.copy(notes = value) }
 
@@ -96,10 +105,14 @@ class AddEditClientViewModel(
             formState.update { it.copy(errorMessage = "Name is required.") }
             return
         }
+        if (form.phoneNumber.isNotBlank() && !PhoneFormatUtils.isValid(form.phoneNumber)) {
+            formState.update { it.copy(errorMessage = "Phone number must match 000-0000000.") }
+            return
+        }
         isSaving.value = true
         viewModelScope.launch {
             try {
-                clientRepository.saveClient(
+                val savedClientId = clientRepository.saveClient(
                     ClientEntity(
                         clientId = clientId ?: 0L,
                         name = form.name.trim(),
@@ -110,7 +123,7 @@ class AddEditClientViewModel(
                         notes = form.notes.trim()
                     )
                 )
-                _savedEvent.emit(Unit)
+                _savedEvent.emit(savedClientId)
             } catch (e: Exception) {
                 userMessage.value = "Error saving client: ${e.message}"
             } finally {
@@ -124,7 +137,7 @@ class AddEditClientViewModel(
         viewModelScope.launch {
             val client = clientRepository.getClient(id) ?: return@launch
             clientRepository.deleteClient(client)
-            _savedEvent.emit(Unit)
+            _savedEvent.emit(-1L)
         }
     }
 

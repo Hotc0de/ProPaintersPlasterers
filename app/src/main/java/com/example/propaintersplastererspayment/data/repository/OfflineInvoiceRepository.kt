@@ -39,11 +39,11 @@ class OfflineInvoiceRepository(
     }
 
     override suspend fun saveInvoiceLine(line: InvoiceLineEntity): Long {
-        return if (line.lineId == 0L) {
+        return if (line.invoiceLineId == 0L) {
             invoiceDao.insertInvoiceLine(line)
         } else {
             invoiceDao.updateInvoiceLine(line)
-            line.lineId
+            line.invoiceLineId
         }
     }
 
@@ -53,17 +53,14 @@ class OfflineInvoiceRepository(
     override suspend fun deleteInvoiceLine(line: InvoiceLineEntity) =
         invoiceDao.deleteInvoiceLine(line)
 
-    override suspend fun getInvoiceLine(lineId: Long): InvoiceLineEntity? =
-        invoiceDao.getInvoiceLineById(lineId)
+    override suspend fun getInvoiceLine(invoiceLineId: Long): InvoiceLineEntity? =
+        invoiceDao.getInvoiceLineById(invoiceLineId)
 
-    /**
-     * Generates a random invoice number in the format PREFIX-ABC123456 that is
-     * guaranteed not to already exist in the database. Retries until unique.
-     */
-    override suspend fun generateUniqueInvoiceNumber(prefix: String): String {
+    /** Generates a unique random invoice number in INV-ABC123456 format. */
+    override suspend fun generateUniqueInvoiceNumber(): String {
         var number: String
         do {
-            number = InvoiceNumberGenerator.generate(prefix)
+            number = InvoiceNumberGenerator.generate()
         } while (invoiceDao.invoiceNumberExists(number) > 0)
         return number
     }

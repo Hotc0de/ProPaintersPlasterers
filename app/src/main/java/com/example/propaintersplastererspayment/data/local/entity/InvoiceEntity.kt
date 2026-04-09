@@ -11,33 +11,46 @@ import androidx.room.PrimaryKey
         ForeignKey(
             entity = JobEntity::class,
             parentColumns = ["jobId"],
-            childColumns = ["jobOwnerId"],
+            childColumns = ["jobId"],
             onDelete = ForeignKey.CASCADE
         ),
         ForeignKey(
             entity = ClientEntity::class,
             parentColumns = ["clientId"],
-            childColumns = ["clientOwnerId"],
+            childColumns = ["clientId"],
             onDelete = ForeignKey.SET_NULL
         )
     ],
     indices = [
-        Index(value = ["jobOwnerId"]),
-        Index(value = ["clientOwnerId"]),
+        Index(value = ["jobId"]),
+        Index(value = ["clientId"]),
         Index(value = ["invoiceNumber"], unique = true)
     ]
 )
 data class InvoiceEntity(
     @PrimaryKey(autoGenerate = true)
     val invoiceId: Long = 0,
-    val jobOwnerId: Long,
-    val clientOwnerId: Long? = null,
     val invoiceNumber: String,
-    val billToName: String,
-    val issueDate: String,
-    val includeGst: Boolean,
-    val gstRate: Double = 0.1,
+    val jobId: Long,
+    val clientId: Long? = null,
+    val invoiceDate: String,
+    val billToNameSnapshot: String,
+    val billToAddressSnapshot: String,
+    val billToPhoneSnapshot: String,
+    val billToEmailSnapshot: String,
+    val subtotalExclusiveGst: Double,
+    val gstEnabled: Boolean,
+    val gstRate: Double,
+    val gstAmount: Double,
     val otherAmount: Double = 0.0,
-    val notes: String = ""
-)
+    val totalAmount: Double,
+    val notes: String = "",
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis()
+) {
+    // Backward-compatible aliases used by existing UI/viewmodel code.
+    val billToName: String get() = billToNameSnapshot
+    val issueDate: String get() = invoiceDate
+    val includeGst: Boolean get() = gstEnabled
+}
 

@@ -8,9 +8,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -18,6 +23,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -52,6 +58,7 @@ import com.example.propaintersplastererspayment.ui.theme.ProPaintersPlasterersPa
  */
 @Composable
 fun SettingsRoute(
+    onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val application = LocalContext.current.applicationContext as ProPaintersApplication
@@ -65,13 +72,13 @@ fun SettingsRoute(
     SettingsScreen(
         uiState = uiState,
         modifier = modifier,
+        onBack = onBack,
         onBusinessNameChange = viewModel::onBusinessNameChange,
         onAddressChange = viewModel::onAddressChange,
         onPhoneNumberChange = viewModel::onPhoneNumberChange,
         onEmailChange = viewModel::onEmailChange,
         onGstNumberChange = viewModel::onGstNumberChange,
         onBankAccountNumberChange = viewModel::onBankAccountNumberChange,
-        onInvoicePrefixChange = viewModel::onInvoicePrefixChange,
         onDefaultLabourRateChange = viewModel::onDefaultLabourRateChange,
         onDefaultGstPercentChange = viewModel::onDefaultGstPercentChange,
         onGstEnabledChange = viewModel::onGstEnabledChange,
@@ -94,16 +101,17 @@ fun SettingsRoute(
  *  4. Banking section
  *  5. Save button + optional "Last saved at" timestamp
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     uiState: SettingsUiState,
+    onBack: () -> Unit,
     onBusinessNameChange: (String) -> Unit,
     onAddressChange: (String) -> Unit,
     onPhoneNumberChange: (String) -> Unit,
     onEmailChange: (String) -> Unit,
     onGstNumberChange: (String) -> Unit,
     onBankAccountNumberChange: (String) -> Unit,
-    onInvoicePrefixChange: (String) -> Unit,
     onDefaultLabourRateChange: (String) -> Unit,
     onDefaultGstPercentChange: (String) -> Unit,
     onGstEnabledChange: (Boolean) -> Unit,
@@ -122,6 +130,19 @@ fun SettingsScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        topBar = {
+            TopAppBar(
+                title = { Text(text = stringResource(R.string.settings_title)) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                }
+            )
+        },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { innerPadding ->
         when {
@@ -186,6 +207,10 @@ fun SettingsScreen(
                             value = uiState.formState.phoneNumber,
                             onValueChange = onPhoneNumberChange,
                             label = { Text(stringResource(R.string.settings_phone)) },
+                            isError = uiState.formState.phoneFormatError != null,
+                            supportingText = {
+                                Text(uiState.formState.phoneFormatError ?: "Format: 000-0000000")
+                            },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
@@ -205,14 +230,6 @@ fun SettingsScreen(
                             value = uiState.formState.gstNumber,
                             onValueChange = onGstNumberChange,
                             label = { Text(stringResource(R.string.settings_gst_number)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
-                        )
-                        OutlinedTextField(
-                            value = uiState.formState.invoiceNumberPrefix,
-                            onValueChange = onInvoicePrefixChange,
-                            label = { Text(stringResource(R.string.settings_invoice_prefix)) },
-                            supportingText = { Text(stringResource(R.string.settings_invoice_prefix_hint)) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
@@ -283,6 +300,10 @@ fun SettingsScreen(
                             value = uiState.formState.bankAccountNumber,
                             onValueChange = onBankAccountNumberChange,
                             label = { Text(stringResource(R.string.settings_bank_account)) },
+                            isError = uiState.formState.bankAccountFormatError != null,
+                            supportingText = {
+                                Text(uiState.formState.bankAccountFormatError ?: "Format: 00-0000-0000000-00")
+                            },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
@@ -380,8 +401,7 @@ private fun SettingsScreenPreview() {
                     phoneNumber = "02 9123 4567",
                     email = "info@propainters.com.au",
                     gstNumber = "12 345 678 901",
-                    bankAccountNumber = "123456789",
-                    invoiceNumberPrefix = "INV-",
+                    bankAccountNumber = "12-1234-1234567-12",
                     defaultLabourRate = 65.0,
                     defaultGstRate = 0.15,
                     gstEnabledByDefault = true
@@ -392,21 +412,20 @@ private fun SettingsScreenPreview() {
                     phoneNumber = "02 9123 4567",
                     email = "info@propainters.com.au",
                     gstNumber = "12 345 678 901",
-                    bankAccountNumber = "123456789",
-                    invoiceNumberPrefix = "INV-",
+                    bankAccountNumber = "12-1234-1234567-12",
                     defaultLabourRateText = "65",
                     defaultGstPercentText = "15",
                     gstEnabledByDefault = true
                 ),
                 lastSavedAt = "14:32"
             ),
+            onBack = {},
             onBusinessNameChange = {},
             onAddressChange = {},
             onPhoneNumberChange = {},
             onEmailChange = {},
             onGstNumberChange = {},
             onBankAccountNumberChange = {},
-            onInvoicePrefixChange = {},
             onDefaultLabourRateChange = {},
             onDefaultGstPercentChange = {},
             onGstEnabledChange = {},

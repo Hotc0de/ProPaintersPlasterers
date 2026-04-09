@@ -11,6 +11,9 @@
     <string name="job_edit_title">Edit Job</string>
     <string name="job_address">Job Address</string>
     <string name="job_client_name">Client / Company</string>
+    <string name="job_client_search_hint">Search or select client</string>
+    <string name="job_add_new_client">Add New Client</string>
+    <string name="job_selected_client">Selected: %1$s</string>
     <string name="job_notes">Notes</string>
     <string name="job_save">Save Job</string>
     <string name="job_detail_title">Job #%1$d</string>
@@ -76,7 +79,7 @@
     <string name="invoice_save">Save</string>
     <string name="invoice_cancel">Cancel</string>
     <string name="invoice_delete">Delete</string>
-    <string name="invoice_client_suggestions">Matching clients</string>
+    <string name="invoice_client_suggestions">Saved clients</string>
     <string name="invoice_lines_header">Invoice Lines</string>
     <string name="invoice_add_line">Add Line</string>
     <string name="invoice_edit_line">Edit Line</string>
@@ -97,15 +100,13 @@
     <string name="settings_title">Business Settings</string>
     <string name="settings_description">Manage your business details used across invoices and documents.</string>
     <string name="settings_section_business">Business Information</string>
-    <string name="settings_business_name">Business Name</string>
+    <string name="settings_business_name">Company Name</string>
     <string name="settings_address">Address</string>
     <string name="settings_section_contact">Contact Details</string>
     <string name="settings_phone">Phone Number</string>
     <string name="settings_email">Email Address</string>
     <string name="settings_section_invoice">Invoice Settings</string>
     <string name="settings_gst_number">GST Number (optional)</string>
-    <string name="settings_invoice_prefix">Invoice Prefix</string>
-    <string name="settings_invoice_prefix_hint">e.g. INV-</string>
     <string name="settings_labour_rate">Default Labour Rate</string>
     <string name="settings_labour_rate_hint">e.g. 65.00</string>
     <string name="settings_gst_percent">Default GST Percent</string>
@@ -114,7 +115,7 @@
     <string name="settings_gst_enabled">Include GST by Default</string>
     <string name="settings_gst_enabled_hint">Automatically enable GST when creating new invoices</string>
     <string name="settings_section_banking">Banking Details</string>
-    <string name="settings_bank_account">Bank Account Number (optional)</string>
+    <string name="settings_bank_account">Bank Account Number</string>
     <string name="settings_save">Save Settings</string>
     <string name="settings_last_saved">Last saved at</string>
     <!-- ── PDF export ───────────────────────────────────────────────────── -->

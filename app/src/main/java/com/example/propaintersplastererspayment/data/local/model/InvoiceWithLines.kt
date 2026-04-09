@@ -10,7 +10,7 @@ data class InvoiceWithLines(
     @Relation(
         entity = InvoiceLineEntity::class,
         parentColumn = "invoiceId",
-        entityColumn = "invoiceOwnerId"
+        entityColumn = "invoiceId"
     )
     val lines: List<InvoiceLineEntity>
 )

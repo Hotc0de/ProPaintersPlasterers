@@ -207,7 +207,8 @@ class InvoiceViewModel(
                 if (query.isNotEmpty()) {
                     clientRepository.observeSuggestions(query)
                 } else {
-                    flowOf(emptyList())
+                    // When blank, show saved clients so user can pick without typing.
+                    clientRepository.observeClients()
                 }
             }
             .stateIn(
@@ -266,13 +267,21 @@ class InvoiceViewModel(
     fun openCreateInvoice() {
         viewModelScope.launch {
             val settings = settingsRepository.observeSettings().first()
-            val prefix = settings?.invoiceNumberPrefix?.ifBlank { "INV-" } ?: "INV-"
-            val invoiceNumber = invoiceRepository.generateUniqueInvoiceNumber(prefix)
+            val invoiceNumber = invoiceRepository.generateUniqueInvoiceNumber()
+            val job = jobRepository.observeJob(jobId).first()
+            val defaultBillTo = when {
+                job?.clientId != null -> clientRepository.getClient(job.clientId)?.name
+                    ?: job.clientNameSnapshot
+                job != null -> job.clientNameSnapshot.ifBlank { job.jobName }
+                else -> ""
+            }
             headerFormState.value = InvoiceHeaderFormState(
                 invoiceNumber = invoiceNumber,
+                billToName = defaultBillTo,
                 includeGst = settings?.gstEnabledByDefault ?: true,
                 gstRate = settings?.defaultGstRate ?: InvoiceUtils.DEFAULT_GST_RATE
             )
+            billToSearchQuery.value = ""
             isEditingHeader.value = true
         }
     }
@@ -353,23 +362,45 @@ class InvoiceViewModel(
         val otherAmount = InvoiceUtils.parseAmount(form.otherAmountText) ?: 0.0
 
         viewModelScope.launch {
-            if (form.billToName.isNotBlank()) {
-                clientRepository.saveClient(
-                    ClientEntity(name = form.billToName.trim())
-                )
+            val now = System.currentTimeMillis()
+            val trimmedBillTo = form.billToName.trim()
+
+            val linkedClient = if (trimmedBillTo.isNotBlank()) {
+                val existingClient = clientRepository.observeSuggestions(trimmedBillTo).first()
+                    .firstOrNull { it.name.equals(trimmedBillTo, ignoreCase = true) }
+                existingClient ?: run {
+                    val newClientId = clientRepository.saveClient(ClientEntity(name = trimmedBillTo))
+                    clientRepository.getClient(newClientId)
+                }
+            } else {
+                null
             }
+
+            val subtotalExclusiveGst = uiState.value.lines.sumOf { it.amount }
+            val gstAmount = if (form.includeGst) subtotalExclusiveGst * form.gstRate else 0.0
+            val totalAmount = subtotalExclusiveGst + gstAmount + otherAmount
+            val existingInvoice = uiState.value.invoice
 
             invoiceRepository.saveInvoice(
                 InvoiceEntity(
                     invoiceId = form.invoiceId ?: 0L,
-                    jobOwnerId = jobId,
+                    jobId = jobId,
+                    clientId = linkedClient?.clientId,
                     invoiceNumber = form.invoiceNumber.trim(),
-                    billToName = form.billToName.trim(),
-                    issueDate = form.issueDate.trim(),
-                    includeGst = form.includeGst,
+                    invoiceDate = form.issueDate.trim(),
+                    billToNameSnapshot = trimmedBillTo.ifBlank { linkedClient?.name.orEmpty() },
+                    billToAddressSnapshot = linkedClient?.address.orEmpty(),
+                    billToPhoneSnapshot = linkedClient?.phoneNumber.orEmpty(),
+                    billToEmailSnapshot = linkedClient?.email.orEmpty(),
+                    subtotalExclusiveGst = subtotalExclusiveGst,
+                    gstEnabled = form.includeGst,
                     gstRate = form.gstRate,
+                    gstAmount = gstAmount,
                     otherAmount = otherAmount,
-                    notes = form.notes.trim()
+                    totalAmount = totalAmount,
+                    notes = form.notes.trim(),
+                    createdAt = existingInvoice?.createdAt ?: now,
+                    updatedAt = now
                 )
             )
             userMessage.value = if (form.invoiceId == null) "Invoice created." else "Invoice updated."
@@ -462,16 +493,17 @@ class InvoiceViewModel(
         viewModelScope.launch {
             invoiceRepository.saveInvoiceLine(
                 InvoiceLineEntity(
-                    lineId = form.lineId ?: 0L,
-                    invoiceOwnerId = invoiceId,
+                    invoiceLineId = form.lineId ?: 0L,
+                    invoiceId = invoiceId,
                     description = form.description.trim(),
                     qty = qty,
                     rate = rate,
                     amount = effectiveAmount,
-                    isManualAmount = form.isManualAmount,
+                    manualAmountOverride = form.isManualAmount,
                     sortOrder = form.sortOrder
                 )
             )
+            syncStoredInvoiceTotals(invoiceId)
             userMessage.value = if (form.lineId == null) "Line added." else "Line updated."
             dismissLine()
         }
@@ -481,7 +513,9 @@ class InvoiceViewModel(
     fun deleteLine(lineId: Long) {
         viewModelScope.launch {
             val line = invoiceRepository.getInvoiceLine(lineId) ?: return@launch
+            val invoiceId = line.invoiceId
             invoiceRepository.deleteInvoiceLine(line)
+            syncStoredInvoiceTotals(invoiceId)
             userMessage.value = "Line deleted."
             if (lineFormState.value.lineId == lineId) {
                 dismissLine()
@@ -633,6 +667,22 @@ class InvoiceViewModel(
     private suspend fun getTotalMaterialCostForJob(): Double {
         val materials = materialRepository.observeMaterialsForJob(jobId).first()
         return InvoiceUtils.calculateTotalMaterialCost(materials.map { it.price })
+    }
+
+    private suspend fun syncStoredInvoiceTotals(invoiceId: Long) {
+        val invoice = invoiceRepository.observeInvoiceWithLines(invoiceId).first()?.invoice ?: return
+        val lines = invoiceRepository.observeInvoiceLines(invoiceId).first()
+        val subtotal = lines.sumOf { it.amount }
+        val gstAmount = if (invoice.gstEnabled) subtotal * invoice.gstRate else 0.0
+        val total = subtotal + gstAmount + invoice.otherAmount
+        invoiceRepository.saveInvoice(
+            invoice.copy(
+                subtotalExclusiveGst = subtotal,
+                gstAmount = gstAmount,
+                totalAmount = total,
+                updatedAt = System.currentTimeMillis()
+            )
+        )
     }
 
     // ─────────────────────────────────────────────────────────────────────

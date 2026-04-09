@@ -11,21 +11,26 @@ import androidx.room.PrimaryKey
         ForeignKey(
             entity = InvoiceEntity::class,
             parentColumns = ["invoiceId"],
-            childColumns = ["invoiceOwnerId"],
+            childColumns = ["invoiceId"],
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index(value = ["invoiceOwnerId"])]
+    indices = [Index(value = ["invoiceId"])]
 )
 data class InvoiceLineEntity(
     @PrimaryKey(autoGenerate = true)
-    val lineId: Long = 0,
-    val invoiceOwnerId: Long,
+    val invoiceLineId: Long = 0,
+    val invoiceId: Long,
     val description: String,
     val qty: Double,
     val rate: Double,
     val amount: Double,
-    val isManualAmount: Boolean,
+    val manualAmountOverride: Boolean,
     val sortOrder: Int
-)
+) {
+    // Backward-compatible aliases used by existing UI/viewmodel code.
+    val lineId: Long get() = invoiceLineId
+    val invoiceOwnerId: Long get() = invoiceId
+    val isManualAmount: Boolean get() = manualAmountOverride
+}
 

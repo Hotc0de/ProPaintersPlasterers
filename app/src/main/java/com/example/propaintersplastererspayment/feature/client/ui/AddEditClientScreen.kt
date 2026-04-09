@@ -43,7 +43,7 @@ import com.example.propaintersplastererspayment.feature.client.vm.ClientFormStat
 @Composable
 fun AddEditClientRoute(
     clientId: Long?,
-    onDone: () -> Unit,
+    onDone: (Long?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val application = LocalContext.current.applicationContext as ProPaintersApplication
@@ -56,7 +56,9 @@ fun AddEditClientRoute(
     val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(Unit) {
-        viewModel.savedEvent.collect { onDone() }
+        viewModel.savedEvent.collect { savedClientId ->
+            onDone(savedClientId.takeIf { it > 0L })
+        }
     }
 
     AddEditClientScreen(
@@ -69,7 +71,7 @@ fun AddEditClientRoute(
         onNotesChange = viewModel::onNotesChange,
         onSave = viewModel::saveClient,
         onDelete = viewModel::deleteClient,
-        onBack = onDone,
+        onBack = { onDone(null) },
         onMessageShown = viewModel::clearMessage,
         modifier = modifier
     )
@@ -166,6 +168,8 @@ fun AddEditClientScreen(
                     value = form.phoneNumber,
                     onValueChange = onPhoneChange,
                     label = { Text("Phone") },
+                    isError = form.phoneFormatError != null,
+                    supportingText = { Text(form.phoneFormatError ?: "Format: 000-0000000") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)

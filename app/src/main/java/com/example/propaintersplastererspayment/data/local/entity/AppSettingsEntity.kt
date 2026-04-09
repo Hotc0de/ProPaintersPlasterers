@@ -14,7 +14,6 @@ data class AppSettingsEntity(
     val email: String = "",
     val gstNumber: String = "",
     val bankAccountNumber: String = "",
-    val invoiceNumberPrefix: String = "INV-",
     val defaultLabourRate: Double = 0.0,
     val defaultGstRate: Double = 0.15,
     val gstEnabledByDefault: Boolean = true

@@ -98,8 +98,14 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
             )
         ) { backStackEntry ->
             val jobIdArg = backStackEntry.arguments?.getLong(AppDestinations.JOB_ID_ARG) ?: -1L
+            val newClientIdState = backStackEntry.savedStateHandle.getStateFlow("newClientId", -1L)
+            val newClientId by newClientIdState.collectAsState()
             JobFormRoute(
                 jobId = if (jobIdArg <= 0L) null else jobIdArg,
+                newClientId = newClientId.takeIf { it > 0L },
+                onConsumeNewClientId = { backStackEntry.savedStateHandle["newClientId"] = -1L },
+                onAddNewClient = { navController.navigate(AppDestinations.clientFormRoute(null)) },
+                onBack = { navController.popBackStack() },
                 onDone = { navController.popBackStack() }
             )
         }
@@ -111,12 +117,15 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
         ) { backStackEntry ->
             val jobId = backStackEntry.arguments?.getLong(AppDestinations.JOB_ID_ARG)
                 ?: return@composable
-            JobDetailScreen(jobId = jobId)
+            JobDetailScreen(
+                jobId = jobId,
+                onBack = { navController.popBackStack() }
+            )
         }
 
         // ── Settings (edit existing settings) ─────────────────────────────
         composable(AppDestinations.SETTINGS_ROUTE) {
-            SettingsRoute()
+            SettingsRoute(onBack = { navController.popBackStack() })
         }
 
         // ── Client list ───────────────────────────────────────────────────
@@ -141,7 +150,12 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
             val clientIdArg = backStackEntry.arguments?.getLong(AppDestinations.CLIENT_ID_ARG) ?: -1L
             AddEditClientRoute(
                 clientId = if (clientIdArg <= 0L) null else clientIdArg,
-                onDone = { navController.popBackStack() }
+                onDone = { savedClientId ->
+                    savedClientId?.let { id ->
+                        navController.previousBackStackEntry?.savedStateHandle?.set("newClientId", id)
+                    }
+                    navController.popBackStack()
+                }
             )
         }
     }

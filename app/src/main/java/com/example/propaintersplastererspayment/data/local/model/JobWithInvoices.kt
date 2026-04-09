@@ -10,7 +10,7 @@ data class JobWithInvoices(
     @Relation(
         entity = InvoiceEntity::class,
         parentColumn = "jobId",
-        entityColumn = "jobOwnerId"
+        entityColumn = "jobId"
     )
     val invoices: List<InvoiceEntity>
 )

@@ -17,14 +17,14 @@ interface InvoiceDao {
 
     // ── Invoice queries ────────────────────────────────────────────────────
 
-    @Query("SELECT * FROM invoices WHERE jobOwnerId = :jobId ORDER BY issueDate DESC")
+    @Query("SELECT * FROM invoices WHERE jobId = :jobId ORDER BY invoiceDate DESC")
     fun observeInvoicesForJob(jobId: Long): Flow<List<InvoiceEntity>>
 
     /**
      * Returns the single invoice linked to a job, or null if none exists yet.
      * Used by InvoiceViewModel to observe whether an invoice exists for this job.
      */
-    @Query("SELECT * FROM invoices WHERE jobOwnerId = :jobId LIMIT 1")
+    @Query("SELECT * FROM invoices WHERE jobId = :jobId LIMIT 1")
     fun observeInvoiceForJob(jobId: Long): Flow<InvoiceEntity?>
 
     @Transaction
@@ -56,15 +56,15 @@ interface InvoiceDao {
 
     // ── Invoice line queries ───────────────────────────────────────────────
 
-    @Query("SELECT * FROM invoice_lines WHERE invoiceOwnerId = :invoiceId ORDER BY sortOrder ASC")
+    @Query("SELECT * FROM invoice_lines WHERE invoiceId = :invoiceId ORDER BY sortOrder ASC")
     fun observeInvoiceLines(invoiceId: Long): Flow<List<InvoiceLineEntity>>
 
     /**
      * Fetches a single invoice line by its ID.
      * Used when the ViewModel needs to delete a specific line.
      */
-    @Query("SELECT * FROM invoice_lines WHERE lineId = :lineId LIMIT 1")
-    suspend fun getInvoiceLineById(lineId: Long): InvoiceLineEntity?
+    @Query("SELECT * FROM invoice_lines WHERE invoiceLineId = :invoiceLineId LIMIT 1")
+    suspend fun getInvoiceLineById(invoiceLineId: Long): InvoiceLineEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertInvoiceLine(line: InvoiceLineEntity): Long

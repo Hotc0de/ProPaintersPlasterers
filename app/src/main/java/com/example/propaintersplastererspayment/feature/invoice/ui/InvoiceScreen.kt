@@ -90,6 +90,8 @@ fun InvoiceRoute(
         )
     )
     val uiState by viewModel.uiState.collectAsState()
+    // Capture string resource at composable scope so it's safe to use inside coroutines
+    val pdfShareTitle = stringResource(R.string.pdf_share_invoice)
 
     LaunchedEffect(viewModel) {
         viewModel.pdfExportEvents.collect { exportData ->
@@ -99,7 +101,7 @@ fun InvoiceRoute(
                 PdfFileHelper.sharePdf(
                     context = context,
                     file = outputFile,
-                    chooserTitle = context.getString(R.string.pdf_share_invoice)
+                    chooserTitle = pdfShareTitle
                 )
             }.onSuccess {
                 viewModel.onPdfExportFinished(success = true)
@@ -157,7 +159,7 @@ fun InvoiceRoute(
  *  4. List of invoice lines
  *  5. Totals card
  *
- * Dialogs overlay the screen when [uiState.isEditingHeader] or [uiState.isEditingLine] is true.
+ * Dialogs overlay the screen when the header or line editing flags are true.
  */
 @Composable
 fun InvoiceScreen(
@@ -682,7 +684,7 @@ private fun LabelValue(label: String, value: String) {
  * Dialog for creating or editing the invoice header.
  *
  * Features:
- *  - Invoice number field (editable)
+ *  - Invoice number field (read-only, auto-generated)
  *  - Bill To field with live client auto-suggestions
  *  - Issue date field
  *  - GST toggle (Switch)
@@ -728,10 +730,11 @@ fun InvoiceHeaderDialog(
                 // Invoice number
                 OutlinedTextField(
                     value = formState.invoiceNumber,
-                    onValueChange = onInvoiceNumberChange,
+                    onValueChange = {},
                     label = { Text(stringResource(R.string.invoice_number)) },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    readOnly = true
                 )
 
                 // Bill To field + suggestions
@@ -1051,34 +1054,41 @@ private fun InvoiceScreenPreview() {
                 ),
                 invoice = InvoiceEntity(
                     invoiceId = 1,
-                    jobOwnerId = 1,
-                    invoiceNumber = "INV-0001",
-                    billToName = "Acme Corp",
-                    issueDate = "2026-04-09",
-                    includeGst = true,
+                    invoiceNumber = "INV-ABC123456",
+                    jobId = 1,
+                    clientId = 1,
+                    invoiceDate = "2026-04-09",
+                    billToNameSnapshot = "Acme Corp",
+                    billToAddressSnapshot = "123 Main St",
+                    billToPhoneSnapshot = "0200000000",
+                    billToEmailSnapshot = "accounts@acme.com",
+                    subtotalExclusiveGst = 1369.95,
+                    gstEnabled = true,
                     gstRate = 0.10,
+                    gstAmount = 136.995,
                     otherAmount = 0.0,
+                    totalAmount = 1506.945,
                     notes = "Payment due 14 days."
                 ),
                 lines = listOf(
                     InvoiceLineEntity(
-                        lineId = 1,
-                        invoiceOwnerId = 1,
+                        invoiceLineId = 1,
+                        invoiceId = 1,
                         description = "Labour",
                         qty = 16.0,
                         rate = 65.0,
                         amount = 1040.0,
-                        isManualAmount = false,
+                        manualAmountOverride = false,
                         sortOrder = 1
                     ),
                     InvoiceLineEntity(
-                        lineId = 2,
-                        invoiceOwnerId = 1,
+                        invoiceLineId = 2,
+                        invoiceId = 1,
                         description = "Materials",
                         qty = 1.0,
                         rate = 329.95,
                         amount = 329.95,
-                        isManualAmount = true,
+                        manualAmountOverride = true,
                         sortOrder = 2
                     )
                 ),

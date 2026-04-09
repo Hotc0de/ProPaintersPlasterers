@@ -5,11 +5,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -35,6 +39,7 @@ private enum class JobDetailTab(val titleRes: Int) {
 @Composable
 fun JobDetailScreen(
     jobId: Long,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -44,7 +49,15 @@ fun JobDetailScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(text = stringResource(R.string.job_detail_title, jobId)) }
+                title = { Text(text = stringResource(R.string.job_detail_title, jobId)) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                }
             )
         }
     ) { innerPadding ->
@@ -53,7 +66,7 @@ fun JobDetailScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            TabRow(selectedTabIndex = selectedTab) {
+            PrimaryTabRow(selectedTabIndex = selectedTab) {
                 tabs.forEachIndexed { index, tab ->
                     Tab(
                         selected = selectedTab == index,

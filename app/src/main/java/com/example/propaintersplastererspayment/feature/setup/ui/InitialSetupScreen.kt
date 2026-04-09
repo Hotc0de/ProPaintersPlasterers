@@ -38,8 +38,7 @@ import com.example.propaintersplastererspayment.feature.settings.vm.SettingsView
  * First-run screen that forces the user to set up their business details
  * before they can access the main app. Cannot be skipped.
  *
- * Reuses [SettingsViewModel] – once settings are saved the [settingsSaved]
- * SharedFlow triggers navigation to [HomeScreen].
+ * Reuses SettingsViewModel and navigates to Home after settings are saved.
  */
 @Composable
 fun InitialSetupRoute(
@@ -65,7 +64,6 @@ fun InitialSetupRoute(
         onEmailChange = viewModel::onEmailChange,
         onGstNumberChange = viewModel::onGstNumberChange,
         onBankAccountNumberChange = viewModel::onBankAccountNumberChange,
-        onInvoicePrefixChange = viewModel::onInvoicePrefixChange,
         onDefaultLabourRateChange = viewModel::onDefaultLabourRateChange,
         onDefaultGstPercentChange = viewModel::onDefaultGstPercentChange,
         onGstEnabledChange = viewModel::onGstEnabledChange,
@@ -84,7 +82,6 @@ fun InitialSetupScreen(
     onEmailChange: (String) -> Unit,
     onGstNumberChange: (String) -> Unit,
     onBankAccountNumberChange: (String) -> Unit,
-    onInvoicePrefixChange: (String) -> Unit,
     onDefaultLabourRateChange: (String) -> Unit,
     onDefaultGstPercentChange: (String) -> Unit,
     onGstEnabledChange: (Boolean) -> Unit,
@@ -156,6 +153,8 @@ fun InitialSetupScreen(
                     value = form.phoneNumber,
                     onValueChange = onPhoneNumberChange,
                     label = { Text("Phone Number *") },
+                    isError = form.phoneFormatError != null,
+                    supportingText = { Text(form.phoneFormatError ?: "Format: 000-0000000") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
@@ -177,14 +176,6 @@ fun InitialSetupScreen(
                     label = { Text("GST Number (optional)") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
-                )
-                OutlinedTextField(
-                    value = form.invoiceNumberPrefix,
-                    onValueChange = onInvoicePrefixChange,
-                    label = { Text("Invoice Number Prefix *") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    supportingText = { Text("e.g. INV, PP, INVOICE") }
                 )
                 OutlinedTextField(
                     value = form.defaultGstPercentText,
@@ -212,6 +203,10 @@ fun InitialSetupScreen(
                     value = form.bankAccountNumber,
                     onValueChange = onBankAccountNumberChange,
                     label = { Text("Bank Account Number *") },
+                    isError = form.bankAccountFormatError != null,
+                    supportingText = {
+                        Text(form.bankAccountFormatError ?: "Format: 00-0000-0000000-00")
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)

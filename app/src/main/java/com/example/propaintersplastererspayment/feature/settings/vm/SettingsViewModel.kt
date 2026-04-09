@@ -3,6 +3,8 @@ package com.example.propaintersplastererspayment.feature.settings.vm
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.propaintersplastererspayment.core.util.BankAccountFormatUtils
+import com.example.propaintersplastererspayment.core.util.PhoneFormatUtils
 import com.example.propaintersplastererspayment.data.local.entity.AppSettingsEntity
 import com.example.propaintersplastererspayment.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -29,7 +31,6 @@ data class SettingsFormState(
     val email: String = "",
     val gstNumber: String = "",
     val bankAccountNumber: String = "",
-    val invoiceNumberPrefix: String = "INV",
     val defaultLabourRateText: String = "",
     val defaultGstPercentText: String = "15",
     val gstEnabledByDefault: Boolean = true,
@@ -51,6 +52,23 @@ data class SettingsFormState(
                 parsedLabourRate!! > 0 &&
                 parsedGstPercent != null &&
                 parsedGstPercent!! >= 0
+
+    val bankAccountFormatError: String?
+        get() = if (
+            bankAccountNumber.isNotBlank() &&
+            !BankAccountFormatUtils.isValid(bankAccountNumber)
+        ) {
+            "Use format 00-0000-0000000-00"
+        } else {
+            null
+        }
+
+    val phoneFormatError: String?
+        get() = if (phoneNumber.isNotBlank() && !PhoneFormatUtils.isValid(phoneNumber)) {
+            "Use format 000-0000000"
+        } else {
+            null
+        }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -115,11 +133,10 @@ class SettingsViewModel(
                 formState.value = SettingsFormState(
                     businessName = firstSettings.businessName,
                     address = firstSettings.address,
-                    phoneNumber = firstSettings.phoneNumber,
+                    phoneNumber = PhoneFormatUtils.formatInput(firstSettings.phoneNumber),
                     email = firstSettings.email,
                     gstNumber = firstSettings.gstNumber,
-                    bankAccountNumber = firstSettings.bankAccountNumber,
-                    invoiceNumberPrefix = firstSettings.invoiceNumberPrefix.trimEnd('-').ifBlank { "INV" },
+                    bankAccountNumber = BankAccountFormatUtils.formatInput(firstSettings.bankAccountNumber),
                     defaultLabourRateText = if (firstSettings.defaultLabourRate > 0) {
                         firstSettings.defaultLabourRate.toString()
                     } else {
@@ -145,7 +162,8 @@ class SettingsViewModel(
     }
 
     fun onPhoneNumberChange(value: String) {
-        formState.update { it.copy(phoneNumber = value, errorMessage = null) }
+        val formatted = PhoneFormatUtils.formatInput(value)
+        formState.update { it.copy(phoneNumber = formatted, errorMessage = null) }
     }
 
     fun onEmailChange(value: String) {
@@ -157,11 +175,8 @@ class SettingsViewModel(
     }
 
     fun onBankAccountNumberChange(value: String) {
-        formState.update { it.copy(bankAccountNumber = value, errorMessage = null) }
-    }
-
-    fun onInvoicePrefixChange(value: String) {
-        formState.update { it.copy(invoiceNumberPrefix = value, errorMessage = null) }
+        val formatted = BankAccountFormatUtils.formatInput(value)
+        formState.update { it.copy(bankAccountNumber = formatted, errorMessage = null) }
     }
 
     fun onDefaultLabourRateChange(value: String) {
@@ -204,7 +219,6 @@ class SettingsViewModel(
                         email = form.email.trim(),
                         gstNumber = form.gstNumber.trim(),
                         bankAccountNumber = form.bankAccountNumber.trim(),
-                        invoiceNumberPrefix = form.invoiceNumberPrefix.trim().trimEnd('-').ifBlank { "INV" },
                         defaultLabourRate = labourRate,
                         defaultGstRate = gstRate,
                         gstEnabledByDefault = form.gstEnabledByDefault
@@ -235,10 +249,12 @@ class SettingsViewModel(
         form.businessName.isBlank() -> "Business name is required."
         form.address.isBlank() -> "Address is required."
         form.phoneNumber.isBlank() -> "Phone number is required."
+        !PhoneFormatUtils.isValid(form.phoneNumber) -> "Phone number must match 000-0000000."
         form.email.isBlank() -> "Email is required."
         !isValidEmail(form.email) -> "Please enter a valid email address."
         form.bankAccountNumber.isBlank() -> "Bank account number is required."
-        form.invoiceNumberPrefix.isBlank() -> "Invoice prefix is required."
+        !BankAccountFormatUtils.isValid(form.bankAccountNumber) ->
+            "Bank account must match 00-0000-0000000-00."
         form.defaultLabourRateText.isBlank() -> "Default labour rate is required."
         form.parsedLabourRate == null -> "Labour rate must be a valid number."
         form.parsedLabourRate!! <= 0 -> "Labour rate must be greater than 0."
