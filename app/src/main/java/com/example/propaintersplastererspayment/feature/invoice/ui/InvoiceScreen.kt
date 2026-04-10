@@ -2,15 +2,18 @@ package com.example.propaintersplastererspayment.feature.invoice.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -45,12 +48,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
 import com.example.propaintersplastererspayment.R
+import com.example.propaintersplastererspayment.core.ui.MinActionButtonWidth
+import com.example.propaintersplastererspayment.core.ui.isCompactActionRowWidth
+import com.example.propaintersplastererspayment.core.ui.isCompactPhoneWidth
 import com.example.propaintersplastererspayment.core.pdf.PdfExportService
 import com.example.propaintersplastererspayment.core.pdf.PdfFileHelper
 import com.example.propaintersplastererspayment.core.util.CurrencyFormatUtils
@@ -377,11 +385,15 @@ private fun InvoiceJobSummaryCard(job: JobEntity) {
                     job.jobName.ifBlank { stringResource(R.string.invoice_unknown_job) }
                 },
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = "${stringResource(R.string.invoice_job_address)}: ${job.propertyAddress}",
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -425,52 +437,110 @@ private fun InvoiceHeaderCard(
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+        BoxWithConstraints {
+            val compactLayout = isCompactPhoneWidth(maxWidth)
+            val compactActionLayout = isCompactActionRowWidth(maxWidth)
+
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = invoice.invoiceNumber,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                Row {
-                    TextButton(onClick = onExportPdf) {
-                        Text(text = stringResource(R.string.pdf_export_invoice))
+                if (compactActionLayout) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            text = invoice.invoiceNumber,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            TextButton(
+                                onClick = onExportPdf,
+                                modifier = Modifier.widthIn(min = 132.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.pdf_export_invoice),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
                     }
-                    TextButton(onClick = onEdit) {
-                        Text(text = stringResource(R.string.invoice_edit))
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = invoice.invoiceNumber,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                        TextButton(
+                            onClick = onExportPdf,
+                            modifier = Modifier.widthIn(min = 132.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.pdf_export_invoice),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 }
-            }
-            LabelValue(
-                label = stringResource(R.string.invoice_bill_to),
-                value = invoice.billToName
-            )
-            LabelValue(
-                label = stringResource(R.string.invoice_date),
-                value = DateFormatUtils.formatDisplayDate(invoice.issueDate)
-            )
-            Text(
-                text = if (invoice.includeGst) {
-                    stringResource(R.string.invoice_include_gst)
-                } else {
-                    stringResource(R.string.invoice_no_gst)
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline
-            )
-            if (invoice.notes.isNotBlank()) {
-                Text(
-                    text = invoice.notes,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline
+                LabelValue(
+                    label = stringResource(R.string.invoice_bill_to),
+                    value = invoice.billToName,
+                    stacked = compactLayout
                 )
+                LabelValue(
+                    label = stringResource(R.string.invoice_date),
+                    value = DateFormatUtils.formatDisplayDate(invoice.issueDate),
+                    stacked = compactLayout
+                )
+                Text(
+                    text = if (invoice.includeGst) {
+                        stringResource(R.string.invoice_include_gst)
+                    } else {
+                        stringResource(R.string.invoice_no_gst)
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                if (invoice.notes.isNotBlank()) {
+                    Text(
+                        text = invoice.notes,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline,
+                        maxLines = if (compactLayout) 3 else 4,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = onEdit,
+                        modifier = Modifier.widthIn(min = MinActionButtonWidth)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.invoice_edit),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
             }
         }
     }
@@ -484,31 +554,68 @@ private fun ImportActionsRow(
     labourAlreadyAdded: Boolean,
     materialsAlreadyAdded: Boolean
 ) {
-    Row(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(horizontal = 16.dp)
     ) {
-        OutlinedButton(
-            onClick = onAddLabourLine,
-            enabled = !labourAlreadyAdded,
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = stringResource(R.string.invoice_add_labour_line),
-                style = MaterialTheme.typography.labelMedium
-            )
-        }
-        OutlinedButton(
-            onClick = onAddMaterialsLine,
-            enabled = !materialsAlreadyAdded,
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = stringResource(R.string.invoice_add_materials_line),
-                style = MaterialTheme.typography.labelMedium
-            )
+        val compactLayout = isCompactPhoneWidth(maxWidth)
+        val compactActionLayout = isCompactActionRowWidth(maxWidth)
+
+        if (compactLayout || compactActionLayout) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = onAddLabourLine,
+                    enabled = !labourAlreadyAdded,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = stringResource(R.string.invoice_add_labour_line),
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                OutlinedButton(
+                    onClick = onAddMaterialsLine,
+                    enabled = !materialsAlreadyAdded,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = stringResource(R.string.invoice_add_materials_line),
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        } else {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = onAddLabourLine,
+                    enabled = !labourAlreadyAdded,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = stringResource(R.string.invoice_add_labour_line),
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                OutlinedButton(
+                    onClick = onAddMaterialsLine,
+                    enabled = !materialsAlreadyAdded,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = stringResource(R.string.invoice_add_materials_line),
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
         }
     }
 }
@@ -540,48 +647,120 @@ private fun InvoiceLineCard(
             .padding(horizontal = 16.dp)
             .clickable(onClick = onEdit)
     ) {
-        Row(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(16.dp)
         ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    text = line.description,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                // Show how the amount was derived
-                if (line.isManualAmount) {
-                    Text(
-                        text = "Manual amount",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                } else {
-                    Text(
-                        text = "${line.qty} × ${CurrencyFormatUtils.formatCurrency(line.rate)}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline
-                    )
+            val compactLayout = isCompactPhoneWidth(maxWidth)
+
+            if (compactLayout) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = line.description,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        if (line.isManualAmount) {
+                            Text(
+                                text = "Manual amount",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.outline,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        } else {
+                            Text(
+                                text = "${line.qty} × ${CurrencyFormatUtils.formatCurrency(line.rate)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.outline,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = CurrencyFormatUtils.formatCurrency(line.amount),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        TextButton(
+                            onClick = onEdit,
+                            modifier = Modifier.widthIn(min = MinActionButtonWidth)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.invoice_edit),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
                 }
-            }
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    text = CurrencyFormatUtils.formatCurrency(line.amount),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                TextButton(onClick = onEdit) {
-                    Text(text = stringResource(R.string.invoice_edit))
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = line.description,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        if (line.isManualAmount) {
+                            Text(
+                                text = "Manual amount",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.outline,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        } else {
+                            Text(
+                                text = "${line.qty} × ${CurrencyFormatUtils.formatCurrency(line.rate)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.outline,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.defaultMinSize(minWidth = 96.dp)
+                    ) {
+                        Text(
+                            text = CurrencyFormatUtils.formatCurrency(line.amount),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1
+                        )
+                        TextButton(
+                            onClick = onEdit,
+                            modifier = Modifier.widthIn(min = MinActionButtonWidth)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.invoice_edit),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -595,23 +774,51 @@ private fun InvoiceOtherAmountLineCard(otherAmount: Double) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
     ) {
-        Row(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(16.dp)
         ) {
-            Text(
-                text = stringResource(R.string.invoice_other_amount),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = CurrencyFormatUtils.formatCurrency(otherAmount),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            val compactLayout = isCompactPhoneWidth(maxWidth)
+
+            if (compactLayout) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = stringResource(R.string.invoice_other_amount),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = CurrencyFormatUtils.formatCurrency(otherAmount),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.invoice_other_amount),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = CurrencyFormatUtils.formatCurrency(otherAmount),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1
+                    )
+                }
+            }
         }
     }
 }
@@ -682,36 +889,86 @@ private fun TotalsRow(
     value: String,
     isBold: Boolean = false
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal
-        )
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val compactLayout = isCompactPhoneWidth(maxWidth)
+
+        if (compactLayout) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal
+                )
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal,
+                    maxLines = 1
+                )
+            }
+        }
     }
 }
 
 /** Small helper composable for label + value pairs inside the header card. */
 @Composable
-private fun LabelValue(label: String, value: String) {
-    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(
-            text = "$label:",
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.SemiBold
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium
-        )
+private fun LabelValue(
+    label: String,
+    value: String,
+    stacked: Boolean = false
+) {
+    if (stacked) {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = "$label:",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    } else {
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = "$label:",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
     }
 }
 
@@ -863,16 +1120,35 @@ fun InvoiceHeaderDialog(
                 }
 
                 // Action buttons
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text(text = stringResource(R.string.invoice_cancel))
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    TextButton(onClick = onSave) {
-                        Text(text = stringResource(R.string.invoice_save))
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    val compactLayout = isCompactPhoneWidth(maxWidth)
+
+                    if (compactLayout) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalAlignment = Alignment.End
+                        ) {
+                            TextButton(onClick = onSave) {
+                                Text(text = stringResource(R.string.invoice_save))
+                            }
+                            TextButton(onClick = onDismiss) {
+                                Text(text = stringResource(R.string.invoice_cancel))
+                            }
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            TextButton(onClick = onDismiss) {
+                                Text(text = stringResource(R.string.invoice_cancel))
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            TextButton(onClick = onSave) {
+                                Text(text = stringResource(R.string.invoice_save))
+                            }
+                        }
                     }
                 }
             }
@@ -962,51 +1238,103 @@ fun InvoiceLineDialog(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                     )
                     // Still allow optional qty/rate context (greyed out)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = formState.qtyText,
-                            onValueChange = onQtyChange,
-                            label = { Text(stringResource(R.string.invoice_line_qty)) },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            enabled = false
-                        )
-                        OutlinedTextField(
-                            value = formState.rateText,
-                            onValueChange = onRateChange,
-                            label = { Text(stringResource(R.string.invoice_line_rate)) },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            enabled = false
-                        )
+                    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                        val compactLayout = isCompactPhoneWidth(maxWidth)
+
+                        if (compactLayout) {
+                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                OutlinedTextField(
+                                    value = formState.qtyText,
+                                    onValueChange = onQtyChange,
+                                    label = { Text(stringResource(R.string.invoice_line_qty)) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                    enabled = false
+                                )
+                                OutlinedTextField(
+                                    value = formState.rateText,
+                                    onValueChange = onRateChange,
+                                    label = { Text(stringResource(R.string.invoice_line_rate)) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                    enabled = false
+                                )
+                            }
+                        } else {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = formState.qtyText,
+                                    onValueChange = onQtyChange,
+                                    label = { Text(stringResource(R.string.invoice_line_qty)) },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                    enabled = false
+                                )
+                                OutlinedTextField(
+                                    value = formState.rateText,
+                                    onValueChange = onRateChange,
+                                    label = { Text(stringResource(R.string.invoice_line_rate)) },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                    enabled = false
+                                )
+                            }
+                        }
                     }
                 } else {
                     // ── Auto-calculated amount mode ────────────────────────
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = formState.qtyText,
-                            onValueChange = onQtyChange,
-                            label = { Text(stringResource(R.string.invoice_line_qty)) },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-                        )
-                        OutlinedTextField(
-                            value = formState.rateText,
-                            onValueChange = onRateChange,
-                            label = { Text(stringResource(R.string.invoice_line_rate)) },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-                        )
+                    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                        val compactLayout = isCompactPhoneWidth(maxWidth)
+
+                        if (compactLayout) {
+                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                OutlinedTextField(
+                                    value = formState.qtyText,
+                                    onValueChange = onQtyChange,
+                                    label = { Text(stringResource(R.string.invoice_line_qty)) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                                )
+                                OutlinedTextField(
+                                    value = formState.rateText,
+                                    onValueChange = onRateChange,
+                                    label = { Text(stringResource(R.string.invoice_line_rate)) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                                )
+                            }
+                        } else {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = formState.qtyText,
+                                    onValueChange = onQtyChange,
+                                    label = { Text(stringResource(R.string.invoice_line_qty)) },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                                )
+                                OutlinedTextField(
+                                    value = formState.rateText,
+                                    onValueChange = onRateChange,
+                                    label = { Text(stringResource(R.string.invoice_line_rate)) },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                                )
+                            }
+                        }
                     }
 
                     // Auto-calculated amount preview
@@ -1039,22 +1367,46 @@ fun InvoiceLineDialog(
                 }
 
                 // Action buttons
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (formState.lineId != null) {
-                        TextButton(onClick = onDelete) {
-                            Text(text = stringResource(R.string.invoice_delete))
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    val compactLayout = isCompactPhoneWidth(maxWidth)
+
+                    if (compactLayout) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalAlignment = Alignment.End
+                        ) {
+                            TextButton(onClick = onSave) {
+                                Text(text = stringResource(R.string.invoice_save))
+                            }
+                            TextButton(onClick = onDismiss) {
+                                Text(text = stringResource(R.string.invoice_cancel))
+                            }
+                            if (formState.lineId != null) {
+                                TextButton(onClick = onDelete) {
+                                    Text(text = stringResource(R.string.invoice_delete))
+                                }
+                            }
                         }
-                        Spacer(modifier = Modifier.width(4.dp))
-                    }
-                    TextButton(onClick = onDismiss) {
-                        Text(text = stringResource(R.string.invoice_cancel))
-                    }
-                    TextButton(onClick = onSave) {
-                        Text(text = stringResource(R.string.invoice_save))
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (formState.lineId != null) {
+                                TextButton(onClick = onDelete) {
+                                    Text(text = stringResource(R.string.invoice_delete))
+                                }
+                                Spacer(modifier = Modifier.width(4.dp))
+                            }
+                            TextButton(onClick = onDismiss) {
+                                Text(text = stringResource(R.string.invoice_cancel))
+                            }
+                            TextButton(onClick = onSave) {
+                                Text(text = stringResource(R.string.invoice_save))
+                            }
+                        }
                     }
                 }
             }
@@ -1067,6 +1419,7 @@ fun InvoiceLineDialog(
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Preview(showBackground = true)
+@PreviewScreenSizes
 @Composable
 private fun InvoiceScreenPreview() {
     ProPaintersPlasterersPaymentTheme {

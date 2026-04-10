@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
@@ -158,43 +159,59 @@ private fun ClientCard(
             .fillMaxWidth()
             .clickable(onClick = onEdit)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Icon(
-                imageVector = if (client.clientType == "BUSINESS") Icons.Default.Business else Icons.Default.Person,
-                contentDescription = client.clientType,
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Column(modifier = Modifier.weight(1f)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(
+                    imageVector = if (client.clientType == "BUSINESS") Icons.Default.Business else Icons.Default.Person,
+                    contentDescription = client.clientType,
+                    tint = MaterialTheme.colorScheme.primary
+                )
                 Text(
                     text = client.name,
                     style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
                 )
-                if (client.phoneNumber.isNotBlank()) {
-                    Text(text = client.phoneNumber, style = MaterialTheme.typography.bodySmall)
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint = MaterialTheme.colorScheme.error
+                    )
                 }
-                if (client.email.isNotBlank()) {
-                    Text(text = client.email, style = MaterialTheme.typography.bodySmall)
-                }
+            }
+            if (client.phoneNumber.isNotBlank()) {
                 Text(
-                    text = if (client.clientType == "BUSINESS") "Business" else "Private",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline
+                    text = client.phoneNumber,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
-            IconButton(onClick = onDelete) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.error
+            if (client.email.isNotBlank()) {
+                Text(
+                    text = client.email,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
+            Text(
+                text = if (client.clientType == "BUSINESS") "Business" else "Private",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.outline
+            )
         }
     }
 }

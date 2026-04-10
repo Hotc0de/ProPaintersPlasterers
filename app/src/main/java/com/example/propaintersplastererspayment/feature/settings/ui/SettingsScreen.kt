@@ -1,6 +1,7 @@
 package com.example.propaintersplastererspayment.feature.settings.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
 import com.example.propaintersplastererspayment.R
+import com.example.propaintersplastererspayment.core.ui.isCompactPhoneWidth
 import com.example.propaintersplastererspayment.core.util.CurrencyFormatUtils
 import com.example.propaintersplastererspayment.data.local.entity.AppSettingsEntity
 import com.example.propaintersplastererspayment.feature.settings.vm.SettingsFormState
@@ -268,29 +270,54 @@ fun SettingsScreen(
 
                         // GST toggle
                         Card(modifier = Modifier.fillMaxWidth()) {
-                            androidx.compose.foundation.layout.Row(
+                            BoxWithConstraints(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                    .padding(16.dp)
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = stringResource(R.string.settings_gst_enabled),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.settings_gst_enabled_hint),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.outline
-                                    )
+                                val compactLayout = isCompactPhoneWidth(maxWidth)
+
+                                if (compactLayout) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text(
+                                            text = stringResource(R.string.settings_gst_enabled),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Text(
+                                            text = stringResource(R.string.settings_gst_enabled_hint),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.outline
+                                        )
+                                        Switch(
+                                            checked = uiState.formState.gstEnabledByDefault,
+                                            onCheckedChange = onGstEnabledChange
+                                        )
+                                    }
+                                } else {
+                                    androidx.compose.foundation.layout.Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = stringResource(R.string.settings_gst_enabled),
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                            Text(
+                                                text = stringResource(R.string.settings_gst_enabled_hint),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.outline
+                                            )
+                                        }
+                                        Switch(
+                                            checked = uiState.formState.gstEnabledByDefault,
+                                            onCheckedChange = onGstEnabledChange
+                                        )
+                                    }
                                 }
-                                Switch(
-                                    checked = uiState.formState.gstEnabledByDefault,
-                                    onCheckedChange = onGstEnabledChange
-                                )
                             }
                         }
 

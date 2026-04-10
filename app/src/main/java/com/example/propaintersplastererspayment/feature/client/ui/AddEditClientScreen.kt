@@ -1,6 +1,7 @@
 package com.example.propaintersplastererspayment.feature.client.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,6 +37,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
+import com.example.propaintersplastererspayment.core.ui.isCompactPhoneWidth
 import com.example.propaintersplastererspayment.feature.client.vm.AddEditClientUiState
 import com.example.propaintersplastererspayment.feature.client.vm.AddEditClientViewModel
 import com.example.propaintersplastererspayment.feature.client.vm.ClientFormState
@@ -134,17 +136,36 @@ fun AddEditClientScreen(
             ) {
                 // Client type selector
                 Text("Client Type", style = MaterialTheme.typography.labelLarge)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
-                        selected = form.clientType == "PRIVATE",
-                        onClick = { onClientTypeChange("PRIVATE") },
-                        label = { Text("Private") }
-                    )
-                    FilterChip(
-                        selected = form.clientType == "BUSINESS",
-                        onClick = { onClientTypeChange("BUSINESS") },
-                        label = { Text("Business") }
-                    )
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    val compactLayout = isCompactPhoneWidth(maxWidth)
+
+                    if (compactLayout) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilterChip(
+                                selected = form.clientType == "PRIVATE",
+                                onClick = { onClientTypeChange("PRIVATE") },
+                                label = { Text("Private") }
+                            )
+                            FilterChip(
+                                selected = form.clientType == "BUSINESS",
+                                onClick = { onClientTypeChange("BUSINESS") },
+                                label = { Text("Business") }
+                            )
+                        }
+                    } else {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilterChip(
+                                selected = form.clientType == "PRIVATE",
+                                onClick = { onClientTypeChange("PRIVATE") },
+                                label = { Text("Private") }
+                            )
+                            FilterChip(
+                                selected = form.clientType == "BUSINESS",
+                                onClick = { onClientTypeChange("BUSINESS") },
+                                label = { Text("Business") }
+                            )
+                        }
+                    }
                 }
 
                 OutlinedTextField(

@@ -2,6 +2,7 @@ package com.example.propaintersplastererspayment.feature.timesheet.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -35,12 +37,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
 import com.example.propaintersplastererspayment.R
+import com.example.propaintersplastererspayment.core.ui.MinActionButtonWidth
+import com.example.propaintersplastererspayment.core.ui.isCompactActionRowWidth
+import com.example.propaintersplastererspayment.core.ui.isCompactPhoneWidth
 import com.example.propaintersplastererspayment.core.pdf.PdfExportService
 import com.example.propaintersplastererspayment.core.pdf.PdfFileHelper
 import com.example.propaintersplastererspayment.core.util.DateFormatUtils
@@ -186,14 +193,40 @@ fun TimesheetScreen(
                         TotalHoursCard(totalHours = uiState.totalHours)
                     }
                     item {
-                        Row(
+                        BoxWithConstraints(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.End
+                                .padding(horizontal = 16.dp)
                         ) {
-                            OutlinedButton(onClick = onExportPdf) {
-                                Text(text = stringResource(R.string.pdf_export_timesheet))
+                            val compactActionLayout = isCompactActionRowWidth(maxWidth)
+
+                            if (compactActionLayout) {
+                                OutlinedButton(
+                                    onClick = onExportPdf,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.pdf_export_timesheet),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            } else {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    OutlinedButton(
+                                        onClick = onExportPdf,
+                                        modifier = Modifier.widthIn(min = 132.dp)
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.pdf_export_timesheet),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -246,11 +279,15 @@ private fun JobSummaryCard(job: JobEntity) {
                     job.jobName.ifBlank { stringResource(R.string.timesheet_unknown_job) }
                 },
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = "${stringResource(R.string.timesheet_job_address)}: ${job.propertyAddress}",
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -263,23 +300,50 @@ private fun TotalHoursCard(totalHours: Double) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
     ) {
-        Row(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(16.dp)
         ) {
-            Text(
-                text = stringResource(R.string.timesheet_total_hours),
-                style = MaterialTheme.typography.titleMedium
-            )
-            AssistChip(
-                onClick = {},
-                label = {
-                    Text(text = WorkEntryTimeUtils.formatHours(totalHours))
+            val compactLayout = isCompactPhoneWidth(maxWidth)
+
+            if (compactLayout) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.timesheet_total_hours),
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    AssistChip(
+                        onClick = {},
+                        label = {
+                            Text(text = WorkEntryTimeUtils.formatHours(totalHours))
+                        }
+                    )
                 }
-            )
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.timesheet_total_hours),
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    AssistChip(
+                        onClick = {},
+                        label = {
+                            Text(text = WorkEntryTimeUtils.formatHours(totalHours))
+                        }
+                    )
+                }
+            }
         }
     }
 }
@@ -314,18 +378,59 @@ private fun WorkEntryCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = entry.workerName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                TextButton(onClick = onEditEntry) {
-                    Text(text = stringResource(R.string.timesheet_edit))
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val compactLayout = isCompactPhoneWidth(maxWidth)
+
+                if (compactLayout) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = entry.workerName,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            TextButton(
+                                onClick = onEditEntry,
+                                modifier = Modifier.widthIn(min = MinActionButtonWidth)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.timesheet_edit),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = entry.workerName,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                        TextButton(
+                            onClick = onEditEntry,
+                            modifier = Modifier.widthIn(min = MinActionButtonWidth)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.timesheet_edit),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
                 }
             }
             Text(
@@ -355,7 +460,7 @@ fun WorkEntryFormDialog(
     onSave: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
-) {
+ ) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = modifier.fillMaxWidth()
@@ -394,26 +499,51 @@ fun WorkEntryFormDialog(
                     singleLine = true
                 )
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    OutlinedTextField(
-                        value = formState.startTime,
-                        onValueChange = onStartTimeChange,
-                        label = { Text(text = stringResource(R.string.timesheet_start_time)) },
-                        supportingText = { Text(text = stringResource(R.string.timesheet_time_hint)) },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                    OutlinedTextField(
-                        value = formState.finishTime,
-                        onValueChange = onFinishTimeChange,
-                        label = { Text(text = stringResource(R.string.timesheet_finish_time)) },
-                        supportingText = { Text(text = stringResource(R.string.timesheet_time_hint)) },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    val compactLayout = isCompactPhoneWidth(maxWidth)
+
+                    if (compactLayout) {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            OutlinedTextField(
+                                value = formState.startTime,
+                                onValueChange = onStartTimeChange,
+                                label = { Text(text = stringResource(R.string.timesheet_start_time)) },
+                                supportingText = { Text(text = stringResource(R.string.timesheet_time_hint)) },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+                            OutlinedTextField(
+                                value = formState.finishTime,
+                                onValueChange = onFinishTimeChange,
+                                label = { Text(text = stringResource(R.string.timesheet_finish_time)) },
+                                supportingText = { Text(text = stringResource(R.string.timesheet_time_hint)) },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = formState.startTime,
+                                onValueChange = onStartTimeChange,
+                                label = { Text(text = stringResource(R.string.timesheet_start_time)) },
+                                supportingText = { Text(text = stringResource(R.string.timesheet_time_hint)) },
+                                modifier = Modifier.weight(1f),
+                                singleLine = true
+                            )
+                            OutlinedTextField(
+                                value = formState.finishTime,
+                                onValueChange = onFinishTimeChange,
+                                label = { Text(text = stringResource(R.string.timesheet_finish_time)) },
+                                supportingText = { Text(text = stringResource(R.string.timesheet_time_hint)) },
+                                modifier = Modifier.weight(1f),
+                                singleLine = true
+                            )
+                        }
+                    }
                 }
 
                 Card(modifier = Modifier.fillMaxWidth()) {
@@ -440,22 +570,46 @@ fun WorkEntryFormDialog(
                     )
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (formState.entryId != null) {
-                        TextButton(onClick = onDelete) {
-                            Text(text = stringResource(R.string.timesheet_delete))
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    val compactLayout = isCompactPhoneWidth(maxWidth)
+
+                    if (compactLayout) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalAlignment = Alignment.End
+                        ) {
+                            TextButton(onClick = onSave) {
+                                Text(text = stringResource(R.string.timesheet_save))
+                            }
+                            TextButton(onClick = onDismiss) {
+                                Text(text = stringResource(R.string.timesheet_cancel))
+                            }
+                            if (formState.entryId != null) {
+                                TextButton(onClick = onDelete) {
+                                    Text(text = stringResource(R.string.timesheet_delete))
+                                }
+                            }
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
-                    TextButton(onClick = onDismiss) {
-                        Text(text = stringResource(R.string.timesheet_cancel))
-                    }
-                    TextButton(onClick = onSave) {
-                        Text(text = stringResource(R.string.timesheet_save))
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (formState.entryId != null) {
+                                TextButton(onClick = onDelete) {
+                                    Text(text = stringResource(R.string.timesheet_delete))
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                            }
+                            TextButton(onClick = onDismiss) {
+                                Text(text = stringResource(R.string.timesheet_cancel))
+                            }
+                            TextButton(onClick = onSave) {
+                                Text(text = stringResource(R.string.timesheet_save))
+                            }
+                        }
                     }
                 }
             }
@@ -464,6 +618,7 @@ fun WorkEntryFormDialog(
 }
 
 @Preview(showBackground = true)
+@PreviewScreenSizes
 @Composable
 private fun TimesheetScreenPreview() {
     ProPaintersPlasterersPaymentTheme {

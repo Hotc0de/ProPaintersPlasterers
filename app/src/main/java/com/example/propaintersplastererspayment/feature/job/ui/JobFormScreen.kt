@@ -3,9 +3,11 @@ package com.example.propaintersplastererspayment.feature.job.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -24,7 +26,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
@@ -114,7 +116,9 @@ fun JobFormScreen(
                             stringResource(R.string.job_add_title)
                         } else {
                             stringResource(R.string.job_edit_title)
-                        }
+                        },
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 },
                 navigationIcon = {
@@ -202,16 +206,17 @@ fun JobFormScreen(
 
                         DropdownMenuItem(
                             text = {
-                                TextButton(onClick = {
-                                    clientDropdownExpanded = false
-                                    onAddNewClient()
-                                }) {
-                                    androidx.compose.material3.Icon(
-                                        Icons.Default.Add,
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
                                         contentDescription = null,
-                                        modifier = Modifier.padding(end = 8.dp)
+                                        modifier = Modifier.size(18.dp)
                                     )
-                                    Text(stringResource(R.string.job_add_new_client))
+                                    Text(
+                                        text = stringResource(R.string.job_add_new_client),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
                                 }
                             },
                             onClick = {
