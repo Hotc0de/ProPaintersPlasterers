@@ -1,7 +1,5 @@
 package com.example.propaintersplastererspayment.core.util
 
-import java.text.ParseException
-import java.text.SimpleDateFormat
 import java.util.Locale
 
 object WorkEntryTimeUtils {
@@ -31,7 +29,7 @@ object WorkEntryTimeUtils {
     ): String? {
         return when {
             workDate.isBlank() -> "Work date is required."
-            !isValidDate(workDate) -> "Use date format YYYY-MM-DD."
+            !isValidDate(workDate) -> "Use date format dd-MM-yyyy."
             workerName.isBlank() -> "Worker name is required."
             startTime.isBlank() -> "Start time is required."
             !isValidTime(startTime) -> "Use start time format HH:mm."
@@ -42,17 +40,7 @@ object WorkEntryTimeUtils {
         }
     }
 
-    fun isValidDate(date: String): Boolean {
-        return try {
-            val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
-                isLenient = false
-            }
-            dateFormatter.parse(date)
-            true
-        } catch (_: ParseException) {
-            false
-        }
-    }
+    fun isValidDate(date: String): Boolean = DateFormatUtils.isValidDisplayDate(date)
 
     fun isValidTime(time: String): Boolean = timeRegex.matches(time)
 

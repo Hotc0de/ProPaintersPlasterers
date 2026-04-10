@@ -1,9 +1,5 @@
 package com.example.propaintersplastererspayment.core.util
 
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-
 /**
  * Utility functions shared by the Invoice ViewModel and the Invoice screen.
  *
@@ -17,10 +13,10 @@ object InvoiceUtils {
 
     /**
      * Returns today's date as a string in the format expected by the invoice date field.
-     * Example: "2026-04-09"
+     * Example: "10-04-2026"
      */
     fun todayDate(): String =
-        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        DateFormatUtils.todayDisplayDate()
 
     /**
      * Generates an invoice number in the format "INV-XXXX" where XXXX is zero-padded.
@@ -70,6 +66,7 @@ object InvoiceUtils {
         invoiceNumber.isBlank() -> "Invoice number is required."
         billToName.isBlank()    -> "Bill To name is required."
         issueDate.isBlank()     -> "Invoice date is required."
+        !DateFormatUtils.isValidDisplayDate(issueDate) -> "Use date format dd-MM-yyyy."
         otherAmountText.isNotBlank() && parseAmount(otherAmountText) == null ->
             "Other amount must be a valid number."
         else -> null

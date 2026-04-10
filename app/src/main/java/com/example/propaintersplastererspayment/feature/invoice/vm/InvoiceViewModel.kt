@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.propaintersplastererspayment.core.pdf.InvoiceLinePdfRow
 import com.example.propaintersplastererspayment.core.pdf.InvoicePdfData
 import com.example.propaintersplastererspayment.core.pdf.PdfBusinessDetails
+import com.example.propaintersplastererspayment.core.util.DateFormatUtils
 import com.example.propaintersplastererspayment.core.util.InvoiceUtils
 import com.example.propaintersplastererspayment.data.local.entity.AppSettingsEntity
 import com.example.propaintersplastererspayment.data.local.entity.ClientEntity
@@ -33,8 +34,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -51,7 +50,7 @@ data class InvoiceHeaderFormState(
     val invoiceId: Long? = null,
     val invoiceNumber: String = "",
     val billToName: String = "",
-    val issueDate: String = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date()),
+    val issueDate: String = DateFormatUtils.todayDisplayDate(),
     val includeGst: Boolean = true,
     val gstRate: Double = InvoiceUtils.DEFAULT_GST_RATE,
     val otherAmountText: String = "0",
@@ -102,9 +101,9 @@ data class InvoiceLineFormState(
 data class InvoiceTotals(
     val subtotalExGst: Double = 0.0,
     val gstAmount: Double = 0.0,
-    val subtotalIncGst: Double = 0.0, // subtotal + GST
+    val subtotalIncGst: Double = 0.0,
     val otherAmount: Double = 0.0,
-    val finalTotal: Double = 0.0      // subtotalIncGst + otherAmount
+    val finalTotal: Double = 0.0
 )
 
 /**
@@ -124,6 +123,8 @@ data class InvoiceUiState(
     val lineFormState: InvoiceLineFormState = InvoiceLineFormState(),
     // Client auto-suggestions while the user types in the Bill To field
     val clientSuggestions: List<ClientEntity> = emptyList(),
+    val hasImportedLabourLine: Boolean = false,
+    val hasImportedMaterialsLine: Boolean = false,
     val userMessage: String? = null
 )
 
@@ -160,16 +161,10 @@ class InvoiceViewModel(
     private val isEditingLine = MutableStateFlow(false)
     private val lineFormState = MutableStateFlow(InvoiceLineFormState())
     private val userMessage = MutableStateFlow<String?>(null)
+    private val selectedBillToClientId = MutableStateFlow<Long?>(null)
     private val pdfExportRequests = MutableSharedFlow<InvoicePdfData>()
 
     val pdfExportEvents: SharedFlow<InvoicePdfData> = pdfExportRequests.asSharedFlow()
-
-    /**
-     * The text the user has typed in the Bill To field — used to drive client suggestions.
-     * Separate from [headerFormState.billToName] so that we can clear suggestions without
-     * clearing the field itself when the user picks a suggestion.
-     */
-    private val billToSearchQuery = MutableStateFlow("")
 
     // ── Database streams ───────────────────────────────────────────────────
 
@@ -197,25 +192,13 @@ class InvoiceViewModel(
         linesFlow
     ) { job, invoice, lines -> CoreData(job, invoice, lines) }
 
-    /**
-     * Client suggestions driven by what the user types in the Bill To field.
-     * Returns an empty list when the query is blank (avoids loading all clients at once).
-     */
+    /** All saved clients for the Bill To dropdown. */
     private val clientSuggestions: StateFlow<List<ClientEntity>> =
-        billToSearchQuery
-            .flatMapLatest { query ->
-                if (query.isNotEmpty()) {
-                    clientRepository.observeSuggestions(query)
-                } else {
-                    // When blank, show saved clients so user can pick without typing.
-                    clientRepository.observeClients()
-                }
-            }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000),
-                initialValue = emptyList()
-            )
+        clientRepository.observeClients().stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList()
+        )
 
     /**
      * Bundles all form-related flows into one object for use in the outer combine.
@@ -248,6 +231,8 @@ class InvoiceViewModel(
             isEditingLine = forms.isEditingLine,
             lineFormState = forms.lineFormState,
             clientSuggestions = suggestions,
+            hasImportedLabourLine = hasLineWithDescription(core.lines, LABOUR_LINE_DESCRIPTION),
+            hasImportedMaterialsLine = hasLineWithDescription(core.lines, MATERIALS_LINE_DESCRIPTION),
             userMessage = forms.userMessage
         )
     }.stateIn(
@@ -269,9 +254,19 @@ class InvoiceViewModel(
             val settings = settingsRepository.observeSettings().first()
             val invoiceNumber = invoiceRepository.generateUniqueInvoiceNumber()
             val job = jobRepository.observeJob(jobId).first()
-            val defaultBillTo = when {
-                job?.clientId != null -> clientRepository.getClient(job.clientId)?.name
-                    ?: job.clientNameSnapshot
+            val clients = clientRepository.observeClients().first()
+            val jobClient = job?.clientId?.let { id -> clients.firstOrNull { it.clientId == id } }
+            val snapshotClient = if (jobClient == null) {
+                clients.firstOrNull {
+                    it.name.equals(job?.clientNameSnapshot.orEmpty(), ignoreCase = true)
+                }
+            } else {
+                null
+            }
+            // Only auto-select the current job client (or exact snapshot match).
+            // Do not auto-pick an unrelated first client.
+            val selectedClient = jobClient ?: snapshotClient
+            val defaultBillTo = selectedClient?.name ?: when {
                 job != null -> job.clientNameSnapshot.ifBlank { job.jobName }
                 else -> ""
             }
@@ -281,52 +276,54 @@ class InvoiceViewModel(
                 includeGst = settings?.gstEnabledByDefault ?: true,
                 gstRate = settings?.defaultGstRate ?: InvoiceUtils.DEFAULT_GST_RATE
             )
-            billToSearchQuery.value = ""
+            selectedBillToClientId.value = selectedClient?.clientId
             isEditingHeader.value = true
         }
     }
 
     /** Opens the header dialog pre-filled with the existing invoice data. */
     fun openEditHeader(invoice: InvoiceEntity) {
+        viewModelScope.launch {
+            val clients = clientRepository.observeClients().first()
+            val selectedClient = when {
+                invoice.clientId != null -> clients.firstOrNull { it.clientId == invoice.clientId }
+                else -> clients.firstOrNull {
+                    it.name.equals(invoice.billToName, ignoreCase = true)
+                }
+            }
         headerFormState.value = InvoiceHeaderFormState(
             invoiceId = invoice.invoiceId,
             invoiceNumber = invoice.invoiceNumber,
-            billToName = invoice.billToName,
-            issueDate = invoice.issueDate,
+            billToName = selectedClient?.name ?: invoice.billToName,
+            issueDate = DateFormatUtils.formatDisplayDate(invoice.issueDate),
             includeGst = invoice.includeGst,
             gstRate = invoice.gstRate,
             otherAmountText = if (invoice.otherAmount == 0.0) "0" else invoice.otherAmount.toString(),
             notes = invoice.notes
         )
+        selectedBillToClientId.value = selectedClient?.clientId
         isEditingHeader.value = true
+        }
     }
 
     fun dismissHeader() {
         isEditingHeader.value = false
         headerFormState.value = InvoiceHeaderFormState()
-        billToSearchQuery.value = ""
+        selectedBillToClientId.value = null
     }
 
     fun onInvoiceNumberChange(value: String) {
         headerFormState.update { it.copy(invoiceNumber = value, errorMessage = null) }
     }
 
-    /**
-     * Called on every keystroke in the Bill To field.
-     * Updates both the form state and the suggestion query.
-     */
     fun onBillToNameChange(value: String) {
         headerFormState.update { it.copy(billToName = value, errorMessage = null) }
-        billToSearchQuery.value = value
+        selectedBillToClientId.value = null
     }
 
-    /**
-     * Called when the user taps a client suggestion chip.
-     * Fills the Bill To field and clears the suggestion list.
-     */
     fun onBillToClientSelected(client: ClientEntity) {
         headerFormState.update { it.copy(billToName = client.name, errorMessage = null) }
-        billToSearchQuery.value = "" // clears suggestions
+        selectedBillToClientId.value = client.clientId
     }
 
     fun onIssueDateChange(value: String) {
@@ -360,25 +357,24 @@ class InvoiceViewModel(
         }
 
         val otherAmount = InvoiceUtils.parseAmount(form.otherAmountText) ?: 0.0
+        val storedIssueDate = DateFormatUtils.toStoredDate(form.issueDate) ?: run {
+            headerFormState.update { it.copy(errorMessage = "Use date format dd-MM-yyyy.") }
+            return
+        }
 
         viewModelScope.launch {
             val now = System.currentTimeMillis()
             val trimmedBillTo = form.billToName.trim()
 
-            val linkedClient = if (trimmedBillTo.isNotBlank()) {
-                val existingClient = clientRepository.observeSuggestions(trimmedBillTo).first()
-                    .firstOrNull { it.name.equals(trimmedBillTo, ignoreCase = true) }
-                existingClient ?: run {
-                    val newClientId = clientRepository.saveClient(ClientEntity(name = trimmedBillTo))
-                    clientRepository.getClient(newClientId)
+            val linkedClient = selectedBillToClientId.value?.let { clientRepository.getClient(it) }
+                ?: clientRepository.observeClients().first().firstOrNull {
+                    it.name.equals(trimmedBillTo, ignoreCase = true)
                 }
-            } else {
-                null
-            }
 
             val subtotalExclusiveGst = uiState.value.lines.sumOf { it.amount }
-            val gstAmount = if (form.includeGst) subtotalExclusiveGst * form.gstRate else 0.0
-            val totalAmount = subtotalExclusiveGst + gstAmount + otherAmount
+            val taxableBase = subtotalExclusiveGst + otherAmount
+            val gstAmount = if (form.includeGst) taxableBase * form.gstRate else 0.0
+            val totalAmount = taxableBase + gstAmount
             val existingInvoice = uiState.value.invoice
 
             invoiceRepository.saveInvoice(
@@ -387,7 +383,7 @@ class InvoiceViewModel(
                     jobId = jobId,
                     clientId = linkedClient?.clientId,
                     invoiceNumber = form.invoiceNumber.trim(),
-                    invoiceDate = form.issueDate.trim(),
+                    invoiceDate = storedIssueDate,
                     billToNameSnapshot = trimmedBillTo.ifBlank { linkedClient?.name.orEmpty() },
                     billToAddressSnapshot = linkedClient?.address.orEmpty(),
                     billToPhoneSnapshot = linkedClient?.phoneNumber.orEmpty(),
@@ -533,6 +529,15 @@ class InvoiceViewModel(
      */
     fun openAddLabourLine() {
         viewModelScope.launch {
+            val existingLabourLine = uiState.value.lines.firstOrNull {
+                it.description.trim().equals(LABOUR_LINE_DESCRIPTION, ignoreCase = true)
+            }
+            if (existingLabourLine != null) {
+                openEditLine(existingLabourLine)
+                userMessage.value = "Labour total is already added. You can edit it."
+                return@launch
+            }
+
             val totalHours = getTotalLabourHoursForJob()
             val settings = settingsRepository.observeSettings().first()
             val defaultRate = settings?.defaultLabourRate ?: 0.0
@@ -541,7 +546,7 @@ class InvoiceViewModel(
 
             lineFormState.value = InvoiceLineFormState(
                 sortOrder = nextOrder,
-                description = "Labour",
+                description = LABOUR_LINE_DESCRIPTION,
                 qtyText = String.format(Locale.US, "%.2f", totalHours),
                 rateText = if (defaultRate > 0) String.format(Locale.US, "%.2f", defaultRate) else "",
                 amountText = String.format(Locale.US, "%.2f", labourAmount),
@@ -557,12 +562,21 @@ class InvoiceViewModel(
      */
     fun openAddMaterialsLine() {
         viewModelScope.launch {
+            val existingMaterialsLine = uiState.value.lines.firstOrNull {
+                it.description.trim().equals(MATERIALS_LINE_DESCRIPTION, ignoreCase = true)
+            }
+            if (existingMaterialsLine != null) {
+                openEditLine(existingMaterialsLine)
+                userMessage.value = "Materials total is already added. You can edit it."
+                return@launch
+            }
+
             val totalMaterials = getTotalMaterialCostForJob()
             val nextOrder = (uiState.value.lines.maxOfOrNull { it.sortOrder } ?: 0) + 1
 
             lineFormState.value = InvoiceLineFormState(
                 sortOrder = nextOrder,
-                description = "Materials",
+                description = MATERIALS_LINE_DESCRIPTION,
                 qtyText = "1",
                 rateText = String.format(Locale.US, "%.2f", totalMaterials),
                 amountText = String.format(Locale.US, "%.2f", totalMaterials),
@@ -595,7 +609,7 @@ class InvoiceViewModel(
                 jobName = job.jobName,
                 jobAddress = job.propertyAddress,
                 invoiceNumber = invoice.invoiceNumber,
-                issueDate = invoice.issueDate,
+                issueDate = DateFormatUtils.formatDisplayDate(invoice.issueDate),
                 billToName = invoice.billToName,
                 lines = snapshot.lines.map { line ->
                     InvoiceLinePdfRow(
@@ -643,18 +657,22 @@ class InvoiceViewModel(
         if (invoice == null) return InvoiceTotals()
 
         val subtotalExGst = lines.sumOf { it.amount }
-        val gstAmount = if (invoice.includeGst) subtotalExGst * invoice.gstRate else 0.0
-        val subtotalIncGst = subtotalExGst + gstAmount
         val otherAmount = invoice.otherAmount
-        val finalTotal = subtotalIncGst + otherAmount
+        val taxableBase = subtotalExGst + otherAmount
+        val gstAmount = if (invoice.includeGst) taxableBase * invoice.gstRate else 0.0
+        val finalTotal = taxableBase + gstAmount
 
         return InvoiceTotals(
             subtotalExGst = subtotalExGst,
             gstAmount = gstAmount,
-            subtotalIncGst = subtotalIncGst,
+            subtotalIncGst = finalTotal,
             otherAmount = otherAmount,
             finalTotal = finalTotal
         )
+    }
+
+    private fun hasLineWithDescription(lines: List<InvoiceLineEntity>, description: String): Boolean {
+        return lines.any { it.description.trim().equals(description, ignoreCase = true) }
     }
 
     /** Reads and calculates total hours from all timesheet entries for this job. */
@@ -673,8 +691,9 @@ class InvoiceViewModel(
         val invoice = invoiceRepository.observeInvoiceWithLines(invoiceId).first()?.invoice ?: return
         val lines = invoiceRepository.observeInvoiceLines(invoiceId).first()
         val subtotal = lines.sumOf { it.amount }
-        val gstAmount = if (invoice.gstEnabled) subtotal * invoice.gstRate else 0.0
-        val total = subtotal + gstAmount + invoice.otherAmount
+        val taxableBase = subtotal + invoice.otherAmount
+        val gstAmount = if (invoice.gstEnabled) taxableBase * invoice.gstRate else 0.0
+        val total = taxableBase + gstAmount
         invoiceRepository.saveInvoice(
             invoice.copy(
                 subtotalExclusiveGst = subtotal,
@@ -708,6 +727,9 @@ class InvoiceViewModel(
     // ─────────────────────────────────────────────────────────────────────
 
     companion object {
+        private const val LABOUR_LINE_DESCRIPTION = "Labour"
+        private const val MATERIALS_LINE_DESCRIPTION = "Materials"
+
         /**
          * Creates a [ViewModelProvider.Factory] that passes all dependencies into the
          * ViewModel constructor. Called from [InvoiceRoute] using the app container.

@@ -43,6 +43,7 @@ import com.example.propaintersplastererspayment.ProPaintersApplication
 import com.example.propaintersplastererspayment.R
 import com.example.propaintersplastererspayment.core.pdf.PdfExportService
 import com.example.propaintersplastererspayment.core.pdf.PdfFileHelper
+import com.example.propaintersplastererspayment.core.util.DateFormatUtils
 import com.example.propaintersplastererspayment.core.util.WorkEntryTimeUtils
 import com.example.propaintersplastererspayment.data.local.entity.JobEntity
 import com.example.propaintersplastererspayment.data.local.entity.WorkEntryEntity
@@ -59,6 +60,7 @@ fun TimesheetRoute(
     val context = LocalContext.current
     val application = context.applicationContext as ProPaintersApplication
     val pdfExportService = remember { PdfExportService() }
+    val pdfShareTitle = stringResource(R.string.pdf_share_timesheet)
     val viewModel: TimesheetViewModel = viewModel(
         factory = TimesheetViewModel.provideFactory(
             jobId = jobId,
@@ -78,7 +80,7 @@ fun TimesheetRoute(
                 PdfFileHelper.sharePdf(
                     context = context,
                     file = outputFile,
-                    chooserTitle = context.getString(R.string.pdf_share_timesheet)
+                    chooserTitle = pdfShareTitle
                 )
             }.onSuccess {
                 viewModel.onPdfExportFinished(success = true)
@@ -326,7 +328,10 @@ private fun WorkEntryCard(
                     Text(text = stringResource(R.string.timesheet_edit))
                 }
             }
-            Text(text = entry.workDate, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = DateFormatUtils.formatDisplayDate(entry.workDate),
+                style = MaterialTheme.typography.bodyMedium
+            )
             Text(
                 text = "${entry.startTime} - ${entry.finishTime}",
                 style = MaterialTheme.typography.bodyMedium

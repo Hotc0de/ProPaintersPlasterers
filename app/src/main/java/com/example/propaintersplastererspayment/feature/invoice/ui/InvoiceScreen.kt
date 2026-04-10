@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,6 +19,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -33,7 +36,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -49,6 +54,7 @@ import com.example.propaintersplastererspayment.R
 import com.example.propaintersplastererspayment.core.pdf.PdfExportService
 import com.example.propaintersplastererspayment.core.pdf.PdfFileHelper
 import com.example.propaintersplastererspayment.core.util.CurrencyFormatUtils
+import com.example.propaintersplastererspayment.core.util.DateFormatUtils
 import com.example.propaintersplastererspayment.core.util.InvoiceUtils
 import com.example.propaintersplastererspayment.data.local.entity.ClientEntity
 import com.example.propaintersplastererspayment.data.local.entity.InvoiceEntity
@@ -120,7 +126,6 @@ fun InvoiceRoute(
         onEditHeader = viewModel::openEditHeader,
         onDismissHeader = viewModel::dismissHeader,
         onInvoiceNumberChange = viewModel::onInvoiceNumberChange,
-        onBillToNameChange = viewModel::onBillToNameChange,
         onBillToClientSelected = viewModel::onBillToClientSelected,
         onIssueDateChange = viewModel::onIssueDateChange,
         onIncludeGstChange = viewModel::onIncludeGstChange,
@@ -169,7 +174,6 @@ fun InvoiceScreen(
     onEditHeader: (InvoiceEntity) -> Unit,
     onDismissHeader: () -> Unit,
     onInvoiceNumberChange: (String) -> Unit,
-    onBillToNameChange: (String) -> Unit,
     onBillToClientSelected: (ClientEntity) -> Unit,
     onIssueDateChange: (String) -> Unit,
     onIncludeGstChange: (Boolean) -> Unit,
@@ -272,7 +276,9 @@ fun InvoiceScreen(
                         item {
                             ImportActionsRow(
                                 onAddLabourLine = onAddLabourLine,
-                                onAddMaterialsLine = onAddMaterialsLine
+                                onAddMaterialsLine = onAddMaterialsLine,
+                                labourAlreadyAdded = uiState.hasImportedLabourLine,
+                                materialsAlreadyAdded = uiState.hasImportedMaterialsLine
                             )
                         }
 
@@ -293,6 +299,12 @@ fun InvoiceScreen(
                                     line = line,
                                     onEdit = { onEditLine(line) }
                                 )
+                            }
+                        }
+
+                        if (uiState.totals.otherAmount != 0.0) {
+                            item {
+                                InvoiceOtherAmountLineCard(otherAmount = uiState.totals.otherAmount)
                             }
                         }
 
@@ -319,7 +331,6 @@ fun InvoiceScreen(
             clientSuggestions = uiState.clientSuggestions,
             onDismiss = onDismissHeader,
             onInvoiceNumberChange = onInvoiceNumberChange,
-            onBillToNameChange = onBillToNameChange,
             onBillToClientSelected = onBillToClientSelected,
             onIssueDateChange = onIssueDateChange,
             onIncludeGstChange = onIncludeGstChange,
@@ -443,7 +454,7 @@ private fun InvoiceHeaderCard(
             )
             LabelValue(
                 label = stringResource(R.string.invoice_date),
-                value = invoice.issueDate
+                value = DateFormatUtils.formatDisplayDate(invoice.issueDate)
             )
             Text(
                 text = if (invoice.includeGst) {
@@ -469,7 +480,9 @@ private fun InvoiceHeaderCard(
 @Composable
 private fun ImportActionsRow(
     onAddLabourLine: () -> Unit,
-    onAddMaterialsLine: () -> Unit
+    onAddMaterialsLine: () -> Unit,
+    labourAlreadyAdded: Boolean,
+    materialsAlreadyAdded: Boolean
 ) {
     Row(
         modifier = Modifier
@@ -479,6 +492,7 @@ private fun ImportActionsRow(
     ) {
         OutlinedButton(
             onClick = onAddLabourLine,
+            enabled = !labourAlreadyAdded,
             modifier = Modifier.weight(1f)
         ) {
             Text(
@@ -488,6 +502,7 @@ private fun ImportActionsRow(
         }
         OutlinedButton(
             onClick = onAddMaterialsLine,
+            enabled = !materialsAlreadyAdded,
             modifier = Modifier.weight(1f)
         ) {
             Text(
@@ -573,8 +588,36 @@ private fun InvoiceLineCard(
     }
 }
 
+@Composable
+private fun InvoiceOtherAmountLineCard(otherAmount: Double) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.invoice_other_amount),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = CurrencyFormatUtils.formatCurrency(otherAmount),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
 /**
- * Shows the full breakdown: subtotal, optional GST, optional other amount, final total.
+ * Shows the full breakdown: subtotal, other amount, optional GST, final total.
  * Uses a divider before the final total for a professional look.
  */
 @Composable
@@ -607,21 +650,17 @@ private fun InvoiceTotalsCard(
                 value = CurrencyFormatUtils.formatCurrency(totals.subtotalExGst)
             )
 
-            if (invoice.includeGst) {
-                TotalsRow(
-                    label = "${stringResource(R.string.invoice_gst_amount)} (${InvoiceUtils.formatGstRate(invoice.gstRate)})",
-                    value = CurrencyFormatUtils.formatCurrency(totals.gstAmount)
-                )
-                TotalsRow(
-                    label = stringResource(R.string.invoice_subtotal_inc_gst),
-                    value = CurrencyFormatUtils.formatCurrency(totals.subtotalIncGst)
-                )
-            }
-
             if (totals.otherAmount != 0.0) {
                 TotalsRow(
                     label = stringResource(R.string.invoice_other_amount),
                     value = CurrencyFormatUtils.formatCurrency(totals.otherAmount)
+                )
+            }
+
+            if (invoice.includeGst) {
+                TotalsRow(
+                    label = "${stringResource(R.string.invoice_gst_amount)} (${InvoiceUtils.formatGstRate(invoice.gstRate)})",
+                    value = CurrencyFormatUtils.formatCurrency(totals.gstAmount)
                 )
             }
 
@@ -698,7 +737,6 @@ fun InvoiceHeaderDialog(
     clientSuggestions: List<ClientEntity>,
     onDismiss: () -> Unit,
     onInvoiceNumberChange: (String) -> Unit,
-    onBillToNameChange: (String) -> Unit,
     onBillToClientSelected: (ClientEntity) -> Unit,
     onIssueDateChange: (String) -> Unit,
     onIncludeGstChange: (Boolean) -> Unit,
@@ -707,6 +745,8 @@ fun InvoiceHeaderDialog(
     onSave: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var billToExpanded by remember { mutableStateOf(false) }
+
     Dialog(onDismissRequest = onDismiss) {
         Card(modifier = modifier.fillMaxWidth()) {
             Column(
@@ -737,46 +777,32 @@ fun InvoiceHeaderDialog(
                     readOnly = true
                 )
 
-                // Bill To field + suggestions
-                OutlinedTextField(
-                    value = formState.billToName,
-                    onValueChange = onBillToNameChange,
-                    label = { Text(stringResource(R.string.invoice_bill_to)) },
-                    placeholder = { Text(stringResource(R.string.invoice_bill_to_hint)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
+                // Bill To dropdown (single selector for saved clients)
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = formState.billToName,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text(stringResource(R.string.invoice_bill_to)) },
+                        placeholder = { Text(stringResource(R.string.invoice_bill_to_hint)) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { billToExpanded = true },
+                        singleLine = true
+                    )
 
-                // Client auto-suggestions — shown as tappable text items
-                if (clientSuggestions.isNotEmpty()) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
+                    DropdownMenu(
+                        expanded = billToExpanded,
+                        onDismissRequest = { billToExpanded = false }
                     ) {
-                        Column {
-                            Text(
-                                text = stringResource(R.string.invoice_client_suggestions),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.outline,
-                                modifier = Modifier.padding(
-                                    start = 12.dp,
-                                    top = 8.dp,
-                                    bottom = 4.dp
-                                )
+                        clientSuggestions.forEach { client ->
+                            DropdownMenuItem(
+                                text = { Text(client.name) },
+                                onClick = {
+                                    onBillToClientSelected(client)
+                                    billToExpanded = false
+                                }
                             )
-                            // Show up to 5 matching clients
-                            clientSuggestions.take(5).forEach { client ->
-                                Text(
-                                    text = client.name,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { onBillToClientSelected(client) }
-                                        .padding(horizontal = 12.dp, vertical = 10.dp)
-                                )
-                            }
                         }
                     }
                 }
@@ -1066,8 +1092,8 @@ private fun InvoiceScreenPreview() {
                     gstEnabled = true,
                     gstRate = 0.10,
                     gstAmount = 136.995,
-                    otherAmount = 0.0,
-                    totalAmount = 1506.945,
+                    otherAmount = 120.0,
+                    totalAmount = 1638.945,
                     notes = "Payment due 14 days."
                 ),
                 lines = listOf(
@@ -1094,10 +1120,10 @@ private fun InvoiceScreenPreview() {
                 ),
                 totals = InvoiceTotals(
                     subtotalExGst = 1369.95,
-                    gstAmount = 136.995,
-                    subtotalIncGst = 1506.945,
-                    otherAmount = 0.0,
-                    finalTotal = 1506.945
+                    gstAmount = 148.995,
+                    subtotalIncGst = 1638.945,
+                    otherAmount = 120.0,
+                    finalTotal = 1638.945
                 )
             ),
             onExportPdf = {},
@@ -1105,7 +1131,6 @@ private fun InvoiceScreenPreview() {
             onEditHeader = {},
             onDismissHeader = {},
             onInvoiceNumberChange = {},
-            onBillToNameChange = {},
             onBillToClientSelected = {},
             onIssueDateChange = {},
             onIncludeGstChange = {},

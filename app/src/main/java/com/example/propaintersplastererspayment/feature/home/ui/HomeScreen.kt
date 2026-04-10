@@ -34,12 +34,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
 import com.example.propaintersplastererspayment.R
+import com.example.propaintersplastererspayment.core.util.DateFormatUtils
 import com.example.propaintersplastererspayment.data.local.entity.JobEntity
 import com.example.propaintersplastererspayment.feature.home.vm.HomeUiState
 import com.example.propaintersplastererspayment.feature.home.vm.HomeViewModel
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @Composable
 fun HomeRoute(
@@ -177,7 +175,7 @@ private fun JobCard(
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
-                    text = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(job.createdAt)),
+                    text = DateFormatUtils.formatTimestampToDisplay(job.createdAt),
                     style = MaterialTheme.typography.labelSmall
                 )
                 Text(

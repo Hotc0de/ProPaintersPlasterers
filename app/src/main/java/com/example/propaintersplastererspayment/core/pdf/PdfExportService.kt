@@ -5,6 +5,7 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import com.example.propaintersplastererspayment.core.util.CurrencyFormatUtils
+import com.example.propaintersplastererspayment.core.util.DateFormatUtils
 import com.example.propaintersplastererspayment.core.util.WorkEntryTimeUtils
 import java.io.File
 import java.io.FileOutputStream
@@ -47,7 +48,13 @@ class PdfExportService {
 
         cursor.y = drawLabelValue(cursor, "Job", data.jobName.ifBlank { "Unnamed Job" }, boldPaint, normalPaint)
         cursor.y = drawLabelValue(cursor, "Address", data.jobAddress, boldPaint, normalPaint)
-        cursor.y = drawLabelValue(cursor, "Exported", data.exportedAt, boldPaint, normalPaint)
+        cursor.y = drawLabelValue(
+            cursor,
+            "Exported",
+            DateFormatUtils.formatDisplayDate(data.exportedAt),
+            boldPaint,
+            normalPaint
+        )
 
         cursor.y += 12f
         drawSectionTitle(cursor, "Work Entries", boldPaint)
@@ -65,7 +72,7 @@ class PdfExportService {
             val x3 = 360f
             val x4 = 435f
             val rowY = cursor.y
-            canvas.drawText(row.workDate, x0, rowY, normalPaint)
+            canvas.drawText(DateFormatUtils.formatDisplayDate(row.workDate), x0, rowY, normalPaint)
             canvas.drawText(row.workerName, x1, rowY, normalPaint)
             canvas.drawText(row.startTime, x2, rowY, normalPaint)
             canvas.drawText(row.finishTime, x3, rowY, normalPaint)
@@ -138,7 +145,13 @@ class PdfExportService {
         cursor.y += 18f
 
         cursor.y = drawLabelValue(cursor, "Invoice Number", data.invoiceNumber, boldPaint, normalPaint)
-        cursor.y = drawLabelValue(cursor, "Invoice Date", data.issueDate, boldPaint, normalPaint)
+        cursor.y = drawLabelValue(
+            cursor,
+            "Invoice Date",
+            DateFormatUtils.formatDisplayDate(data.issueDate),
+            boldPaint,
+            normalPaint
+        )
         cursor.y = drawLabelValue(cursor, "Bill To", data.billToName, boldPaint, normalPaint)
         cursor.y = drawLabelValue(cursor, "Job", data.jobName.ifBlank { "Unnamed Job" }, boldPaint, normalPaint)
         cursor.y = drawLabelValue(cursor, "Job Address", data.jobAddress, boldPaint, normalPaint)

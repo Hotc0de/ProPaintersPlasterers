@@ -17,13 +17,18 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.propaintersplastererspayment.ProPaintersApplication
 import com.example.propaintersplastererspayment.R
 import com.example.propaintersplastererspayment.feature.invoice.ui.InvoiceRoute
 import com.example.propaintersplastererspayment.feature.materials.ui.MaterialsRoute
@@ -42,14 +47,24 @@ fun JobDetailScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val application = LocalContext.current.applicationContext as ProPaintersApplication
+    val job by application.container.jobRepository.observeJob(jobId).collectAsState(initial = null)
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = remember { JobDetailTab.entries }
+    val screenTitle = job?.propertyAddress?.takeIf { it.isNotBlank() }
+        ?: stringResource(R.string.job_detail_title, jobId)
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(text = stringResource(R.string.job_detail_title, jobId)) },
+                title = {
+                    Text(
+                        text = screenTitle,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(

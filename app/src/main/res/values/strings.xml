@@ -32,7 +32,7 @@
     <string name="timesheet_hours_worked">Hours Worked</string>
     <string name="timesheet_edit_entry">Edit Entry</string>
     <string name="timesheet_work_date">Work Date</string>
-    <string name="timesheet_date_hint">yyyy-MM-dd</string>
+    <string name="timesheet_date_hint">dd-MM-yyyy</string>
     <string name="timesheet_worker_name">Worker Name</string>
     <string name="timesheet_start_time">Start Time</string>
     <string name="timesheet_finish_time">Finish Time</string>
@@ -67,9 +67,9 @@
     <string name="invoice_edit_header">Edit Invoice Details</string>
     <string name="invoice_number">Invoice Number</string>
     <string name="invoice_bill_to">Bill To</string>
-    <string name="invoice_bill_to_hint">Start typing a client name…</string>
+    <string name="invoice_bill_to_hint">Select a saved client</string>
     <string name="invoice_date">Invoice Date</string>
-    <string name="invoice_date_hint">yyyy-MM-dd</string>
+    <string name="invoice_date_hint">dd-MM-yyyy</string>
     <string name="invoice_notes">Notes (optional)</string>
     <string name="invoice_include_gst">Include GST</string>
     <string name="invoice_no_gst">GST not included</string>

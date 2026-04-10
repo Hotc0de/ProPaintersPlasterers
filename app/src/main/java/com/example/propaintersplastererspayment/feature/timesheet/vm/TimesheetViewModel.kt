@@ -7,6 +7,7 @@ import com.example.propaintersplastererspayment.core.pdf.MaterialPdfRow
 import com.example.propaintersplastererspayment.core.pdf.PdfBusinessDetails
 import com.example.propaintersplastererspayment.core.pdf.TimesheetPdfData
 import com.example.propaintersplastererspayment.core.pdf.WorkEntryPdfRow
+import com.example.propaintersplastererspayment.core.util.DateFormatUtils
 import com.example.propaintersplastererspayment.core.util.WorkEntryTimeUtils
 import com.example.propaintersplastererspayment.data.local.entity.AppSettingsEntity
 import com.example.propaintersplastererspayment.data.local.entity.JobEntity
@@ -26,12 +27,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-
-private fun defaultWorkDate(): String =
-    SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+private fun defaultWorkDate(): String = DateFormatUtils.todayDisplayDate()
 
 data class WorkEntryFormState(
     val entryId: Long? = null,
@@ -108,7 +104,7 @@ class TimesheetViewModel(
     fun openEditEntry(entry: WorkEntryEntity) {
         formState.value = WorkEntryFormState(
             entryId = entry.entryId,
-            workDate = entry.workDate,
+            workDate = DateFormatUtils.formatDisplayDate(entry.workDate),
             workerName = entry.workerName,
             startTime = entry.startTime,
             finishTime = entry.finishTime,
@@ -156,13 +152,13 @@ class TimesheetViewModel(
 
             val data = TimesheetPdfData(
                 fileName = "timesheet-${job.jobId}-${System.currentTimeMillis()}.pdf",
-                exportedAt = defaultWorkDate(),
+                exportedAt = DateFormatUtils.todayDisplayDate(),
                 business = settings.toBusinessDetails(),
                 jobName = job.jobName,
                 jobAddress = job.propertyAddress,
                 workEntries = snapshot.entries.map { entry ->
                     WorkEntryPdfRow(
-                        workDate = entry.workDate,
+                        workDate = DateFormatUtils.formatDisplayDate(entry.workDate),
                         workerName = entry.workerName,
                         startTime = entry.startTime,
                         finishTime = entry.finishTime,
@@ -205,13 +201,14 @@ class TimesheetViewModel(
         }
 
         val hoursWorked = currentForm.calculatedHours ?: return
+        val storedWorkDate = DateFormatUtils.toStoredDate(currentForm.workDate) ?: return
 
         viewModelScope.launch {
             workEntryRepository.saveEntry(
                 WorkEntryEntity(
                     entryId = currentForm.entryId ?: 0,
                     jobOwnerId = jobId,
-                    workDate = currentForm.workDate,
+                    workDate = storedWorkDate,
                     workerName = currentForm.workerName.trim(),
                     startTime = currentForm.startTime,
                     finishTime = currentForm.finishTime,
