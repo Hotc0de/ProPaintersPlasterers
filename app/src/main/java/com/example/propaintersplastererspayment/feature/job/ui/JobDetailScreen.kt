@@ -14,8 +14,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -23,8 +25,10 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -33,6 +37,8 @@ import com.example.propaintersplastererspayment.R
 import com.example.propaintersplastererspayment.feature.invoice.ui.InvoiceRoute
 import com.example.propaintersplastererspayment.feature.materials.ui.MaterialsRoute
 import com.example.propaintersplastererspayment.feature.timesheet.ui.TimesheetRoute
+import com.example.propaintersplastererspayment.ui.theme.GoldAccent
+import com.example.propaintersplastererspayment.ui.theme.OxfordBlue
 
 private enum class JobDetailTab(val titleRes: Int) {
     TIMESHEET(R.string.job_tab_timesheet),
@@ -56,23 +62,41 @@ fun JobDetailScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = screenTitle,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Column {
+                        Text(
+                            text = screenTitle,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        job?.clientName?.let {
+                            if (it.isNotBlank()) {
+                                Text(
+                                    text = it,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.White.copy(alpha = 0.7f)
+                                )
+                            }
+                        }
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = "Back",
+                            tint = Color.White
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = OxfordBlue
+                )
             )
         }
     ) { innerPadding ->
@@ -81,12 +105,34 @@ fun JobDetailScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            PrimaryTabRow(selectedTabIndex = selectedTab) {
+            PrimaryTabRow(
+                selectedTabIndex = selectedTab,
+                containerColor = OxfordBlue,
+                contentColor = Color.White,
+                indicator = {
+                    TabRowDefaults.PrimaryIndicator(
+                        modifier = Modifier.tabIndicatorOffset(selectedTabIndex = selectedTab),
+                        width = 64.dp,
+                        color = GoldAccent
+                    )
+                },
+                divider = {}
+            ) {
                 tabs.forEachIndexed { index, tab ->
                     Tab(
                         selected = selectedTab == index,
                         onClick = { selectedTab = index },
-                        text = { Text(text = stringResource(tab.titleRes)) }
+                        text = {
+                            Text(
+                                text = stringResource(tab.titleRes),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Medium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        selectedContentColor = GoldAccent,
+                        unselectedContentColor = Color.White.copy(alpha = 0.6f)
                     )
                 }
             }
@@ -107,9 +153,9 @@ fun JobDetailScreen(
             Text(
                 text = stringResource(R.string.job_detail_hint),
                 style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.padding(12.dp)
+                color = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.padding(16.dp)
             )
         }
     }
 }
-

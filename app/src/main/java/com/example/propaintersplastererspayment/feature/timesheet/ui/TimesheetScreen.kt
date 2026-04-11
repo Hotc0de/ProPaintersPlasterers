@@ -14,11 +14,13 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedButton
@@ -144,7 +146,12 @@ fun TimesheetScreen(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         floatingActionButton = {
             if (uiState.job != null) {
-                ExtendedFloatingActionButton(onClick = onAddEntry) {
+                ExtendedFloatingActionButton(
+                    onClick = onAddEntry,
+                    containerColor = MaterialTheme.colorScheme.tertiary,
+                    contentColor = MaterialTheme.colorScheme.onTertiary,
+                    shape = RoundedCornerShape(16.dp)
+                ) {
                     Text(text = stringResource(R.string.timesheet_add_entry))
                 }
             }
@@ -272,7 +279,7 @@ private fun JobSummaryCard(job: JobEntity) {
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
                 text = job.clientName.ifBlank {
@@ -315,11 +322,11 @@ private fun TotalHoursCard(totalHours: Double) {
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
-                    AssistChip(
-                        onClick = {},
-                        label = {
-                            Text(text = WorkEntryTimeUtils.formatHours(totalHours))
-                        }
+                    Text(
+                        text = WorkEntryTimeUtils.formatHours(totalHours),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             } else {
@@ -336,11 +343,11 @@ private fun TotalHoursCard(totalHours: Double) {
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
-                    AssistChip(
-                        onClick = {},
-                        label = {
-                            Text(text = WorkEntryTimeUtils.formatHours(totalHours))
-                        }
+                    Text(
+                        text = WorkEntryTimeUtils.formatHours(totalHours),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -386,25 +393,10 @@ private fun WorkEntryCard(
                         Text(
                             text = entry.workerName,
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Bold,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            TextButton(
-                                onClick = onEditEntry,
-                                modifier = Modifier.widthIn(min = MinActionButtonWidth)
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.timesheet_edit),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
                     }
                 } else {
                     Row(
@@ -415,36 +407,47 @@ private fun WorkEntryCard(
                         Text(
                             text = entry.workerName,
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f)
                         )
-                        TextButton(
-                            onClick = onEditEntry,
-                            modifier = Modifier.widthIn(min = MinActionButtonWidth)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.timesheet_edit),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
                     }
                 }
             }
-            Text(
-                text = DateFormatUtils.formatDisplayDate(entry.workDate),
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                text = "${entry.startTime} - ${entry.finishTime}",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                text = "${stringResource(R.string.timesheet_hours_worked)}: ${WorkEntryTimeUtils.formatHours(entry.hoursWorked)}",
-                style = MaterialTheme.typography.bodyMedium
-            )
+
+            HorizontalDivider()
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = DateFormatUtils.formatDisplayDate(entry.workDate),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = "${entry.startTime} - ${entry.finishTime}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = WorkEntryTimeUtils.formatHours(entry.hoursWorked),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = stringResource(R.string.timesheet_hours_worked),
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+            }
         }
     }
 }
@@ -665,5 +668,3 @@ private fun TimesheetScreenPreview() {
         )
     }
 }
-
-

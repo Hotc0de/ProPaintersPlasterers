@@ -1,19 +1,30 @@
 package com.example.propaintersplastererspayment.feature.job.ui
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,6 +38,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -34,7 +46,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -46,6 +61,8 @@ import com.example.propaintersplastererspayment.R
 import com.example.propaintersplastererspayment.data.local.entity.ClientEntity
 import com.example.propaintersplastererspayment.feature.job.vm.JobFormUiState
 import com.example.propaintersplastererspayment.feature.job.vm.JobFormViewModel
+import com.example.propaintersplastererspayment.ui.theme.GoldAccent
+import com.example.propaintersplastererspayment.ui.theme.OxfordBlue
 
 @Composable
 fun JobFormRoute(
@@ -117,6 +134,8 @@ fun JobFormScreen(
                         } else {
                             stringResource(R.string.job_edit_title)
                         },
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -125,10 +144,14 @@ fun JobFormScreen(
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = "Back",
+                            tint = Color.White
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = OxfordBlue
+                )
             )
         }
     ) { innerPadding ->
@@ -137,132 +160,174 @@ fun JobFormScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+                CircularProgressIndicator()
             }
         } else {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(16.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                OutlinedTextField(
-                    value = uiState.address,
-                    onValueChange = onAddressChange,
-                    label = { Text(stringResource(R.string.job_address)) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                ExposedDropdownMenuBox(
-                    expanded = clientDropdownExpanded,
-                    onExpandedChange = { clientDropdownExpanded = !clientDropdownExpanded }
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = OxfordBlue),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 ) {
-                    OutlinedTextField(
-                        value = uiState.clientQuery,
-                        onValueChange = {
-                            onClientQueryChange(it)
-                            clientDropdownExpanded = true
-                        },
-                        label = { Text(stringResource(R.string.job_client_name)) },
-                        placeholder = { Text(stringResource(R.string.job_client_search_hint)) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(
-                                type = ExposedDropdownMenuAnchorType.PrimaryEditable,
-                                enabled = true
-                            ),
-                        singleLine = true,
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = clientDropdownExpanded)
-                        }
-                    )
+                    Box {
+                        Box(
+                            modifier = Modifier
+                                .width(6.dp)
+                                .matchParentSize()
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(
+                                            GoldAccent,
+                                            GoldAccent.copy(alpha = 0.7f)
+                                        )
+                                    )
+                                )
+                        )
+                        Column(
+                            modifier = Modifier.padding(start = 22.dp).padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = uiState.address,
+                                onValueChange = onAddressChange,
+                                    label = { Text(stringResource(R.string.job_address), color = Color.White.copy(alpha = 0.7f)) },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
 
-                    ExposedDropdownMenu(
-                        expanded = clientDropdownExpanded,
-                        onDismissRequest = { clientDropdownExpanded = false }
-                    ) {
-                        uiState.filteredClients.take(20).forEach { client ->
-                            DropdownMenuItem(
-                                text = {
-                                    Column {
-                                        Text(client.name, fontWeight = FontWeight.SemiBold)
-                                        Text(
-                                            text = client.clientType,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.outline
+                                ExposedDropdownMenuBox(
+                                    expanded = clientDropdownExpanded,
+                                    onExpandedChange = { clientDropdownExpanded = !clientDropdownExpanded }
+                                ) {
+                                    OutlinedTextField(
+                                        value = uiState.clientQuery,
+                                        onValueChange = {
+                                            onClientQueryChange(it)
+                                            clientDropdownExpanded = true
+                                        },
+                                        label = { Text(stringResource(R.string.job_client_name), color = Color.White.copy(alpha = 0.7f)) },
+                                        placeholder = { Text(stringResource(R.string.job_client_search_hint), color = Color.White.copy(alpha = 0.4f)) },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .menuAnchor(
+                                                type = ExposedDropdownMenuAnchorType.PrimaryEditable,
+                                                enabled = true
+                                            ),
+                                        singleLine = true,
+                                        trailingIcon = {
+                                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = clientDropdownExpanded)
+                                        }
+                                    )
+
+                                ExposedDropdownMenu(
+                                    expanded = clientDropdownExpanded,
+                                    onDismissRequest = { clientDropdownExpanded = false }
+                                ) {
+                                    uiState.filteredClients.take(20).forEach { client ->
+                                        DropdownMenuItem(
+                                            text = {
+                                                Column {
+                                                    Text(client.name, fontWeight = FontWeight.SemiBold)
+                                                    Text(
+                                                        text = client.clientType,
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.outline
+                                                    )
+                                                }
+                                            },
+                                            onClick = {
+                                                onClientSelected(client)
+                                                clientDropdownExpanded = false
+                                            }
                                         )
                                     }
-                                },
-                                onClick = {
-                                    onClientSelected(client)
-                                    clientDropdownExpanded = false
+
+                                    DropdownMenuItem(
+                                        text = {
+                                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Add,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                                Text(
+                                                    text = stringResource(R.string.job_add_new_client),
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            }
+                                        },
+                                        onClick = {
+                                            clientDropdownExpanded = false
+                                            onAddNewClient()
+                                        }
+                                    )
                                 }
+                            }
+
+                            if (uiState.selectedClientName.isNotBlank()) {
+                                Text(
+                                    text = stringResource(R.string.job_selected_client, uiState.selectedClientName),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = GoldAccent,
+                                    modifier = Modifier.clickable {
+                                        clientDropdownExpanded = true
+                                    }
+                                )
+                            }
+
+                            OutlinedTextField(
+                                value = uiState.notes,
+                                onValueChange = onNotesChange,
+                                label = { Text(stringResource(R.string.job_notes), color = Color.White.copy(alpha = 0.7f)) },
+                                modifier = Modifier.fillMaxWidth(),
+                                minLines = 2
                             )
                         }
-
-                        DropdownMenuItem(
-                            text = {
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Icon(
-                                        imageVector = Icons.Default.Add,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.job_add_new_client),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                            },
-                            onClick = {
-                                clientDropdownExpanded = false
-                                onAddNewClient()
-                            }
-                        )
                     }
                 }
-
-                if (uiState.selectedClientName.isNotBlank()) {
-                    Text(
-                        text = stringResource(R.string.job_selected_client, uiState.selectedClientName),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.clickable {
-                            clientDropdownExpanded = true
-                        }
-                    )
-                }
-
-                OutlinedTextField(
-                    value = uiState.notes,
-                    onValueChange = onNotesChange,
-                    label = { Text(stringResource(R.string.job_notes)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 2
-                )
 
                 uiState.errorMessage?.let { message ->
                     Text(
                         text = message,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(horizontal = 4.dp)
                     )
                 }
 
                 Button(
                     onClick = onSave,
                     enabled = !uiState.isSaving,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = GoldAccent,
+                        contentColor = OxfordBlue
+                    )
                 ) {
                     if (uiState.isSaving) {
-                        CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp), strokeWidth = 2.dp)
+                        CircularProgressIndicator(
+                            modifier = Modifier.padding(end = 8.dp).size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
                     }
-                    Text(text = stringResource(R.string.job_save))
+                    Text(
+                        text = stringResource(R.string.job_save),
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }

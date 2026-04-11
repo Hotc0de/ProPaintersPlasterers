@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -29,6 +30,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -74,7 +76,7 @@ fun LuxuryInvoice(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 16.dp)
+                .padding(horizontal = 14.dp, vertical = 16.dp)
         ) {
             InvoiceHeader(invoiceData)
             Spacer(modifier = Modifier.height(16.dp))
@@ -135,10 +137,13 @@ fun InvoiceHeader(invoiceData: InvoiceData) {
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Top
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 16.dp)
+            ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(bottom = 12.dp)
@@ -171,10 +176,12 @@ fun InvoiceHeader(invoiceData: InvoiceData) {
                     Column {
                         Text(
                             text = invoiceData.businessName,
-                            fontSize = 26.sp,
+                            fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             color = InvoiceColors.DarkSlate,
-                            letterSpacing = (-1).sp
+                            letterSpacing = (-1).sp,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = invoiceData.businessSubtitle,
@@ -266,7 +273,10 @@ fun InvoiceHeader(invoiceData: InvoiceData) {
                 )
             }
 
-            Column(horizontalAlignment = Alignment.End) {
+            Column(
+                modifier = Modifier.widthIn(min = 120.dp, max = 150.dp),
+                horizontalAlignment = Alignment.End
+            ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -288,10 +298,13 @@ fun InvoiceHeader(invoiceData: InvoiceData) {
 
                 Text(
                     text = "INVOICE",
-                    fontSize = 48.sp,
+                    fontSize = 34.sp,
                     fontWeight = FontWeight.Light,
                     color = InvoiceColors.DarkSlate,
-                    letterSpacing = (-2).sp
+                    letterSpacing = (-1.5).sp,
+                    maxLines = 1,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
@@ -486,7 +499,7 @@ fun ServicesTable(lineItems: List<InvoiceLineItem>) {
                     color = InvoiceColors.BorderGray,
                     letterSpacing = 1.8.sp,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.width(80.dp)
+                    modifier = Modifier.width(52.dp)
                 )
                 Text(
                     text = "UNIT PRICE",
@@ -495,7 +508,7 @@ fun ServicesTable(lineItems: List<InvoiceLineItem>) {
                     color = InvoiceColors.BorderGray,
                     letterSpacing = 1.8.sp,
                     textAlign = TextAlign.End,
-                    modifier = Modifier.width(100.dp)
+                    modifier = Modifier.width(82.dp)
                 )
                 Text(
                     text = "LINE TOTAL",
@@ -504,7 +517,7 @@ fun ServicesTable(lineItems: List<InvoiceLineItem>) {
                     color = InvoiceColors.BorderGray,
                     letterSpacing = 1.8.sp,
                     textAlign = TextAlign.End,
-                    modifier = Modifier.width(120.dp)
+                    modifier = Modifier.width(96.dp)
                 )
             }
 
@@ -539,7 +552,7 @@ fun ServicesTable(lineItems: List<InvoiceLineItem>) {
                         fontWeight = FontWeight.Medium,
                         color = InvoiceColors.TextGray,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.width(80.dp)
+                        modifier = Modifier.width(52.dp)
                     )
                     Text(
                         text = "$${String.format(Locale.getDefault(), "%.2f", item.rate)}",
@@ -547,7 +560,7 @@ fun ServicesTable(lineItems: List<InvoiceLineItem>) {
                         fontWeight = FontWeight.Medium,
                         color = InvoiceColors.TextGray,
                         textAlign = TextAlign.End,
-                        modifier = Modifier.width(100.dp)
+                        modifier = Modifier.width(82.dp)
                     )
                     Text(
                         text = "$${String.format(Locale.getDefault(), "%.2f", item.amount)}",
@@ -555,7 +568,7 @@ fun ServicesTable(lineItems: List<InvoiceLineItem>) {
                         fontWeight = FontWeight.Bold,
                         color = InvoiceColors.DarkSlate,
                         textAlign = TextAlign.End,
-                        modifier = Modifier.width(120.dp)
+                        modifier = Modifier.width(96.dp)
                     )
                 }
             }
@@ -577,7 +590,7 @@ fun TotalsSection(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.End
     ) {
-        Column(modifier = Modifier.fillMaxWidth(0.9f)) {
+        Column(modifier = Modifier.fillMaxWidth(0.82f)) {
             Card(
                 shape = RoundedCornerShape(2.dp),
                 colors = CardDefaults.cardColors(containerColor = InvoiceColors.White),

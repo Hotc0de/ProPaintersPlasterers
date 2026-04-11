@@ -5,6 +5,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
+import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.pdf.PdfDocument
 import com.example.propaintersplastererspayment.core.util.CurrencyFormatUtils
@@ -23,6 +24,7 @@ class PdfExportService {
         var document: PdfDocument,
         var page: PdfDocument.Page,
         var pageNumber: Int,
+        var totalPages: Int,
         var y: Float
     )
 
@@ -30,102 +32,484 @@ class PdfExportService {
     private val pageHeight = 842
     private val margin = 40f
 
+    // Colors
+    private val colorDarkNavy = Color.parseColor("#2C3E50")
+    private val colorOffWhite = Color.parseColor("#FDFCFB")
+    private val colorGoldAccent = Color.parseColor("#9D8560")
+    private val colorLightGray = Color.parseColor("#F1F5F9")
+    private val colorMediumGray = Color.parseColor("#94A3B8")
+    private val colorTextGray = Color.parseColor("#64748B")
+    private val colorBorderGray = Color.parseColor("#CBD5E1")
+    private val colorWhite = Color.WHITE
+
     fun exportTimesheetPdf(context: Context, data: TimesheetPdfData, outputFile: File): File {
         val document = PdfDocument()
-        val normalPaint = textPaint(11f)
-        val boldPaint = textPaint(11f, true)
-        val titlePaint = textPaint(18f, true)
-        val smallPaint = textPaint(9f)
-        val linePaint = Paint().apply { strokeWidth = 1f }
+        
+        // Calculate total pages
+        val totalPages = calculateTotalPages(data)
+        
+        var cursor = startDocument(document, 1, totalPages)
 
-        val cursor = startDocument(document)
+        // Draw First Page Header
+        drawTimesheetHeader(cursor, data, isFirstPage = true)
 
-        cursor.y = drawBusinessHeader(
-            cursor,
-            data.business,
-            "Timesheet",
-            titlePaint,
-            normalPaint,
-            linePaint
-        )
-
-        cursor.y += 8f
-        drawLine(cursor, linePaint)
-        cursor.y += 18f
-
-        cursor.y = drawLabelValue(cursor, "Job", data.jobName.ifBlank { "Unnamed Job" }, boldPaint, normalPaint)
-        cursor.y = drawLabelValue(cursor, "Address", data.jobAddress, boldPaint, normalPaint)
-        cursor.y = drawLabelValue(
-            cursor,
-            "Exported",
-            DateFormatUtils.formatDisplayDate(data.exportedAt),
-            boldPaint,
-            normalPaint
-        )
-
+        // Work Entries Table
+        drawSectionTitleLuxury(cursor, "Work Entries")
         cursor.y += 12f
-        drawSectionTitle(cursor, "Work Entries", boldPaint)
-        cursor.y += 6f
-        cursor.y = drawWorkEntryTableHeader(cursor, boldPaint, linePaint)
+        
+        drawWorkEntriesTable(cursor, data)
 
-        data.workEntries.forEach { row ->
-            ensureSpace(cursor, 18f) {
-                drawWorkEntryTableHeader(cursor, boldPaint, linePaint)
-            }
-            val canvas = cursor.page.canvas
-            val x0 = margin
-            val x1 = 150f
-            val x2 = 285f
-            val x3 = 360f
-            val x4 = 435f
-            val rowY = cursor.y
-            canvas.drawText(DateFormatUtils.formatDisplayDate(row.workDate), x0, rowY, normalPaint)
-            canvas.drawText(row.workerName, x1, rowY, normalPaint)
-            canvas.drawText(row.startTime, x2, rowY, normalPaint)
-            canvas.drawText(row.finishTime, x3, rowY, normalPaint)
-            canvas.drawText(WorkEntryTimeUtils.formatHours(row.hoursWorked), x4, rowY, normalPaint)
-            cursor.y += 16f
+        // Materials Section (if space allows or on next page)
+        if (data.materials.isNotEmpty()) {
+            ensureSpaceLuxury(cursor, 100f, data)
+            drawSectionTitleLuxury(cursor, "Materials")
+            cursor.y += 12f
+            drawMaterialsTable(cursor, data)
         }
 
-        cursor.y += 4f
-        drawLine(cursor, linePaint)
-        cursor.y += 16f
-        cursor.y = drawRightValue(
-            cursor,
-            "Total Hours: ${WorkEntryTimeUtils.formatHours(data.totalHours)}",
-            boldPaint
-        )
-
-        cursor.y += 18f
-        ensureSpace(cursor, 80f)
-        drawSectionTitle(cursor, "Materials", boldPaint)
-        cursor.y += 6f
-        cursor.y = drawMaterialsTableHeader(cursor, boldPaint, linePaint)
-
-        data.materials.forEach { row ->
-            ensureSpace(cursor, 18f) {
-                drawMaterialsTableHeader(cursor, boldPaint, linePaint)
-            }
-            val canvas = cursor.page.canvas
-            val rowY = cursor.y
-            canvas.drawText(row.materialName, margin, rowY, normalPaint)
-            canvas.drawText(CurrencyFormatUtils.formatCurrency(row.price), 430f, rowY, normalPaint)
-            cursor.y += 16f
-        }
-
-        cursor.y += 4f
-        drawLine(cursor, linePaint)
-        cursor.y += 16f
-        cursor.y = drawRightValue(
-            cursor,
-            "Total Material Cost: ${CurrencyFormatUtils.formatCurrency(data.totalMaterialCost)}",
-            boldPaint
-        )
-
-        drawFooter(cursor, smallPaint)
+        drawFooterLuxury(cursor)
         finishDocument(cursor)
         writeDocument(document, outputFile)
         return outputFile
+    }
+
+    private fun calculateTotalPages(data: TimesheetPdfData): Int {
+        var pages = 1
+        var currentY = margin + 130f // First page header space
+        currentY += 40f // "Work Entries" title + space
+        
+        val rowHeight = 22f
+        val headerHeight = 25f
+        val totalRowHeight = 40f
+        val bottomLimit = pageHeight - margin - 40f
+        
+        currentY += headerHeight
+        
+        var entriesOnPage = 0
+        data.workEntries.forEachIndexed { index, _ ->
+            if (entriesOnPage >= 20 || currentY + rowHeight > bottomLimit) {
+                pages++
+                currentY = margin + 55f + headerHeight // Continuation header + table header
+                entriesOnPage = 0
+            }
+            currentY += rowHeight
+            entriesOnPage++
+        }
+        
+        // Total Hours row
+        if (currentY + totalRowHeight > bottomLimit) {
+            pages++
+            currentY = margin + 55f
+        }
+        currentY += totalRowHeight
+        
+        // Materials Section
+        if (data.materials.isNotEmpty()) {
+            if (currentY + 100f > bottomLimit) {
+                pages++
+                currentY = margin + 55f
+            }
+            currentY += 40f + headerHeight // Title + Table header
+            
+            data.materials.forEach { _ ->
+                if (currentY + rowHeight > bottomLimit) {
+                    pages++
+                    currentY = margin + 55f + headerHeight
+                }
+                currentY += rowHeight
+            }
+            currentY += 30f // Total materials row
+        }
+        
+        return pages
+    }
+
+    private fun startDocument(document: PdfDocument, pageNumber: Int, totalPages: Int): PageCursor {
+        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create()
+        val page = document.startPage(pageInfo)
+        // Background
+        page.canvas.drawColor(colorOffWhite)
+        return PageCursor(document = document, page = page, pageNumber = pageNumber, totalPages = totalPages, y = margin)
+    }
+
+    private fun finishDocument(cursor: PageCursor) {
+        cursor.document.finishPage(cursor.page)
+    }
+
+    private fun ensureSpaceLuxury(
+        cursor: PageCursor,
+        requiredHeight: Float,
+        data: TimesheetPdfData
+    ) {
+        val bottomLimit = pageHeight - margin - 40f
+        if (cursor.y + requiredHeight <= bottomLimit) return
+
+        drawFooterLuxury(cursor)
+        cursor.document.finishPage(cursor.page)
+        cursor.pageNumber += 1
+        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, cursor.pageNumber).create()
+        cursor.page = cursor.document.startPage(pageInfo)
+        cursor.page.canvas.drawColor(colorOffWhite)
+        cursor.y = margin
+        
+        // Draw continuation header
+        drawTimesheetHeader(cursor, data, isFirstPage = false)
+        cursor.y += 10f
+    }
+
+    private fun drawTimesheetHeader(cursor: PageCursor, data: TimesheetPdfData, isFirstPage: Boolean) {
+        val canvas = cursor.page.canvas
+        val yStart = cursor.y
+
+        // Top Border Accent
+        val accentPaint = Paint().apply { color = colorGoldAccent; style = Paint.Style.FILL }
+        canvas.drawRect(margin, 0f, pageWidth - margin, 3f, accentPaint)
+
+        if (isFirstPage) {
+            // Logo placeholder
+            val badgeRect = RectF(margin, yStart, margin + 48f, yStart + 48f)
+            val darkFillPaint = Paint().apply { color = Color.parseColor("#1E293B"); style = Paint.Style.FILL }
+            canvas.drawRoundRect(badgeRect, 4f, 4f, darkFillPaint)
+            
+            val logoTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = colorGoldAccent
+                textSize = 18f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                textAlign = Paint.Align.CENTER
+            }
+            canvas.drawText("PPP", badgeRect.centerX(), badgeRect.centerY() + 6f, logoTextPaint)
+
+            // Business Name
+            val busNamePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.parseColor("#1E293B")
+                textSize = 24f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            }
+            
+            val companyName = "Pro Painters Plasterers"
+            canvas.drawText(companyName, margin + 60f, yStart + 34f, busNamePaint)
+
+            // Business Details
+            val detailPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = colorTextGray
+                textSize = 8f
+            }
+            
+        val detailLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#9D8560") // Luxury Gold
+            textSize = 8f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        }
+            
+            var detailY = yStart + 58f
+            val detailX = margin + 60f
+            val detailMaxWidth = pageWidth - detailX - 200f // leave space for Job box
+            
+            // Address with wrapping
+            canvas.drawText("ADDRESS:", detailX, detailY, detailLabelPaint)
+            drawWrappedPlainText(
+                canvas,
+                data.business.address,
+                detailX,
+                detailY + 12f,
+                detailMaxWidth,
+                detailPaint,
+                10f,
+                maxLines = 3
+            )
+            
+            detailY += 45f // Move down after address block
+            
+            canvas.drawText("P: ${data.business.phoneNumber}", detailX, detailY, detailPaint)
+            detailY += 12f
+            canvas.drawText("E: ${data.business.email}", detailX, detailY, detailPaint)
+            detailY += 12f
+            canvas.drawText("Account: ${data.business.bankAccountNumber}", detailX, detailY, detailPaint)
+
+            // Job Details Box
+            val boxWidth = 170f
+            val boxHeight = 110f
+            val boxRect = RectF(pageWidth - margin - boxWidth, yStart, pageWidth - margin, yStart + boxHeight)
+            val boxPaint = Paint().apply { color = colorWhite; style = Paint.Style.FILL }
+            val borderPaint = Paint().apply { color = colorBorderGray; style = Paint.Style.STROKE; strokeWidth = 1f }
+            canvas.drawRoundRect(boxRect, 6f, 6f, boxPaint)
+            canvas.drawRoundRect(boxRect, 6f, 6f, borderPaint)
+
+            val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colorMediumGray; textSize = 8f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) }
+            val valuePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#1E293B"); textSize = 10f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) }
+
+            var bx = boxRect.left + 12f
+            var by = boxRect.top + 20f
+            canvas.drawText("JOB", bx, by, labelPaint)
+            canvas.drawText(ellipsizeToWidth(data.jobName.ifBlank { "N/A" }, valuePaint, boxWidth - 24f), bx, by + 14f, valuePaint)
+            
+            by += 32f
+            canvas.drawText("ADDRESS", bx, by, labelPaint)
+            canvas.drawText(ellipsizeToWidth(data.jobAddress.ifBlank { "N/A" }, valuePaint, boxWidth - 24f), bx, by + 14f, valuePaint)
+
+            by += 32f
+            canvas.drawText("EXPORTED", bx, by, labelPaint)
+            canvas.drawText(DateFormatUtils.formatDisplayDate(data.exportedAt), bx, by + 14f, valuePaint)
+
+            // Center Title - Moved down to avoid overlap
+            drawTitleWithOrnaments(canvas, pageWidth / 2f, yStart + 165f)
+
+            cursor.y = yStart + 205f
+        } else {
+            // Continuation Header
+            val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.parseColor("#1E293B")
+                textSize = 14f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            }
+            canvas.drawText("${data.business.businessName} - TIMESHEET (Continued)", margin, yStart + 15f, paint)
+            
+            val subPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = colorTextGray
+                textSize = 10f
+            }
+            canvas.drawText("Job: ${data.jobName} | Page ${cursor.pageNumber}", margin, yStart + 30f, subPaint)
+            
+            val linePaint = Paint().apply { color = colorGoldAccent; strokeWidth = 1f }
+            canvas.drawLine(margin, yStart + 40f, pageWidth - margin, yStart + 40f, linePaint)
+            
+            cursor.y = yStart + 55f
+        }
+    }
+
+    private fun drawTitleWithOrnaments(canvas: Canvas, cx: Float, cy: Float) {
+        val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#1E293B")
+            textSize = 28f
+            typeface = Typeface.create("serif", Typeface.NORMAL)
+            textAlign = Paint.Align.CENTER
+            letterSpacing = 0.2f
+        }
+        
+        val text = "TIMESHEET"
+        val textWidth = titlePaint.measureText(text)
+        val halfTextWidth = textWidth / 2f
+        
+        // Ornament lines - Dynamic based on text width
+        val linePaint = Paint().apply { color = colorGoldAccent; strokeWidth = 1f }
+        val gap = 15f
+        val lineLen = 35f
+        
+        canvas.drawLine(cx - halfTextWidth - gap - lineLen, cy - 8f, cx - halfTextWidth - gap, cy - 8f, linePaint)
+        canvas.drawLine(cx + halfTextWidth + gap, cy - 8f, cx + halfTextWidth + gap + lineLen, cy - 8f, linePaint)
+        
+        // Diamond ornament
+        val path = Path().apply {
+            moveTo(cx, cy - 13f)
+            lineTo(cx + 4f, cy - 8f)
+            lineTo(cx, cy - 3f)
+            lineTo(cx - 4f, cy - 8f)
+            close()
+        }
+        canvas.drawPath(path, Paint().apply { color = colorGoldAccent; style = Paint.Style.FILL })
+        
+        canvas.drawText(text, cx, cy + 12f, titlePaint)
+    }
+
+    private fun drawSectionTitleLuxury(cursor: PageCursor, title: String) {
+        val canvas = cursor.page.canvas
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#1E293B")
+            textSize = 12f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            letterSpacing = 0.1f
+        }
+        
+        // Accent dot
+        val dotPaint = Paint().apply { color = colorGoldAccent; style = Paint.Style.FILL }
+        canvas.drawCircle(margin + 3f, cursor.y - 4f, 3f, dotPaint)
+        
+        canvas.drawText(title.uppercase(), margin + 12f, cursor.y, paint)
+        
+        // Line
+        val linePaint = Paint().apply { color = colorGoldAccent; strokeWidth = 0.5f }
+        val textWidth = paint.measureText(title.uppercase())
+        canvas.drawLine(margin + 12f + textWidth + 10f, cursor.y - 4f, pageWidth - margin, cursor.y - 4f, linePaint)
+    }
+
+    private fun drawWorkEntriesTable(cursor: PageCursor, data: TimesheetPdfData) {
+        val colDate = margin + 10f
+        val colWorker = margin + 100f
+        val colStart = margin + 250f
+        val colFinish = margin + 320f
+        val colHours = pageWidth - margin - 10f
+
+        // Header
+        drawWorkEntriesTableHeader(cursor, colDate, colWorker, colStart, colFinish, colHours)
+        
+        // Rows
+        val rowHeight = 22f
+        val normalPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#475569"); textSize = 10f }
+        val boldPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#1E293B"); textSize = 10f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) }
+        
+        var entriesOnPage = 0
+        data.workEntries.forEachIndexed { index, entry ->
+            val needsNewPage = entriesOnPage >= 20
+            
+            if (needsNewPage) {
+                goToNextPage(cursor, data)
+                drawWorkEntriesTableHeader(cursor, colDate, colWorker, colStart, colFinish, colHours)
+                entriesOnPage = 0
+            } else {
+                ensureSpaceWithHeader(cursor, rowHeight, data) {
+                    drawWorkEntriesTableHeader(cursor, colDate, colWorker, colStart, colFinish, colHours)
+                    entriesOnPage = 0
+                }
+            }
+            
+            if (index % 2 != 0) {
+                val stripePaint = Paint().apply { color = colorLightGray; style = Paint.Style.FILL }
+                cursor.page.canvas.drawRect(margin, cursor.y, pageWidth - margin, cursor.y + rowHeight, stripePaint)
+            }
+            
+            val rowY = cursor.y + 15f
+            cursor.page.canvas.drawText(DateFormatUtils.formatDisplayDate(entry.workDate), colDate, rowY, normalPaint)
+            cursor.page.canvas.drawText(entry.workerName, colWorker, rowY, boldPaint)
+            cursor.page.canvas.drawText(entry.startTime, colStart, rowY, normalPaint)
+            cursor.page.canvas.drawText(entry.finishTime, colFinish, rowY, normalPaint)
+            drawTextRight(cursor.page.canvas, WorkEntryTimeUtils.formatHours(entry.hoursWorked), colHours, rowY, boldPaint)
+            
+            cursor.y += rowHeight
+            entriesOnPage++
+        }
+        
+        // Total Hours Row
+        val totalRowHeight = 30f
+        ensureSpaceLuxury(cursor, totalRowHeight, data)
+        val totalY = cursor.y + 20f
+        val linePaint = Paint().apply { color = colorGoldAccent; strokeWidth = 1.5f }
+        cursor.page.canvas.drawLine(pageWidth - margin - 150f, cursor.y, pageWidth - margin, cursor.y, linePaint)
+        
+        val totalLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#1E293B"); textSize = 10f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) }
+        drawTextRight(cursor.page.canvas, "TOTAL HOURS:", colHours - 60f, totalY, totalLabelPaint)
+        drawTextRight(cursor.page.canvas, WorkEntryTimeUtils.formatHours(data.totalHours), colHours, totalY, totalLabelPaint)
+        
+        cursor.y += totalRowHeight + 10f
+    }
+
+    private fun drawWorkEntriesTableHeader(cursor: PageCursor, colDate: Float, colWorker: Float, colStart: Float, colFinish: Float, colHours: Float) {
+        val canvas = cursor.page.canvas
+        val headerHeight = 25f
+        val headerRect = RectF(margin, cursor.y, pageWidth - margin, cursor.y + headerHeight)
+        val headerPaint = Paint().apply { color = colorDarkNavy; style = Paint.Style.FILL }
+        canvas.drawRect(headerRect, headerPaint)
+        
+        val headerTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = colorWhite
+            textSize = 9f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        }
+        
+        val headerY = cursor.y + 16f
+        canvas.drawText("DATE", colDate, headerY, headerTextPaint)
+        canvas.drawText("WORKER", colWorker, headerY, headerTextPaint)
+        canvas.drawText("START", colStart, headerY, headerTextPaint)
+        canvas.drawText("FINISH", colFinish, headerY, headerTextPaint)
+        drawTextRight(canvas, "HOURS", colHours, headerY, headerTextPaint)
+        
+        cursor.y += headerHeight
+    }
+
+    private fun goToNextPage(cursor: PageCursor, data: TimesheetPdfData) {
+        drawFooterLuxury(cursor)
+        cursor.document.finishPage(cursor.page)
+        cursor.pageNumber += 1
+        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, cursor.pageNumber).create()
+        cursor.page = cursor.document.startPage(pageInfo)
+        cursor.page.canvas.drawColor(colorOffWhite)
+        cursor.y = margin
+        drawTimesheetHeader(cursor, data, isFirstPage = false)
+        cursor.y += 10f
+    }
+
+    private fun ensureSpaceWithHeader(cursor: PageCursor, requiredHeight: Float, data: TimesheetPdfData, onNewPage: () -> Unit) {
+        val bottomLimit = pageHeight - margin - 40f
+        if (cursor.y + requiredHeight <= bottomLimit) return
+        
+        goToNextPage(cursor, data)
+        onNewPage()
+    }
+
+    private fun drawMaterialsTable(cursor: PageCursor, data: TimesheetPdfData) {
+        val canvas = cursor.page.canvas
+        
+        // Header
+        val headerHeight = 25f
+        val headerRect = RectF(margin, cursor.y, pageWidth - margin, cursor.y + headerHeight)
+        val headerPaint = Paint().apply { color = colorDarkNavy; style = Paint.Style.FILL }
+        canvas.drawRect(headerRect, headerPaint)
+        
+        val headerTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = colorWhite
+            textSize = 9f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        }
+        
+        val colName = margin + 10f
+        val colPrice = pageWidth - margin - 10f
+        
+        val headerY = cursor.y + 16f
+        canvas.drawText("MATERIAL", colName, headerY, headerTextPaint)
+        drawTextRight(canvas, "PRICE", colPrice, headerY, headerTextPaint)
+        
+        cursor.y += headerHeight
+        
+        val rowHeight = 22f
+        val normalPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#475569"); textSize = 10f }
+        val boldPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#1E293B"); textSize = 10f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) }
+
+        data.materials.forEachIndexed { index, material ->
+            ensureSpaceLuxury(cursor, rowHeight, data)
+            
+            if (index % 2 != 0) {
+                val stripePaint = Paint().apply { color = colorLightGray; style = Paint.Style.FILL }
+                cursor.page.canvas.drawRect(margin, cursor.y, pageWidth - margin, cursor.y + rowHeight, stripePaint)
+            }
+            
+            val rowY = cursor.y + 15f
+            cursor.page.canvas.drawText(material.materialName, colName, rowY, boldPaint)
+            drawTextRight(cursor.page.canvas, CurrencyFormatUtils.formatCurrency(material.price), colPrice, rowY, normalPaint)
+            
+            cursor.y += rowHeight
+        }
+
+        // Total Materials Row
+        val totalRowHeight = 30f
+        ensureSpaceLuxury(cursor, totalRowHeight, data)
+        val totalY = cursor.y + 20f
+        val linePaint = Paint().apply { color = colorGoldAccent; strokeWidth = 1.5f }
+        cursor.page.canvas.drawLine(pageWidth - margin - 200f, cursor.y, pageWidth - margin, cursor.y, linePaint)
+        
+        val totalLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#1E293B"); textSize = 10f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) }
+        drawTextRight(cursor.page.canvas, "TOTAL MATERIAL COST:", colPrice - 80f, totalY, totalLabelPaint)
+        drawTextRight(cursor.page.canvas, CurrencyFormatUtils.formatCurrency(data.totalMaterialCost), colPrice, totalY, totalLabelPaint)
+        
+        cursor.y += totalRowHeight
+    }
+
+    private fun drawFooterLuxury(cursor: PageCursor) {
+        val canvas = cursor.page.canvas
+        val footerY = pageHeight - margin
+        
+        // Bottom border accent
+        val accentPaint = Paint().apply { color = Color.parseColor("#2C3E50"); style = Paint.Style.FILL }
+        canvas.drawRect(margin, pageHeight.toFloat() - 3f, pageWidth - margin, pageHeight.toFloat(), accentPaint)
+
+        val linePaint = Paint().apply { color = colorBorderGray; strokeWidth = 0.5f }
+        canvas.drawLine(margin, footerY - 15f, pageWidth - margin, footerY - 15f, linePaint)
+        
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = colorMediumGray
+            textSize = 8f
+            textAlign = Paint.Align.CENTER
+        }
+        val text = "Generated by Pro Painters Plasterers — Page ${cursor.pageNumber} of ${cursor.totalPages}"
+        canvas.drawText(text, pageWidth / 2f, footerY, paint)
     }
 
     fun exportInvoicePdf(context: Context, data: InvoicePdfData, outputFile: File): File {
@@ -154,14 +538,14 @@ class PdfExportService {
         val lightGray1 = Color.parseColor("#F7F5F2")
         val lightGray2 = Color.parseColor("#F1F5F9")
         val lightGray3 = Color.parseColor("#E2E8F0")
-        val mediumGray = Color.parseColor("#94A3B8")
         val darkGray = Color.parseColor("#475569")
         val textGray = Color.parseColor("#64748B")
         val white = Color.WHITE
 
-        val contentLeft = margin
-        val contentTop = margin
-        val contentRight = pageWidth - margin
+        val pageMargin = 28f
+        val contentLeft = pageMargin
+        val contentTop = pageMargin
+        val contentRight = pageWidth - pageMargin
         val contentWidth = contentRight - contentLeft
         var y = contentTop
 
@@ -174,17 +558,17 @@ class PdfExportService {
         val whiteFillPaint = Paint().apply { style = Paint.Style.FILL; color = white }
 
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = darkSlate
-            textSize = 34f
+            color = Color.parseColor("#9D8560") // Luxury Gold
+            textSize = 24f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
         val hugeTitlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = darkSlate
-            textSize = 42f
+            textSize = 32f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
         }
         val sectionLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = mediumGray
+            color = Color.parseColor("#9D8560") // Luxury Gold
             textSize = 8.5f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
@@ -221,40 +605,123 @@ class PdfExportService {
         canvas.drawRect(contentLeft, y, contentRight, y + 3f, accentPaint)
         y += 14f
 
-        // Header card
-        val headerHeight = 150f
+        // Header card with constrained title area so it cannot overlap business details.
+        val headerHeight = 156f
         val headerRect = RectF(contentLeft, y, contentRight, y + headerHeight)
         canvas.drawRoundRect(headerRect, 4f, 4f, whiteFillPaint)
         canvas.drawRoundRect(headerRect, 4f, 4f, borderPaint)
 
-        // Left brand area
-        val badgeRect = RectF(contentLeft + 14f, y + 14f, contentLeft + 54f, y + 54f)
+        val headerPadding = 14f
+        val titleAreaWidth = 138f
+        val headerGap = 16f
+        val leftSectionLeft = headerRect.left + headerPadding
+        val leftSectionRight = headerRect.right - headerPadding - titleAreaWidth - headerGap
+        val titleAreaLeft = leftSectionRight + headerGap
+        val badgeRect = RectF(leftSectionLeft, y + 14f, leftSectionLeft + 40f, y + 54f)
         canvas.drawRoundRect(badgeRect, 3f, 3f, darkFillPaint)
-        canvas.drawText("PPP", badgeRect.left + 8f, badgeRect.top + 25f, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        
+        val logoTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = bronze
             textSize = 16f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        })
+            textAlign = Paint.Align.CENTER
+        }
+        canvas.drawText("PPP", badgeRect.centerX(), badgeRect.centerY() + 6f, logoTextPaint)
 
-        canvas.drawText(invoiceData.businessName, contentLeft + 68f, y + 34f, titlePaint)
-        canvas.drawText(invoiceData.businessSubtitle, contentLeft + 68f, y + 52f, Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = bronze
-            textSize = 12f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        })
+        val businessTextX = badgeRect.right + 12f
+        val businessTextWidth = leftSectionRight - businessTextX
+        val companyName = "Pro Painters Plasterers"
+        canvas.drawText(
+            ellipsizeToWidth(companyName, titlePaint, businessTextWidth),
+            businessTextX,
+            y + 42f,
+            titlePaint
+        )
 
-        drawWrappedText(canvas, "ADDRESS", invoiceData.businessAddress, contentLeft + 16f, y + 74f, 150f, sectionLabelPaint, bodyPaint)
-        drawWrappedText(canvas, "CONTACT", "${invoiceData.businessPhone}\n${invoiceData.businessEmail}", contentLeft + 170f, y + 74f, 150f, sectionLabelPaint, bodyPaint)
-        drawWrappedText(canvas, "ACCOUNT", invoiceData.accountNumber, contentLeft + 324f, y + 74f, 120f, sectionLabelPaint, bodyPaint)
+        val leftInfoY = y + 74f
+        val leftInfoWidth = leftSectionRight - leftSectionLeft
+        val columnGap = 20f
+        val addressWidth = leftInfoWidth * 0.45f
+        val detailsWidth = leftInfoWidth - addressWidth - columnGap
+        
+        // Column 1: Address
+        drawWrappedText(
+            canvas,
+            "ADDRESS:",
+            invoiceData.businessAddress,
+            leftSectionLeft,
+            leftInfoY,
+            addressWidth,
+            sectionLabelPaint,
+            bodyPaint,
+            maxLines = 4
+        )
 
-        canvas.drawText("INVOICE", contentRight - 150f, y + 52f, hugeTitlePaint)
+        // Column 2: Contact Details (Rows for Contact, Email, Account)
+        var detailRowY = leftInfoY
+        
+        // Row 1: Contact
+        drawWrappedText(
+            canvas,
+            "CONTACT:",
+            invoiceData.businessPhone,
+            leftSectionLeft + addressWidth + columnGap,
+            detailRowY,
+            detailsWidth,
+            sectionLabelPaint,
+            bodyPaint,
+            maxLines = 1
+        )
+        
+        detailRowY += 28f
+        
+        // Row 2: Email
+        drawWrappedText(
+            canvas,
+            "EMAIL:",
+            invoiceData.businessEmail,
+            leftSectionLeft + addressWidth + columnGap,
+            detailRowY,
+            detailsWidth,
+            sectionLabelPaint,
+            bodyPaint,
+            maxLines = 1
+        )
+        
+        detailRowY += 28f
+        
+        // Row 3: Account
+        drawWrappedText(
+            canvas,
+            "ACCOUNT:",
+            invoiceData.accountNumber,
+            leftSectionLeft + addressWidth + columnGap,
+            detailRowY,
+            detailsWidth,
+            sectionLabelPaint,
+            bodyPaint,
+            maxLines = 1
+        )
+
+        // Right title block is width-constrained and right-aligned to prevent overlap.
+        canvas.drawLine(titleAreaLeft + 62f, y + 22f, headerRect.right - headerPadding, y + 22f, accentPaint)
+        drawTextRight(
+            canvas,
+            "INVOICE",
+            headerRect.right - headerPadding,
+            y + 50f,
+            hugeTitlePaint
+        )
         y += headerHeight + 14f
 
         // Detail cards
         val cardGap = 12f
         val cardWidth = (contentWidth - cardGap) / 2f
-        val leftCard = RectF(contentLeft, y, contentLeft + cardWidth, y + 90f)
-        val rightCard = RectF(contentLeft + cardWidth + cardGap, y, contentRight, y + 90f)
+        val leftCardHeight = 84f
+        val rightCardHeight = 96f
+        val cardsHeight = max(leftCardHeight, rightCardHeight)
+        val leftCard = RectF(contentLeft, y, contentLeft + cardWidth, y + cardsHeight)
+        val rightCard = RectF(contentLeft + cardWidth + cardGap, y, contentRight, y + cardsHeight)
         canvas.drawRoundRect(leftCard, 4f, 4f, whiteFillPaint)
         canvas.drawRoundRect(rightCard, 4f, 4f, whiteFillPaint)
         canvas.drawRoundRect(leftCard, 4f, 4f, subtleBorderPaint)
@@ -265,8 +732,18 @@ class PdfExportService {
         drawCardLabelValue(canvas, leftCard.left + 130f, leftCard.top + 48f, "DUE DATE", invoiceData.dueDate, sectionLabelPaint, Paint(bodyBoldPaint).apply { color = bronze })
 
         drawCardLabelValue(canvas, rightCard.left + 12f, rightCard.top + 20f, "BILL TO", invoiceData.billTo, sectionLabelPaint, bodyBoldPaint)
-        drawWrappedText(canvas, "JOB ADDRESS", invoiceData.jobAddress, rightCard.left + 12f, rightCard.top + 48f, cardWidth - 24f, sectionLabelPaint, bodyPaint)
-        y += 108f
+        drawWrappedText(
+            canvas,
+            "CLIENT ADDRESS",
+            invoiceData.jobAddress,
+            rightCard.left + 12f,
+            rightCard.top + 48f,
+            cardWidth - 24f,
+            sectionLabelPaint,
+            bodyPaint,
+            maxLines = 3
+        )
+        y += cardsHeight + 14f
 
         // Services header
         canvas.drawText("SERVICES & MATERIALS", contentLeft + 20f, y, bodyBoldPaint)
@@ -274,44 +751,63 @@ class PdfExportService {
 
         val tableHeaderHeight = 24f
         canvas.drawRect(contentLeft, y, contentRight, y + tableHeaderHeight, darkFillPaint2)
-        drawTableHeaderText(canvas, "DESCRIPTION", contentLeft + 12f, y + 16f, whiteTextPaint)
-        drawTableHeaderText(canvas, "QTY", contentLeft + 320f, y + 16f, whiteTextPaint)
-        drawTableHeaderText(canvas, "UNIT PRICE", contentLeft + 390f, y + 16f, whiteTextPaint)
-        drawTableHeaderText(canvas, "LINE TOTAL", contentLeft + 485f, y + 16f, whiteTextPaint)
+        val tablePadding = 12f
+        val amountColWidth = 88f
+        val rateColWidth = 84f
+        val qtyColWidth = 44f
+        val tableGap = 10f
+        val amountRight = contentRight - tablePadding
+        val amountLeft = amountRight - amountColWidth
+        val rateRight = amountLeft - tableGap
+        val rateLeft = rateRight - rateColWidth
+        val qtyRight = rateLeft - tableGap
+        val qtyLeft = qtyRight - qtyColWidth
+        val descriptionLeft = contentLeft + tablePadding
+        val descriptionRight = qtyLeft - tableGap
+        val descriptionWidth = descriptionRight - descriptionLeft
+        drawTableHeaderText(canvas, "DESCRIPTION", descriptionLeft, y + 16f, whiteTextPaint)
+        drawTextCenter(canvas, "QTY", qtyLeft, qtyRight, y + 16f, whiteTextPaint)
+        drawTextRight(canvas, "UNIT PRICE", rateRight, y + 16f, whiteTextPaint)
+        drawTextRight(canvas, "LINE TOTAL", amountRight, y + 16f, whiteTextPaint)
         y += tableHeaderHeight
 
         invoiceData.lineItems.forEachIndexed { index, item ->
-            val rowHeight = 28f
+            val descriptionLines = wrapTextLines(item.description, bodyPaint, descriptionWidth, maxLines = 3)
+            val rowHeight = max(28f, (descriptionLines.size * 12f) + 10f)
             fillPaint.color = if (index % 2 == 0) white else lightGray1
             canvas.drawRect(contentLeft, y, contentRight, y + rowHeight, fillPaint)
             canvas.drawLine(contentLeft, y + rowHeight, contentRight, y + rowHeight, subtleBorderPaint)
-            canvas.drawText(item.description.take(45), contentLeft + 12f, y + 18f, bodyPaint)
-            canvas.drawText(item.quantity.toString(), contentLeft + 328f, y + 18f, bodyPaint)
-            canvas.drawText(CurrencyFormatUtils.formatCurrency(item.rate), contentLeft + 390f, y + 18f, bodyPaint)
-            canvas.drawText(CurrencyFormatUtils.formatCurrency(item.amount), contentLeft + 485f, y + 18f, bodyBoldPaint)
+            var lineY = y + 16f
+            descriptionLines.forEach { line ->
+                canvas.drawText(line, descriptionLeft, lineY, bodyPaint)
+                lineY += 12f
+            }
+            val numberBaseline = y + minOf(rowHeight - 8f, 18f)
+            drawTextCenter(canvas, item.quantity.toString(), qtyLeft, qtyRight, numberBaseline, bodyPaint)
+            drawTextRight(canvas, CurrencyFormatUtils.formatCurrency(item.rate), rateRight, numberBaseline, bodyPaint)
+            drawTextRight(canvas, CurrencyFormatUtils.formatCurrency(item.amount), amountRight, numberBaseline, bodyBoldPaint)
             y += rowHeight
         }
 
         y += 14f
 
         // Totals cards
-        val totalsWidth = 250f
+        val totalsWidth = minOf(236f, contentWidth)
         val totalsLeft = contentRight - totalsWidth
-        val totalsCard = RectF(totalsLeft, y, contentRight, y + 86f)
+        val totalsCard = RectF(totalsLeft, y, contentRight, y + 64f)
         canvas.drawRoundRect(totalsCard, 4f, 4f, whiteFillPaint)
         canvas.drawRoundRect(totalsCard, 4f, 4f, subtleBorderPaint)
-        drawAmountRow(canvas, "SUBTOTAL", invoiceData.subtotal, totalsLeft + 12f, y + 18f, sectionLabelPaint, bodyPaint)
-        drawAmountRow(canvas, "OTHER AMOUNT", invoiceData.otherAmount, totalsLeft + 12f, y + 40f, sectionLabelPaint, bodyPaint)
-        drawAmountRow(canvas, "GST", invoiceData.subtotal * invoiceData.gstRate, totalsLeft + 12f, y + 62f, sectionLabelPaint, bodyPaint)
-        y += 96f
+        drawAmountRow(canvas, "SUBTOTAL", invoiceData.subtotal, totalsLeft + 12f, contentRight - 12f, y + 18f, sectionLabelPaint, bodyPaint)
+        drawAmountRow(canvas, "GST", invoiceData.subtotal * invoiceData.gstRate, totalsLeft + 12f, contentRight - 12f, y + 40f, sectionLabelPaint, bodyPaint)
+        y += 74f
 
-        val total = invoiceData.subtotal + invoiceData.otherAmount + (invoiceData.subtotal * invoiceData.gstRate)
+        val total = invoiceData.subtotal + (invoiceData.subtotal * invoiceData.gstRate)
         val dueCard = RectF(totalsLeft, y, contentRight, y + 74f)
         canvas.drawRoundRect(dueCard, 4f, 4f, darkFillPaint)
         canvas.drawRoundRect(dueCard, 4f, 4f, borderPaint)
         canvas.drawText("AMOUNT DUE", totalsLeft + 12f, y + 24f, bronzeTextPaint)
         canvas.drawText("Due: ${invoiceData.dueDate}", totalsLeft + 12f, y + 40f, smallPaint.apply { color = Color.parseColor("#CBD5E1") })
-        canvas.drawText(CurrencyFormatUtils.formatCurrency(total), totalsLeft + 110f, y + 46f, whiteAmountPaint)
+        drawTextRight(canvas, CurrencyFormatUtils.formatCurrency(total), contentRight - 12f, y + 46f, whiteAmountPaint)
         y += 88f
 
         // Payment note + footer
@@ -326,17 +822,32 @@ class PdfExportService {
             y + 16f,
             contentWidth - 24f,
             smallPaint.apply { color = textGray },
-            11f
+            11f,
+            maxLines = 3
         )
         y += 54f
 
         canvas.drawLine(contentLeft, y, contentRight, y, subtleBorderPaint)
         y += 18f
-        canvas.drawText("Thank you for choosing ${invoiceData.businessName} ${invoiceData.businessSubtitle}", contentLeft + 80f, y, bodyBoldPaint)
+        drawTextCenter(
+            canvas,
+            "Thank you for choosing ${invoiceData.businessName} ${invoiceData.businessSubtitle}",
+            contentLeft,
+            contentRight,
+            y,
+            bodyBoldPaint
+        )
         y += 14f
-        canvas.drawText("Document generated by ${invoiceData.businessName} invoicing system — Page 1 of 1", contentLeft + 70f, y, smallPaint)
+        drawTextCenter(
+            canvas,
+            "Document generated by ${invoiceData.businessName} invoicing system — Page 1 of 1",
+            contentLeft,
+            contentRight,
+            y,
+            smallPaint
+        )
 
-        canvas.drawRect(contentLeft, pageHeight - margin - 3f, contentRight, pageHeight - margin, accentPaint)
+        canvas.drawRect(contentLeft, pageHeight - pageMargin - 3f, contentRight, pageHeight - pageMargin, accentPaint)
     }
 
     private fun drawCardLabelValue(
@@ -361,12 +872,13 @@ class PdfExportService {
         label: String,
         amount: Double,
         x: Float,
+        rightX: Float,
         y: Float,
         labelPaint: Paint,
         valuePaint: Paint
     ) {
         canvas.drawText(label, x, y, labelPaint)
-        canvas.drawText(CurrencyFormatUtils.formatCurrency(amount), x + 150f, y, valuePaint)
+        drawTextRight(canvas, CurrencyFormatUtils.formatCurrency(amount), rightX, y, valuePaint)
     }
 
     private fun drawWrappedText(
@@ -377,10 +889,11 @@ class PdfExportService {
         y: Float,
         maxWidth: Float,
         labelPaint: Paint,
-        textPaint: Paint
+        textPaint: Paint,
+        maxLines: Int = Int.MAX_VALUE
     ) {
         canvas.drawText(label, x, y, labelPaint)
-        drawWrappedPlainText(canvas, text, x, y + 12f, maxWidth, textPaint, 12f)
+        drawWrappedPlainText(canvas, text, x, y + 12f, maxWidth, textPaint, 12f, maxLines)
     }
 
     private fun drawWrappedPlainText(
@@ -390,45 +903,64 @@ class PdfExportService {
         y: Float,
         maxWidth: Float,
         paint: Paint,
-        lineHeight: Float
+        lineHeight: Float,
+        maxLines: Int = Int.MAX_VALUE
     ) {
+        val lines = wrapTextLines(text, paint, maxWidth, maxLines)
         var currentY = y
+        lines.forEach { line ->
+            canvas.drawText(line, x, currentY, paint)
+            currentY += lineHeight
+        }
+    }
+
+    private fun wrapTextLines(
+        text: String,
+        paint: Paint,
+        maxWidth: Float,
+        maxLines: Int = Int.MAX_VALUE
+    ): List<String> {
+        if (text.isBlank()) return emptyList()
+        val result = mutableListOf<String>()
         text.split("\n").forEach { paragraph ->
-            val words = paragraph.split(" ")
+            val words = paragraph.split(" ").filter { it.isNotBlank() }
             var line = ""
-            words.forEach { word ->
+            for (word in words) {
                 val candidate = if (line.isBlank()) word else "$line $word"
                 if (paint.measureText(candidate) > maxWidth && line.isNotBlank()) {
-                    canvas.drawText(line, x, currentY, paint)
-                    currentY += lineHeight
+                    result += line
                     line = word
+                    if (result.size == maxLines) return result.dropLast(1) + ellipsizeToWidth(result.last(), paint, maxWidth)
                 } else {
                     line = candidate
                 }
             }
             if (line.isNotBlank()) {
-                canvas.drawText(line, x, currentY, paint)
-                currentY += lineHeight
+                result += line
+                if (result.size == maxLines) return result
             }
         }
+        return if (result.size <= maxLines) result else result.take(maxLines)
     }
 
-
-    private fun textPaint(textSize: Float, isBold: Boolean = false): Paint =
-        Paint().apply {
-            this.textSize = textSize
-            isAntiAlias = true
-            typeface = if (isBold) Typeface.create(Typeface.DEFAULT, Typeface.BOLD) else Typeface.DEFAULT
+    private fun ellipsizeToWidth(text: String, paint: Paint, maxWidth: Float): String {
+        if (paint.measureText(text) <= maxWidth) return text
+        val ellipsis = "…"
+        var trimmed = text
+        while (trimmed.isNotEmpty() && paint.measureText(trimmed + ellipsis) > maxWidth) {
+            trimmed = trimmed.dropLast(1)
         }
-
-    private fun startDocument(document: PdfDocument): PageCursor {
-        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
-        val page = document.startPage(pageInfo)
-        return PageCursor(document = document, page = page, pageNumber = 1, y = margin)
+        return if (trimmed.isEmpty()) ellipsis else trimmed + ellipsis
     }
 
-    private fun finishDocument(cursor: PageCursor) {
-        cursor.document.finishPage(cursor.page)
+    private fun drawTextRight(canvas: Canvas, text: String, rightX: Float, baselineY: Float, paint: Paint) {
+        canvas.drawText(text, rightX - paint.measureText(text), baselineY, paint)
+    }
+
+    private fun drawTextCenter(canvas: Canvas, text: String, leftX: Float, rightX: Float, baselineY: Float, paint: Paint) {
+        val textWidth = paint.measureText(text)
+        val x = leftX + ((rightX - leftX - textWidth) / 2f)
+        canvas.drawText(ellipsizeToWidth(text, paint, rightX - leftX), x.coerceAtLeast(leftX), baselineY, paint)
     }
 
     private fun writeDocument(document: PdfDocument, outputFile: File) {
@@ -439,116 +971,4 @@ class PdfExportService {
         document.close()
     }
 
-    private fun ensureSpace(
-        cursor: PageCursor,
-        requiredHeight: Float,
-        onNewPageHeader: (() -> Unit)? = null
-    ) {
-        val bottomLimit = pageHeight - margin - 30f
-        if (cursor.y + requiredHeight <= bottomLimit) return
-
-        drawFooter(cursor, textPaint(9f))
-        cursor.document.finishPage(cursor.page)
-        cursor.pageNumber += 1
-        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, cursor.pageNumber).create()
-        cursor.page = cursor.document.startPage(pageInfo)
-        cursor.y = margin
-        onNewPageHeader?.invoke()
-    }
-
-    private fun drawBusinessHeader(
-        cursor: PageCursor,
-        details: PdfBusinessDetails,
-        documentTitle: String,
-        titlePaint: Paint,
-        normalPaint: Paint,
-        linePaint: Paint
-    ): Float {
-        val canvas = cursor.page.canvas
-        canvas.drawText(details.businessName.ifBlank { "Business" }, margin, cursor.y, titlePaint)
-        canvas.drawText(documentTitle, pageWidth - 160f, cursor.y, titlePaint)
-
-        var y = cursor.y + 18f
-        if (details.address.isNotBlank()) {
-            canvas.drawText(details.address, margin, y, normalPaint)
-            y += 14f
-        }
-        if (details.phoneNumber.isNotBlank()) {
-            canvas.drawText("Phone: ${details.phoneNumber}", margin, y, normalPaint)
-            y += 14f
-        }
-        if (details.email.isNotBlank()) {
-            canvas.drawText("Email: ${details.email}", margin, y, normalPaint)
-            y += 14f
-        }
-        if (details.gstNumber.isNotBlank()) {
-            canvas.drawText("GST: ${details.gstNumber}", margin, y, normalPaint)
-            y += 14f
-        }
-        if (details.bankAccountNumber.isNotBlank()) {
-            canvas.drawText("Bank: ${details.bankAccountNumber}", margin, y, normalPaint)
-            y += 14f
-        }
-
-        canvas.drawLine(margin, y, pageWidth - margin, y, linePaint)
-        return y + 10f
-    }
-
-    private fun drawSectionTitle(cursor: PageCursor, title: String, paint: Paint) {
-        cursor.page.canvas.drawText(title, margin, cursor.y, paint)
-    }
-
-    private fun drawLabelValue(
-        cursor: PageCursor,
-        label: String,
-        value: String,
-        labelPaint: Paint,
-        valuePaint: Paint
-    ): Float {
-        ensureSpace(cursor, 16f)
-        cursor.page.canvas.drawText("$label:", margin, cursor.y, labelPaint)
-        cursor.page.canvas.drawText(value, margin + 120f, cursor.y, valuePaint)
-        return cursor.y + 15f
-    }
-
-    private fun drawRightValue(cursor: PageCursor, value: String, paint: Paint): Float {
-        ensureSpace(cursor, 16f)
-        cursor.page.canvas.drawText(value, 360f, cursor.y, paint)
-        return cursor.y + 15f
-    }
-
-    private fun drawWorkEntryTableHeader(cursor: PageCursor, paint: Paint, linePaint: Paint): Float {
-        val canvas = cursor.page.canvas
-        ensureSpace(cursor, 20f)
-        val y = cursor.y
-        canvas.drawText("Date", margin, y, paint)
-        canvas.drawText("Worker", 150f, y, paint)
-        canvas.drawText("Start", 285f, y, paint)
-        canvas.drawText("Finish", 360f, y, paint)
-        canvas.drawText("Hours", 435f, y, paint)
-        canvas.drawLine(margin, y + 4f, pageWidth - margin, y + 4f, linePaint)
-        return y + 16f
-    }
-
-    private fun drawMaterialsTableHeader(cursor: PageCursor, paint: Paint, linePaint: Paint): Float {
-        val canvas = cursor.page.canvas
-        ensureSpace(cursor, 20f)
-        val y = cursor.y
-        canvas.drawText("Material", margin, y, paint)
-        canvas.drawText("Price", 430f, y, paint)
-        canvas.drawLine(margin, y + 4f, pageWidth - margin, y + 4f, linePaint)
-        return y + 16f
-    }
-
-    private fun drawLine(cursor: PageCursor, paint: Paint) {
-        cursor.page.canvas.drawLine(margin, cursor.y, pageWidth - margin, cursor.y, paint)
-    }
-
-    private fun drawFooter(cursor: PageCursor, paint: Paint) {
-        val footerY = pageHeight - margin
-        val text = "Generated by ProPainters app - Page ${cursor.pageNumber}"
-        cursor.page.canvas.drawText(text, margin, footerY, paint)
-    }
-
 }
-

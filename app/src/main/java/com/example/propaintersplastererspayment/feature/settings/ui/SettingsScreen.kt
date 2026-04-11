@@ -1,18 +1,32 @@
 package com.example.propaintersplastererspayment.feature.settings.ui
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -25,13 +39,18 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.Color
+import com.example.propaintersplastererspayment.ui.theme.GoldAccent
+import com.example.propaintersplastererspayment.ui.theme.OxfordBlue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -134,15 +153,25 @@ fun SettingsScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(text = stringResource(R.string.settings_title)) },
+                title = {
+                    Text(
+                        text = stringResource(R.string.settings_title),
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = "Back",
+                            tint = Color.White
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = OxfordBlue
+                )
             )
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
@@ -165,19 +194,17 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // ── Header ─────────────────────────────────────────
                         Text(
                             text = stringResource(R.string.settings_title),
                             style = MaterialTheme.typography.headlineSmall,
+                            color = OxfordBlue,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
@@ -185,33 +212,38 @@ fun SettingsScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.outline
                         )
+                    }
 
-                        // ── Business Info ──────────────────────────────────
-                        SectionHeader(text = stringResource(R.string.settings_section_business))
+                    // ── Business Info Card ───────────────────────────────
+                    SettingsSectionCard(title = stringResource(R.string.settings_section_business)) {
                         OutlinedTextField(
                             value = uiState.formState.businessName,
                             onValueChange = onBusinessNameChange,
-                            label = { Text(stringResource(R.string.settings_business_name)) },
+                            label = { Text(stringResource(R.string.settings_business_name), color = Color.White.copy(alpha = 0.7f)) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
                         OutlinedTextField(
                             value = uiState.formState.address,
                             onValueChange = onAddressChange,
-                            label = { Text(stringResource(R.string.settings_address)) },
+                            label = { Text(stringResource(R.string.settings_address), color = Color.White.copy(alpha = 0.7f)) },
                             modifier = Modifier.fillMaxWidth(),
                             minLines = 2
                         )
+                    }
 
-                        // ── Contact ────────────────────────────────────────
-                        SectionHeader(text = stringResource(R.string.settings_section_contact))
+                    // ── Contact Card ─────────────────────────────────────
+                    SettingsSectionCard(title = stringResource(R.string.settings_section_contact)) {
                         OutlinedTextField(
                             value = uiState.formState.phoneNumber,
                             onValueChange = onPhoneNumberChange,
-                            label = { Text(stringResource(R.string.settings_phone)) },
+                            label = { Text(stringResource(R.string.settings_phone), color = Color.White.copy(alpha = 0.7f)) },
                             isError = uiState.formState.phoneFormatError != null,
                             supportingText = {
-                                Text(uiState.formState.phoneFormatError ?: "Format: 000-0000000")
+                                Text(
+                                    text = uiState.formState.phoneFormatError ?: "Format: 000-0000000",
+                                    color = if (uiState.formState.phoneFormatError != null) MaterialTheme.colorScheme.error else Color.White.copy(alpha = 0.5f)
+                                )
                             },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
@@ -220,26 +252,27 @@ fun SettingsScreen(
                         OutlinedTextField(
                             value = uiState.formState.email,
                             onValueChange = onEmailChange,
-                            label = { Text(stringResource(R.string.settings_email)) },
+                            label = { Text(stringResource(R.string.settings_email), color = Color.White.copy(alpha = 0.7f)) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                         )
+                    }
 
-                        // ── Invoice & Tax ──────────────────────────────────
-                        SectionHeader(text = stringResource(R.string.settings_section_invoice))
+                    // ── Invoice & Tax Card ───────────────────────────────
+                    SettingsSectionCard(title = stringResource(R.string.settings_section_invoice)) {
                         OutlinedTextField(
                             value = uiState.formState.gstNumber,
                             onValueChange = onGstNumberChange,
-                            label = { Text(stringResource(R.string.settings_gst_number)) },
+                            label = { Text(stringResource(R.string.settings_gst_number), color = Color.White.copy(alpha = 0.7f)) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
                         OutlinedTextField(
                             value = uiState.formState.defaultLabourRateText,
                             onValueChange = onDefaultLabourRateChange,
-                            label = { Text(stringResource(R.string.settings_labour_rate)) },
-                            supportingText = { Text(stringResource(R.string.settings_labour_rate_hint)) },
+                            label = { Text(stringResource(R.string.settings_labour_rate), color = Color.White.copy(alpha = 0.7f)) },
+                            supportingText = { Text(stringResource(R.string.settings_labour_rate_hint), color = Color.White.copy(alpha = 0.5f)) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
@@ -247,8 +280,8 @@ fun SettingsScreen(
                         OutlinedTextField(
                             value = uiState.formState.defaultGstPercentText,
                             onValueChange = onDefaultGstPercentChange,
-                            label = { Text(stringResource(R.string.settings_gst_percent)) },
-                            supportingText = { Text(stringResource(R.string.settings_gst_percent_hint)) },
+                            label = { Text(stringResource(R.string.settings_gst_percent), color = Color.White.copy(alpha = 0.7f)) },
+                            supportingText = { Text(stringResource(R.string.settings_gst_percent_hint), color = Color.White.copy(alpha = 0.5f)) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
@@ -256,117 +289,101 @@ fun SettingsScreen(
                         // Labour rate preview
                         if (uiState.formState.parsedLabourRate != null) {
                             Card(
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.1f))
                             ) {
                                 Text(
                                     text = "${stringResource(R.string.settings_labour_rate_preview)}: ${
                                         CurrencyFormatUtils.formatCurrency(uiState.formState.parsedLabourRate!!)
                                     }",
                                     style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = GoldAccent,
                                     modifier = Modifier.padding(12.dp)
                                 )
                             }
                         }
 
                         // GST toggle
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            BoxWithConstraints(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp)
-                            ) {
-                                val compactLayout = isCompactPhoneWidth(maxWidth)
-
-                                if (compactLayout) {
-                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Text(
-                                            text = stringResource(R.string.settings_gst_enabled),
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-                                        Text(
-                                            text = stringResource(R.string.settings_gst_enabled_hint),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.outline
-                                        )
-                                        Switch(
-                                            checked = uiState.formState.gstEnabledByDefault,
-                                            onCheckedChange = onGstEnabledChange
-                                        )
-                                    }
-                                } else {
-                                    androidx.compose.foundation.layout.Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                text = stringResource(R.string.settings_gst_enabled),
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                fontWeight = FontWeight.SemiBold
-                                            )
-                                            Text(
-                                                text = stringResource(R.string.settings_gst_enabled_hint),
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.outline
-                                            )
-                                        }
-                                        Switch(
-                                            checked = uiState.formState.gstEnabledByDefault,
-                                            onCheckedChange = onGstEnabledChange
-                                        )
-                                    }
-                                }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.settings_gst_enabled),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.White
+                                )
+                                Text(
+                                    text = stringResource(R.string.settings_gst_enabled_hint),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.White.copy(alpha = 0.7f)
+                                )
                             }
+                            Switch(
+                                checked = uiState.formState.gstEnabledByDefault,
+                                onCheckedChange = onGstEnabledChange
+                            )
                         }
+                    }
 
-                        // ── Banking ────────────────────────────────────────
-                        SectionHeader(text = stringResource(R.string.settings_section_banking))
+                    // ── Banking Card ─────────────────────────────────────
+                    SettingsSectionCard(title = stringResource(R.string.settings_section_banking)) {
                         OutlinedTextField(
                             value = uiState.formState.bankAccountNumber,
                             onValueChange = onBankAccountNumberChange,
-                            label = { Text(stringResource(R.string.settings_bank_account)) },
+                            label = { Text(stringResource(R.string.settings_bank_account), color = Color.White.copy(alpha = 0.7f)) },
                             isError = uiState.formState.bankAccountFormatError != null,
                             supportingText = {
-                                Text(uiState.formState.bankAccountFormatError ?: "Format: 00-0000-0000000-00")
+                                Text(
+                                    text = uiState.formState.bankAccountFormatError ?: "Format: 00-0000-0000000-00",
+                                    color = if (uiState.formState.bankAccountFormatError != null) MaterialTheme.colorScheme.error else Color.White.copy(alpha = 0.5f)
+                                )
                             },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
+                    }
 
-                        // ── Validation errors ──────────────────────────────
-                        uiState.formState.errorMessage?.let { error ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                            ) {
-                                Text(
-                                    text = error,
-                                    color = MaterialTheme.colorScheme.error,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    modifier = Modifier.padding(12.dp)
-                                )
-                            }
-                        }
+                    // ── Validation errors ──────────────────────────────
+                    uiState.formState.errorMessage?.let { error ->
+                        Text(
+                            text = error,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(horizontal = 4.dp)
+                        )
+                    }
 
-                        // ── Save button & status ───────────────────────────
+                    // ── Save button & status ───────────────────────────
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Button(
                             onClick = onSave,
                             enabled = !uiState.isSaving && uiState.formState.isValid,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp)
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = GoldAccent,
+                                contentColor = OxfordBlue
+                            )
                         ) {
                             if (uiState.isSaving) {
                                 CircularProgressIndicator(
-                                    modifier = Modifier.padding(end = 8.dp),
-                                    strokeWidth = 2.dp
+                                    modifier = Modifier.padding(end = 8.dp).size(20.dp),
+                                    strokeWidth = 2.dp,
+                                    color = OxfordBlue
                                 )
                             }
                             Text(
                                 text = stringResource(R.string.settings_save),
-                                style = MaterialTheme.typography.labelLarge
+                                fontWeight = FontWeight.Bold
                             )
                         }
 
@@ -375,17 +392,59 @@ fun SettingsScreen(
                             Text(
                                 text = "${stringResource(R.string.settings_last_saved)} ${uiState.lastSavedAt}",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.outline,
-                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                                color = MaterialTheme.colorScheme.outline
                             )
                         }
-
-                        // Bottom padding
-                        androidx.compose.foundation.layout.Spacer(
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
                     }
+
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sub-composables
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun SettingsSectionCard(
+    title: String,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = OxfordBlue),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+    ) {
+        Box {
+            Box(
+                modifier = Modifier
+                    .width(6.dp)
+                    .matchParentSize()
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                GoldAccent,
+                                GoldAccent.copy(alpha = 0.7f)
+                            )
+                        )
+                    )
+            )
+            Column(
+                modifier = Modifier.padding(start = 22.dp).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = GoldAccent
+                )
+                content()
             }
         }
     }
@@ -397,6 +456,7 @@ fun SettingsScreen(
 
 /**
  * Section header with a clean style.
+ * (Deprecated: using SettingsSectionCard now)
  */
 @Composable
 private fun SectionHeader(text: String) {

@@ -44,7 +44,13 @@ object WorkEntryTimeUtils {
 
     fun isValidTime(time: String): Boolean = timeRegex.matches(time)
 
-    fun formatHours(hours: Double): String = String.format(Locale.getDefault(), "%.2f", hours)
+    fun formatHours(hours: Double): String {
+        return if (hours == hours.toLong().toDouble()) {
+            String.format(Locale.getDefault(), "%d", hours.toLong())
+        } else {
+            String.format(Locale.getDefault(), "%.1f", hours)
+        }
+    }
 
     private fun parseTimeToMinutes(value: String): Int? {
         if (!isValidTime(value)) {

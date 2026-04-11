@@ -1,23 +1,34 @@
 package com.example.propaintersplastererspayment.feature.materials.ui
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -32,22 +43,30 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
 import com.example.propaintersplastererspayment.R
+import com.example.propaintersplastererspayment.core.ui.MinActionButtonWidth
+import com.example.propaintersplastererspayment.core.ui.isCompactPhoneWidth
 import com.example.propaintersplastererspayment.core.util.CurrencyFormatUtils
 import com.example.propaintersplastererspayment.data.local.entity.JobEntity
 import com.example.propaintersplastererspayment.data.local.entity.MaterialItemEntity
 import com.example.propaintersplastererspayment.feature.materials.vm.MaterialFormState
 import com.example.propaintersplastererspayment.feature.materials.vm.MaterialsUiState
 import com.example.propaintersplastererspayment.feature.materials.vm.MaterialsViewModel
+import com.example.propaintersplastererspayment.ui.theme.GoldAccent
+import com.example.propaintersplastererspayment.ui.theme.OxfordBlue
 import com.example.propaintersplastererspayment.ui.theme.ProPaintersPlasterersPaymentTheme
 
 @Composable
@@ -106,7 +125,12 @@ fun MaterialsScreen(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         floatingActionButton = {
             if (uiState.job != null) {
-                ExtendedFloatingActionButton(onClick = onAddMaterial) {
+                ExtendedFloatingActionButton(
+                    onClick = onAddMaterial,
+                    containerColor = MaterialTheme.colorScheme.tertiary,
+                    contentColor = MaterialTheme.colorScheme.onTertiary,
+                    shape = RoundedCornerShape(16.dp)
+                ) {
                     Text(text = stringResource(R.string.materials_add_item))
                 }
             }
@@ -190,23 +214,48 @@ private fun MaterialJobSummaryCard(job: JobEntity) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = OxfordBlue),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Text(
-                text = job.clientName.ifBlank {
-                    job.jobName.ifBlank { stringResource(R.string.materials_unknown_job) }
-                },
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+        Box {
+            Box(
+                modifier = Modifier
+                    .width(6.dp)
+                    .matchParentSize()
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primary,
+                                GoldAccent
+                            )
+                        )
+                    )
             )
-            Text(
-                text = "${stringResource(R.string.materials_job_address)}: ${job.propertyAddress}",
-                style = MaterialTheme.typography.bodyMedium
-            )
+            Column(
+                modifier = Modifier.padding(start = 22.dp).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = job.clientName.ifBlank {
+                        job.jobName.ifBlank { stringResource(R.string.materials_unknown_job) }
+                    },
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "${stringResource(R.string.materials_job_address)}: ${job.propertyAddress}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White.copy(alpha = 0.7f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }
@@ -216,25 +265,57 @@ private fun TotalMaterialCostCard(totalMaterialCost: Double) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 16.dp),
+        colors = CardDefaults.cardColors(containerColor = OxfordBlue),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
     ) {
-        Row(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(16.dp)
         ) {
-            Text(
-                text = stringResource(R.string.materials_total_cost),
-                style = MaterialTheme.typography.titleMedium
-            )
-            AssistChip(
-                onClick = {},
-                label = {
-                    Text(text = CurrencyFormatUtils.formatCurrency(totalMaterialCost))
+            val compactLayout = isCompactPhoneWidth(maxWidth)
+
+            if (compactLayout) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.materials_total_cost),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = CurrencyFormatUtils.formatCurrency(totalMaterialCost),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = GoldAccent
+                    )
                 }
-            )
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.materials_total_cost),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = CurrencyFormatUtils.formatCurrency(totalMaterialCost),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = GoldAccent
+                    )
+                }
+            }
         }
     }
 }
@@ -263,28 +344,76 @@ private fun MaterialItemCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
-            .clickable(onClick = onEditMaterial)
+            .clickable(onClick = onEditMaterial),
+        colors = CardDefaults.cardColors(containerColor = OxfordBlue),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = item.materialName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = CurrencyFormatUtils.formatCurrency(item.price),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-            TextButton(onClick = onEditMaterial) {
-                Text(text = stringResource(R.string.materials_edit))
+        Box {
+            Box(
+                modifier = Modifier
+                    .width(6.dp)
+                    .matchParentSize()
+                    .background(GoldAccent.copy(alpha = 0.7f))
+            )
+            Column(
+                modifier = Modifier.padding(start = 22.dp).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    val compactLayout = isCompactPhoneWidth(maxWidth)
+
+                    if (compactLayout) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                text = item.materialName,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = item.materialName,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+
+                HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = CurrencyFormatUtils.formatCurrency(item.price),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = GoldAccent
+                    )
+                    Text(
+                        text = stringResource(R.string.materials_edit),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Color.White.copy(alpha = 0.6f),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
         }
     }
@@ -361,22 +490,46 @@ fun MaterialFormDialog(
                     )
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (formState.materialId != null) {
-                        TextButton(onClick = onDelete) {
-                            Text(text = stringResource(R.string.materials_delete))
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    val compactLayout = isCompactPhoneWidth(maxWidth)
+
+                    if (compactLayout) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalAlignment = Alignment.End
+                        ) {
+                            TextButton(onClick = onSave) {
+                                Text(text = stringResource(R.string.materials_save))
+                            }
+                            TextButton(onClick = onDismiss) {
+                                Text(text = stringResource(R.string.materials_cancel))
+                            }
+                            if (formState.materialId != null) {
+                                TextButton(onClick = onDelete) {
+                                    Text(text = stringResource(R.string.materials_delete))
+                                }
+                            }
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
-                    TextButton(onClick = onDismiss) {
-                        Text(text = stringResource(R.string.materials_cancel))
-                    }
-                    TextButton(onClick = onSave) {
-                        Text(text = stringResource(R.string.materials_save))
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (formState.materialId != null) {
+                                TextButton(onClick = onDelete) {
+                                    Text(text = stringResource(R.string.materials_delete))
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                            }
+                            TextButton(onClick = onDismiss) {
+                                Text(text = stringResource(R.string.materials_cancel))
+                            }
+                            TextButton(onClick = onSave) {
+                                Text(text = stringResource(R.string.materials_save))
+                            }
+                        }
                     }
                 }
             }
@@ -385,6 +538,7 @@ fun MaterialFormDialog(
 }
 
 @Preview(showBackground = true)
+@PreviewScreenSizes
 @Composable
 private fun MaterialsScreenPreview() {
     ProPaintersPlasterersPaymentTheme {

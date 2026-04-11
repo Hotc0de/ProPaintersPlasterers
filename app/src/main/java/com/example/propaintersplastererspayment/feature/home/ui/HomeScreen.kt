@@ -29,12 +29,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
 import com.example.propaintersplastererspayment.R
-import com.example.propaintersplastererspayment.core.util.DateFormatUtils
 import com.example.propaintersplastererspayment.data.local.entity.JobEntity
 import com.example.propaintersplastererspayment.feature.home.vm.HomeUiState
 import com.example.propaintersplastererspayment.feature.home.vm.HomeViewModel
@@ -59,7 +57,6 @@ fun HomeRoute(
         onAddJob = onAddJob,
         onOpenJob = onOpenJob,
         onOpenClients = onOpenClients,
-        onDeleteJob = viewModel::deleteJob,
         modifier = modifier
     )
 }
@@ -71,7 +68,6 @@ fun HomeScreen(
     onOpenSettings: () -> Unit,
     onAddJob: () -> Unit,
     onOpenJob: (Long) -> Unit,
-    onDeleteJob: (JobEntity) -> Unit,
     onOpenClients: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -120,11 +116,6 @@ fun HomeScreen(
                         text = stringResource(R.string.home_empty_jobs),
                         style = MaterialTheme.typography.titleMedium
                     )
-                    Text(
-                        text = stringResource(R.string.home_empty_jobs_hint),
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
                 }
             }
 
@@ -133,13 +124,13 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp)
                 ) {
                     items(uiState.jobs, key = { it.jobId }) { job ->
                         JobCard(
                             job = job,
-                            onOpenJob = { onOpenJob(job.jobId) },
-                            onDeleteJob = { onDeleteJob(job) }
+                            onOpenJob = { onOpenJob(job.jobId) }
                         )
                     }
                 }
@@ -151,41 +142,25 @@ fun HomeScreen(
 @Composable
 private fun JobCard(
     job: JobEntity,
-    onOpenJob: () -> Unit,
-    onDeleteJob: () -> Unit
+    onOpenJob: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
             .clickable(onClick = onOpenJob)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
-                text = job.clientName.ifBlank { job.jobName.ifBlank { "Client" } },
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                text = job.clientName.ifBlank { job.jobName.ifBlank { "Unnamed Job" } },
+                style = MaterialTheme.typography.titleMedium
             )
-            Text(text = job.propertyAddress, style = MaterialTheme.typography.bodyMedium)
-            if (job.notes.isNotBlank()) {
-                Text(text = job.notes, style = MaterialTheme.typography.bodySmall)
-            }
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(
-                    text = DateFormatUtils.formatTimestampToDisplay(job.createdAt),
-                    style = MaterialTheme.typography.labelSmall
-                )
-                Text(
-                    text = stringResource(R.string.home_delete_job),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.clickable(onClick = onDeleteJob)
-                )
-            }
+            Text(
+                text = job.propertyAddress,
+                style = MaterialTheme.typography.bodyMedium
+            )
         }
     }
 }
-
