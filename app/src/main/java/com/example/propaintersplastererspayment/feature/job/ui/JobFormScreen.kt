@@ -1,30 +1,20 @@
 package com.example.propaintersplastererspayment.feature.job.ui
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,7 +24,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -48,11 +38,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -61,8 +50,17 @@ import com.example.propaintersplastererspayment.R
 import com.example.propaintersplastererspayment.data.local.entity.ClientEntity
 import com.example.propaintersplastererspayment.feature.job.vm.JobFormUiState
 import com.example.propaintersplastererspayment.feature.job.vm.JobFormViewModel
-import com.example.propaintersplastererspayment.ui.theme.GoldAccent
-import com.example.propaintersplastererspayment.ui.theme.OxfordBlue
+import com.example.propaintersplastererspayment.ui.components.IndustrialCard
+import com.example.propaintersplastererspayment.ui.components.IndustrialTextField
+import com.example.propaintersplastererspayment.ui.components.PrimaryButton
+import com.example.propaintersplastererspayment.ui.theme.AppDimensions
+import com.example.propaintersplastererspayment.ui.theme.AppShapes
+import com.example.propaintersplastererspayment.ui.theme.CharcoalBackground
+import com.example.propaintersplastererspayment.ui.theme.ErrorRed
+import com.example.propaintersplastererspayment.ui.theme.IndustrialGold
+import com.example.propaintersplastererspayment.ui.theme.OffWhite
+import com.example.propaintersplastererspayment.ui.theme.TextMuted
+import com.example.propaintersplastererspayment.ui.theme.TextSubdued
 
 @Composable
 fun JobFormRoute(
@@ -112,12 +110,12 @@ fun JobFormRoute(
 @Composable
 fun JobFormScreen(
     uiState: JobFormUiState,
-    onAddressChange: (String) -> Unit,
-    onClientQueryChange: (String) -> Unit,
+    onAddressChange: (TextFieldValue) -> Unit,
+    onClientQueryChange: (TextFieldValue) -> Unit,
     onClientSelected: (ClientEntity) -> Unit,
     onAddNewClient: () -> Unit,
     onBack: () -> Unit,
-    onNotesChange: (String) -> Unit,
+    onNotesChange: (TextFieldValue) -> Unit,
     onSave: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -125,6 +123,7 @@ fun JobFormScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        containerColor = CharcoalBackground,
         topBar = {
             TopAppBar(
                 title = {
@@ -134,7 +133,7 @@ fun JobFormScreen(
                         } else {
                             stringResource(R.string.job_edit_title)
                         },
-                        color = Color.White,
+                        color = OffWhite,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -145,25 +144,24 @@ fun JobFormScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color.White
+                            tint = IndustrialGold
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = OxfordBlue
+                    containerColor = CharcoalBackground
                 )
             )
         }
     ) { innerPadding ->
         if (uiState.isLoading) {
-            Column(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+                contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = IndustrialGold)
             }
         } else {
             Column(
@@ -171,78 +169,80 @@ fun JobFormScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
                     .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .padding(AppDimensions.screenPadding),
+                verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = OxfordBlue),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                ) {
-                    Box {
-                        Box(
-                            modifier = Modifier
-                                .width(6.dp)
-                                .matchParentSize()
-                                .background(
-                                    brush = Brush.verticalGradient(
-                                        colors = listOf(
-                                            GoldAccent,
-                                            GoldAccent.copy(alpha = 0.7f)
-                                        )
-                                    )
-                                )
+                IndustrialCard {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        IndustrialTextField(
+                            value = uiState.address,
+                            onValueChange = onAddressChange,
+                            label = stringResource(R.string.job_address),
+                            placeholder = "Enter site address",
+                            singleLine = true
                         )
-                        Column(
-                            modifier = Modifier.padding(start = 22.dp).padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            OutlinedTextField(
-                                value = uiState.address,
-                                onValueChange = onAddressChange,
-                                    label = { Text(stringResource(R.string.job_address), color = Color.White.copy(alpha = 0.7f)) },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
 
-                                ExposedDropdownMenuBox(
-                                    expanded = clientDropdownExpanded,
-                                    onExpandedChange = { clientDropdownExpanded = !clientDropdownExpanded }
-                                ) {
-                                    OutlinedTextField(
-                                        value = uiState.clientQuery,
-                                        onValueChange = {
-                                            onClientQueryChange(it)
-                                            clientDropdownExpanded = true
-                                        },
-                                        label = { Text(stringResource(R.string.job_client_name), color = Color.White.copy(alpha = 0.7f)) },
-                                        placeholder = { Text(stringResource(R.string.job_client_search_hint), color = Color.White.copy(alpha = 0.4f)) },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .menuAnchor(
-                                                type = ExposedDropdownMenuAnchorType.PrimaryEditable,
-                                                enabled = true
-                                            ),
-                                        singleLine = true,
-                                        trailingIcon = {
-                                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = clientDropdownExpanded)
-                                        }
-                                    )
+                        Column {
+                            Text(
+                                text = stringResource(R.string.job_client_name),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextMuted,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                            ExposedDropdownMenuBox(
+                                expanded = clientDropdownExpanded,
+                                onExpandedChange = { clientDropdownExpanded = !clientDropdownExpanded }
+                            ) {
+                                androidx.compose.material3.OutlinedTextField(
+                                    value = uiState.clientQuery,
+                                    onValueChange = {
+                                        onClientQueryChange(it)
+                                        clientDropdownExpanded = true
+                                    },
+                                    placeholder = { 
+                                        Text(
+                                            stringResource(R.string.job_client_search_hint), 
+                                            color = TextSubdued,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        ) 
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .menuAnchor(
+                                            type = ExposedDropdownMenuAnchorType.PrimaryEditable,
+                                            enabled = true
+                                        ),
+                                    singleLine = true,
+                                    shape = AppShapes.large,
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedTextColor = OffWhite,
+                                        unfocusedTextColor = OffWhite,
+                                        focusedBorderColor = IndustrialGold,
+                                        unfocusedBorderColor = IndustrialGold.copy(alpha = 0.5f),
+                                        cursorColor = IndustrialGold
+                                    ),
+                                    trailingIcon = {
+                                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = clientDropdownExpanded)
+                                    }
+                                )
 
                                 ExposedDropdownMenu(
                                     expanded = clientDropdownExpanded,
-                                    onDismissRequest = { clientDropdownExpanded = false }
+                                    onDismissRequest = { clientDropdownExpanded = false },
+                                    modifier = Modifier.background(CharcoalBackground)
                                 ) {
                                     uiState.filteredClients.take(20).forEach { client ->
                                         DropdownMenuItem(
                                             text = {
                                                 Column {
-                                                    Text(client.name, fontWeight = FontWeight.SemiBold)
+                                                    Text(client.name, fontWeight = FontWeight.SemiBold, color = OffWhite)
                                                     Text(
                                                         text = client.clientType,
                                                         style = MaterialTheme.typography.labelSmall,
-                                                        color = MaterialTheme.colorScheme.outline
+                                                        color = TextMuted
                                                     )
                                                 }
                                             },
@@ -255,16 +255,21 @@ fun JobFormScreen(
 
                                     DropdownMenuItem(
                                         text = {
-                                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Row(
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
                                                 Icon(
                                                     imageVector = Icons.Default.Add,
                                                     contentDescription = null,
-                                                    modifier = Modifier.size(18.dp)
+                                                    modifier = Modifier.size(18.dp),
+                                                    tint = IndustrialGold
                                                 )
                                                 Text(
                                                     text = stringResource(R.string.job_add_new_client),
                                                     maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    color = IndustrialGold
                                                 )
                                             }
                                         },
@@ -275,26 +280,26 @@ fun JobFormScreen(
                                     )
                                 }
                             }
+                        }
 
-                            if (uiState.selectedClientName.isNotBlank()) {
-                                Text(
-                                    text = stringResource(R.string.job_selected_client, uiState.selectedClientName),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = GoldAccent,
-                                    modifier = Modifier.clickable {
-                                        clientDropdownExpanded = true
-                                    }
-                                )
-                            }
-
-                            OutlinedTextField(
-                                value = uiState.notes,
-                                onValueChange = onNotesChange,
-                                label = { Text(stringResource(R.string.job_notes), color = Color.White.copy(alpha = 0.7f)) },
-                                modifier = Modifier.fillMaxWidth(),
-                                minLines = 2
+                        if (uiState.selectedClientName.isNotBlank()) {
+                            Text(
+                                text = stringResource(R.string.job_selected_client, uiState.selectedClientName),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = IndustrialGold,
+                                modifier = Modifier.clickable {
+                                    clientDropdownExpanded = true
+                                }
                             )
                         }
+
+                        IndustrialTextField(
+                            value = uiState.notes,
+                            onValueChange = onNotesChange,
+                            label = stringResource(R.string.job_notes),
+                            placeholder = "Enter job notes or instructions",
+                            singleLine = false
+                        )
                     }
                 }
 
@@ -302,35 +307,26 @@ fun JobFormScreen(
                     Text(
                         text = message,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
+                        color = ErrorRed,
                         modifier = Modifier.padding(horizontal = 4.dp)
                     )
                 }
 
-                Button(
+                PrimaryButton(
+                    text = stringResource(R.string.job_save),
                     onClick = onSave,
                     enabled = !uiState.isSaving,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = GoldAccent,
-                        contentColor = OxfordBlue
-                    )
-                ) {
-                    if (uiState.isSaving) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.padding(end = 8.dp).size(20.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
+                    icon = {
+                        if (uiState.isSaving) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = CharcoalBackground
+                            )
+                        }
                     }
-                    Text(
-                        text = stringResource(R.string.job_save),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                )
             }
         }
     }
 }
-

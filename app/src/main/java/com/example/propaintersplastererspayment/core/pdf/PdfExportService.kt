@@ -161,85 +161,108 @@ class PdfExportService {
         val canvas = cursor.page.canvas
         val yStart = cursor.y
 
-        // Top Border Accent
+        // 0. Top Decorative Bar (Dark Navy + Gold)
+        val darkBarPaint = Paint().apply { color = Color.parseColor("#1E293B"); style = Paint.Style.FILL }
+        canvas.drawRect(0f, 0f, pageWidth.toFloat(), 12f, darkBarPaint)
         val accentPaint = Paint().apply { color = colorGoldAccent; style = Paint.Style.FILL }
-        canvas.drawRect(margin, 0f, pageWidth - margin, 3f, accentPaint)
+        canvas.drawRect(0f, 12f, pageWidth.toFloat(), 14f, accentPaint)
 
         if (isFirstPage) {
-            // Logo placeholder
-            val badgeRect = RectF(margin, yStart, margin + 48f, yStart + 48f)
-            val darkFillPaint = Paint().apply { color = Color.parseColor("#1E293B"); style = Paint.Style.FILL }
-            canvas.drawRoundRect(badgeRect, 4f, 4f, darkFillPaint)
+            // 1. LOGO BADGE (Left)
+            val badgeSize = 46f
+            val badgeRect = RectF(margin, yStart, margin + badgeSize, yStart + badgeSize)
+            val darkFillPaint = Paint().apply { color = Color.parseColor("#2C3E50"); style = Paint.Style.FILL }
+            canvas.drawRoundRect(badgeRect, 8f, 8f, darkFillPaint)
             
             val logoTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = colorGoldAccent
-                textSize = 18f
+                textSize = 16f
                 typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                 textAlign = Paint.Align.CENTER
             }
             canvas.drawText("PPP", badgeRect.centerX(), badgeRect.centerY() + 6f, logoTextPaint)
 
-            // Business Name
+            // 2. BUSINESS NAME & DETAILS
             val busNamePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = Color.parseColor("#1E293B")
-                textSize = 24f
+                textSize = 22f
                 typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             }
+            val busSubNamePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = colorGoldAccent
+                textSize = 16f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+                letterSpacing = 0.15f
+            }
             
-            val companyName = "Pro Painters Plasterers"
-            canvas.drawText(companyName, margin + 60f, yStart + 34f, busNamePaint)
+            val detailX = margin + 58f
+            var currentY = yStart + 17f
+            canvas.drawText("Pro Painters", detailX, currentY, busNamePaint)
+            currentY += 20f
+            canvas.drawText("& PLASTERERS", detailX, currentY, busSubNamePaint)
 
-            // Business Details
             val detailPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = colorTextGray
                 textSize = 8f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
             }
             
-        val detailLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#9D8560") // Luxury Gold
-            textSize = 8f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        }
-            
-            var detailY = yStart + 58f
-            val detailX = margin + 60f
-            val detailMaxWidth = pageWidth - detailX - 200f // leave space for Job box
-            
-            // Address with wrapping
-            canvas.drawText("ADDRESS:", detailX, detailY, detailLabelPaint)
+            currentY += 22f // Increased from 15f to add gap below logo/name
+            // Business Address - Moved back to left (margin) to align with logo
             drawWrappedPlainText(
                 canvas,
                 data.business.address,
-                detailX,
-                detailY + 12f,
-                detailMaxWidth,
+                margin,
+                currentY,
+                210f,
                 detailPaint,
                 10f,
-                maxLines = 3
+                maxLines = 2
             )
             
-            detailY += 45f // Move down after address block
-            
-            canvas.drawText("P: ${data.business.phoneNumber}", detailX, detailY, detailPaint)
-            detailY += 12f
-            canvas.drawText("E: ${data.business.email}", detailX, detailY, detailPaint)
-            detailY += 12f
-            canvas.drawText("Account: ${data.business.bankAccountNumber}", detailX, detailY, detailPaint)
+            currentY += 20f // Reduced from 24f to close gap with phone/email
+            canvas.drawText("P: ${data.business.phoneNumber} | E: ${data.business.email}", margin, currentY, detailPaint)
+            currentY += 10f // Reduced from 12f to close gap with account
+            canvas.drawText("Account: ${data.business.bankAccountNumber}", margin, currentY, detailPaint)
 
-            // Job Details Box
-            val boxWidth = 170f
-            val boxHeight = 110f
+            // 3. CENTER TITLE (TIMESHEET) - Moved up to align with Logo/Job Box top row
+            drawTimesheetTitleWithOrnaments(canvas, 335f, yStart + 28f)
+
+            // 4. JOB DETAILS BOX (Right)
+            val boxWidth = 135f
+            val boxHeight = 105f
             val boxRect = RectF(pageWidth - margin - boxWidth, yStart, pageWidth - margin, yStart + boxHeight)
-            val boxPaint = Paint().apply { color = colorWhite; style = Paint.Style.FILL }
-            val borderPaint = Paint().apply { color = colorBorderGray; style = Paint.Style.STROKE; strokeWidth = 1f }
-            canvas.drawRoundRect(boxRect, 6f, 6f, boxPaint)
-            canvas.drawRoundRect(boxRect, 6f, 6f, borderPaint)
+            
+            // Subtle off-white background with light border
+            val boxBgPaint = Paint().apply { color = Color.parseColor("#FDFCFB"); style = Paint.Style.FILL }
+            val boxBorderPaint = Paint().apply { 
+                color = Color.parseColor("#F1F5F9")
+                style = Paint.Style.STROKE
+                strokeWidth = 1f 
+            }
+            canvas.drawRoundRect(boxRect, 10f, 10f, boxBgPaint)
+            canvas.drawRoundRect(boxRect, 10f, 10f, boxBorderPaint)
 
-            val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colorMediumGray; textSize = 8f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) }
-            val valuePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#1E293B"); textSize = 10f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) }
+            val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { 
+                color = Color.parseColor("#94A3B8")
+                textSize = 7f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                letterSpacing = 0.1f
+            }
+            val valuePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { 
+                color = Color.parseColor("#1E293B")
+                textSize = 10f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) 
+            }
+            val dateValuePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { 
+                color = colorGoldAccent
+                textSize = 10f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) 
+            }
 
-            var bx = boxRect.left + 12f
+            val bx = boxRect.left + 12f
             var by = boxRect.top + 20f
+            
             canvas.drawText("JOB", bx, by, labelPaint)
             canvas.drawText(ellipsizeToWidth(data.jobName.ifBlank { "N/A" }, valuePaint, boxWidth - 24f), bx, by + 14f, valuePaint)
             
@@ -249,12 +272,9 @@ class PdfExportService {
 
             by += 32f
             canvas.drawText("EXPORTED", bx, by, labelPaint)
-            canvas.drawText(DateFormatUtils.formatDisplayDate(data.exportedAt), bx, by + 14f, valuePaint)
+            canvas.drawText(DateFormatUtils.formatDisplayDate(data.exportedAt), bx, by + 14f, dateValuePaint)
 
-            // Center Title - Moved down to avoid overlap
-            drawTitleWithOrnaments(canvas, pageWidth / 2f, yStart + 165f)
-
-            cursor.y = yStart + 205f
+            cursor.y = yStart + 125f
         } else {
             // Continuation Header
             val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -277,38 +297,39 @@ class PdfExportService {
         }
     }
 
-    private fun drawTitleWithOrnaments(canvas: Canvas, cx: Float, cy: Float) {
+    private fun drawTimesheetTitleWithOrnaments(canvas: Canvas, cx: Float, cy: Float) {
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.parseColor("#1E293B")
-            textSize = 28f
+            textSize = 20f // Further reduced from 28f
             typeface = Typeface.create("serif", Typeface.NORMAL)
             textAlign = Paint.Align.CENTER
             letterSpacing = 0.2f
         }
         
         val text = "TIMESHEET"
-        val textWidth = titlePaint.measureText(text)
-        val halfTextWidth = textWidth / 2f
         
-        // Ornament lines - Dynamic based on text width
-        val linePaint = Paint().apply { color = colorGoldAccent; strokeWidth = 1f }
-        val gap = 15f
-        val lineLen = 35f
+        // Ornament lines - Top and Bottom
+        val linePaint = Paint().apply { color = colorGoldAccent; strokeWidth = 0.6f }
+        val ornamentWidth = 70f // Further reduced from 110f
         
-        canvas.drawLine(cx - halfTextWidth - gap - lineLen, cy - 8f, cx - halfTextWidth - gap, cy - 8f, linePaint)
-        canvas.drawLine(cx + halfTextWidth + gap, cy - 8f, cx + halfTextWidth + gap + lineLen, cy - 8f, linePaint)
+        // Top ornament line
+        canvas.drawLine(cx - ornamentWidth/2, cy - 20f, cx + ornamentWidth/2, cy - 20f, linePaint)
         
-        // Diamond ornament
-        val path = Path().apply {
-            moveTo(cx, cy - 13f)
-            lineTo(cx + 4f, cy - 8f)
-            lineTo(cx, cy - 3f)
-            lineTo(cx - 4f, cy - 8f)
+        // Diamond ornament top
+        val diamondPath = Path().apply {
+            moveTo(cx, cy - 24f)
+            lineTo(cx + 3f, cy - 20f)
+            lineTo(cx, cy - 16f)
+            lineTo(cx - 3f, cy - 20f)
             close()
         }
-        canvas.drawPath(path, Paint().apply { color = colorGoldAccent; style = Paint.Style.FILL })
+        canvas.drawPath(diamondPath, Paint().apply { color = colorGoldAccent; style = Paint.Style.FILL })
         
-        canvas.drawText(text, cx, cy + 12f, titlePaint)
+        // Bottom ornament line (shorter)
+        val bottomLineY = cy + 10f
+        canvas.drawLine(cx - ornamentWidth/4, bottomLineY, cx + ornamentWidth/4, bottomLineY, linePaint)
+        
+        canvas.drawText(text, cx, cy + 4f, titlePaint)
     }
 
     private fun drawSectionTitleLuxury(cursor: PageCursor, title: String) {

@@ -1,5 +1,6 @@
 package com.example.propaintersplastererspayment.feature.settings.vm
 
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -25,29 +26,29 @@ import kotlinx.coroutines.launch
 // ─────────────────────────────────────────────────────────────────────────────
 
 data class SettingsFormState(
-    val businessName: String = "",
-    val address: String = "",
-    val phoneNumber: String = "",
-    val email: String = "",
-    val gstNumber: String = "",
-    val bankAccountNumber: String = "",
-    val defaultLabourRateText: String = "",
-    val defaultGstPercentText: String = "15",
+    val businessName: TextFieldValue = TextFieldValue(""),
+    val address: TextFieldValue = TextFieldValue(""),
+    val phoneNumber: TextFieldValue = TextFieldValue(""),
+    val email: TextFieldValue = TextFieldValue(""),
+    val gstNumber: TextFieldValue = TextFieldValue(""),
+    val bankAccountNumber: TextFieldValue = TextFieldValue(""),
+    val defaultLabourRateText: TextFieldValue = TextFieldValue(""),
+    val defaultGstPercentText: TextFieldValue = TextFieldValue("15"),
     val gstEnabledByDefault: Boolean = true,
     val errorMessage: String? = null
 ) {
     val parsedLabourRate: Double?
-        get() = defaultLabourRateText.trim().replace(",", "").toDoubleOrNull()
+        get() = defaultLabourRateText.text.trim().replace(",", "").toDoubleOrNull()
 
     val parsedGstPercent: Double?
-        get() = defaultGstPercentText.trim().replace(",", "").toDoubleOrNull()
+        get() = defaultGstPercentText.text.trim().replace(",", "").toDoubleOrNull()
 
     val isValid: Boolean
-        get() = businessName.isNotBlank() &&
-                address.isNotBlank() &&
-                phoneNumber.isNotBlank() &&
-                email.isNotBlank() &&
-                bankAccountNumber.isNotBlank() &&
+        get() = businessName.text.isNotBlank() &&
+                address.text.isNotBlank() &&
+                phoneNumber.text.isNotBlank() &&
+                email.text.isNotBlank() &&
+                bankAccountNumber.text.isNotBlank() &&
                 parsedLabourRate != null &&
                 parsedLabourRate!! > 0 &&
                 parsedGstPercent != null &&
@@ -55,8 +56,8 @@ data class SettingsFormState(
 
     val bankAccountFormatError: String?
         get() = if (
-            bankAccountNumber.isNotBlank() &&
-            !BankAccountFormatUtils.isValid(bankAccountNumber)
+            bankAccountNumber.text.isNotBlank() &&
+            !BankAccountFormatUtils.isValid(bankAccountNumber.text)
         ) {
             "Use format 00-0000-0000000-00"
         } else {
@@ -64,7 +65,7 @@ data class SettingsFormState(
         }
 
     val phoneFormatError: String?
-        get() = if (phoneNumber.isNotBlank() && !PhoneFormatUtils.isValid(phoneNumber)) {
+        get() = if (phoneNumber.text.isNotBlank() && !PhoneFormatUtils.isValid(phoneNumber.text)) {
             "Use format 000-0000000"
         } else {
             null
@@ -129,20 +130,25 @@ class SettingsViewModel(
     init {
         viewModelScope.launch {
             val firstSettings = settingsRepository.observeSettings().first()
-            if (firstSettings != null && formState.value.businessName.isEmpty()) {
+            if (firstSettings != null && formState.value.businessName.text.isEmpty()) {
+                val phoneNumber = PhoneFormatUtils.formatInput(firstSettings.phoneNumber)
+                val bankAccount = BankAccountFormatUtils.formatInput(firstSettings.bankAccountNumber)
+                val labourRate = if (firstSettings.defaultLabourRate > 0) {
+                    firstSettings.defaultLabourRate.toString()
+                } else {
+                    ""
+                }
+                val gstPercent = (firstSettings.defaultGstRate * 100).toInt().toString()
+
                 formState.value = SettingsFormState(
-                    businessName = firstSettings.businessName,
-                    address = firstSettings.address,
-                    phoneNumber = PhoneFormatUtils.formatInput(firstSettings.phoneNumber),
-                    email = firstSettings.email,
-                    gstNumber = firstSettings.gstNumber,
-                    bankAccountNumber = BankAccountFormatUtils.formatInput(firstSettings.bankAccountNumber),
-                    defaultLabourRateText = if (firstSettings.defaultLabourRate > 0) {
-                        firstSettings.defaultLabourRate.toString()
-                    } else {
-                        ""
-                    },
-                    defaultGstPercentText = (firstSettings.defaultGstRate * 100).toInt().toString(),
+                    businessName = TextFieldValue(firstSettings.businessName),
+                    address = TextFieldValue(firstSettings.address),
+                    phoneNumber = TextFieldValue(phoneNumber, selection = androidx.compose.ui.text.TextRange(phoneNumber.length)),
+                    email = TextFieldValue(firstSettings.email),
+                    gstNumber = TextFieldValue(firstSettings.gstNumber),
+                    bankAccountNumber = TextFieldValue(bankAccount, selection = androidx.compose.ui.text.TextRange(bankAccount.length)),
+                    defaultLabourRateText = TextFieldValue(labourRate, selection = androidx.compose.ui.text.TextRange(labourRate.length)),
+                    defaultGstPercentText = TextFieldValue(gstPercent, selection = androidx.compose.ui.text.TextRange(gstPercent.length)),
                     gstEnabledByDefault = firstSettings.gstEnabledByDefault
                 )
             }
@@ -153,37 +159,55 @@ class SettingsViewModel(
     // Form field updates
     // ─────────────────────────────────────────────────────────────────────
 
-    fun onBusinessNameChange(value: String) {
+    fun onBusinessNameChange(value: TextFieldValue) {
         formState.update { it.copy(businessName = value, errorMessage = null) }
     }
 
-    fun onAddressChange(value: String) {
+    fun onAddressChange(value: TextFieldValue) {
         formState.update { it.copy(address = value, errorMessage = null) }
     }
 
-    fun onPhoneNumberChange(value: String) {
-        val formatted = PhoneFormatUtils.formatInput(value)
-        formState.update { it.copy(phoneNumber = formatted, errorMessage = null) }
+    fun onPhoneNumberChange(value: TextFieldValue) {
+        val formatted = PhoneFormatUtils.formatInput(value.text)
+        val selectionOffset = if (value.text.length != formatted.length && value.selection.collapsed) {
+            val diff = formatted.length - value.text.length
+            (value.selection.start + diff).coerceIn(0, formatted.length)
+        } else {
+            value.selection.start.coerceAtMost(formatted.length)
+        }
+        formState.update { it.copy(
+            phoneNumber = value.copy(text = formatted, selection = androidx.compose.ui.text.TextRange(selectionOffset)),
+            errorMessage = null
+        ) }
     }
 
-    fun onEmailChange(value: String) {
+    fun onEmailChange(value: TextFieldValue) {
         formState.update { it.copy(email = value, errorMessage = null) }
     }
 
-    fun onGstNumberChange(value: String) {
+    fun onGstNumberChange(value: TextFieldValue) {
         formState.update { it.copy(gstNumber = value, errorMessage = null) }
     }
 
-    fun onBankAccountNumberChange(value: String) {
-        val formatted = BankAccountFormatUtils.formatInput(value)
-        formState.update { it.copy(bankAccountNumber = formatted, errorMessage = null) }
+    fun onBankAccountNumberChange(value: TextFieldValue) {
+        val formatted = BankAccountFormatUtils.formatInput(value.text)
+        val selectionOffset = if (value.text.length != formatted.length && value.selection.collapsed) {
+            val diff = formatted.length - value.text.length
+            (value.selection.start + diff).coerceIn(0, formatted.length)
+        } else {
+            value.selection.start.coerceAtMost(formatted.length)
+        }
+        formState.update { it.copy(
+            bankAccountNumber = value.copy(text = formatted, selection = androidx.compose.ui.text.TextRange(selectionOffset)),
+            errorMessage = null
+        ) }
     }
 
-    fun onDefaultLabourRateChange(value: String) {
+    fun onDefaultLabourRateChange(value: TextFieldValue) {
         formState.update { it.copy(defaultLabourRateText = value, errorMessage = null) }
     }
 
-    fun onDefaultGstPercentChange(value: String) {
+    fun onDefaultGstPercentChange(value: TextFieldValue) {
         formState.update { it.copy(defaultGstPercentText = value, errorMessage = null) }
     }
 
@@ -213,12 +237,12 @@ class SettingsViewModel(
                 settingsRepository.saveSettings(
                     AppSettingsEntity(
                         settingsId = 1,
-                        businessName = form.businessName.trim(),
-                        address = form.address.trim(),
-                        phoneNumber = form.phoneNumber.trim(),
-                        email = form.email.trim(),
-                        gstNumber = form.gstNumber.trim(),
-                        bankAccountNumber = form.bankAccountNumber.trim(),
+                        businessName = form.businessName.text.trim(),
+                        address = form.address.text.trim(),
+                        phoneNumber = form.phoneNumber.text.trim(),
+                        email = form.email.text.trim(),
+                        gstNumber = form.gstNumber.text.trim(),
+                        bankAccountNumber = form.bankAccountNumber.text.trim(),
                         defaultLabourRate = labourRate,
                         defaultGstRate = gstRate,
                         gstEnabledByDefault = form.gstEnabledByDefault
@@ -246,19 +270,19 @@ class SettingsViewModel(
     // ─────────────────────────────────────────────────────────────────────
 
     private fun validateForm(form: SettingsFormState): String? = when {
-        form.businessName.isBlank() -> "Business name is required."
-        form.address.isBlank() -> "Address is required."
-        form.phoneNumber.isBlank() -> "Phone number is required."
-        !PhoneFormatUtils.isValid(form.phoneNumber) -> "Phone number must match 000-0000000."
-        form.email.isBlank() -> "Email is required."
-        !isValidEmail(form.email) -> "Please enter a valid email address."
-        form.bankAccountNumber.isBlank() -> "Bank account number is required."
-        !BankAccountFormatUtils.isValid(form.bankAccountNumber) ->
+        form.businessName.text.isBlank() -> "Business name is required."
+        form.address.text.isBlank() -> "Address is required."
+        form.phoneNumber.text.isBlank() -> "Phone number is required."
+        !PhoneFormatUtils.isValid(form.phoneNumber.text) -> "Phone number must match 000-0000000."
+        form.email.text.isBlank() -> "Email is required."
+        !isValidEmail(form.email.text) -> "Please enter a valid email address."
+        form.bankAccountNumber.text.isBlank() -> "Bank account number is required."
+        !BankAccountFormatUtils.isValid(form.bankAccountNumber.text) ->
             "Bank account must match 00-0000-0000000-00."
-        form.defaultLabourRateText.isBlank() -> "Default labour rate is required."
+        form.defaultLabourRateText.text.isBlank() -> "Default labour rate is required."
         form.parsedLabourRate == null -> "Labour rate must be a valid number."
         form.parsedLabourRate!! <= 0 -> "Labour rate must be greater than 0."
-        form.defaultGstPercentText.isBlank() -> "Default GST percent is required."
+        form.defaultGstPercentText.text.isBlank() -> "Default GST percent is required."
         form.parsedGstPercent == null -> "GST percent must be a valid number."
         form.parsedGstPercent!! < 0 -> "GST percent cannot be negative."
         else -> null

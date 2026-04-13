@@ -1,27 +1,11 @@
 package com.example.propaintersplastererspayment.feature.home.ui
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -29,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
@@ -36,6 +21,8 @@ import com.example.propaintersplastererspayment.R
 import com.example.propaintersplastererspayment.data.local.entity.JobEntity
 import com.example.propaintersplastererspayment.feature.home.vm.HomeUiState
 import com.example.propaintersplastererspayment.feature.home.vm.HomeViewModel
+import com.example.propaintersplastererspayment.ui.components.*
+import com.example.propaintersplastererspayment.ui.theme.*
 
 @Composable
 fun HomeRoute(
@@ -61,7 +48,6 @@ fun HomeRoute(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     uiState: HomeUiState,
@@ -73,65 +59,102 @@ fun HomeScreen(
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = {
-            TopAppBar(
-                title = { Text(text = stringResource(R.string.home_title)) },
-                actions = {
-                    IconButton(onClick = onOpenClients) {
-                        Icon(Icons.Default.People, contentDescription = "Clients")
-                    }
-                    IconButton(onClick = onAddJob) {
-                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.home_add_job))
-                    }
-                    IconButton(onClick = onOpenSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.home_open_settings))
-                    }
-                }
+        containerColor = CharcoalBackground,
+        floatingActionButton = {
+            IndustrialFAB(
+                onClick = onAddJob,
+                icon = Icons.Default.Add
             )
         }
-    ) { innerPadding ->
-        when {
-            uiState.isLoading -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    CircularProgressIndicator()
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(AppDimensions.screenPadding)
+        ) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.home_title),
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = IndustrialGold,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    IconButton(
+                        onClick = onOpenClients,
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Surface(
+                            modifier = Modifier.fillMaxSize(),
+                            shape = AppShapes.large,
+                            color = CharcoalSecondary
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.People,
+                                contentDescription = "Clients",
+                                tint = OffWhite,
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
+                    }
+
+                    IconButton(
+                        onClick = onOpenSettings,
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Surface(
+                            modifier = Modifier.fillMaxSize(),
+                            shape = AppShapes.large,
+                            color = CharcoalSecondary
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Settings",
+                                tint = OffWhite,
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
+                    }
                 }
             }
 
-            uiState.jobs.isEmpty() -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = stringResource(R.string.home_empty_jobs),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
-            }
+            Spacer(modifier = Modifier.height(32.dp))
 
-            else -> {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp)
-                ) {
-                    items(uiState.jobs, key = { it.jobId }) { job ->
-                        JobCard(
-                            job = job,
-                            onOpenJob = { onOpenJob(job.jobId) }
+            when {
+                uiState.isLoading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = IndustrialGold)
+                    }
+                }
+
+                uiState.jobs.isEmpty() -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = stringResource(R.string.home_empty_jobs),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = TextMuted
                         )
+                    }
+                }
+
+                else -> {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(uiState.jobs, key = { it.jobId }) { job ->
+                            JobCard(
+                                job = job,
+                                onClick = { onOpenJob(job.jobId) }
+                            )
+                        }
                     }
                 }
             }
@@ -140,27 +163,102 @@ fun HomeScreen(
 }
 
 @Composable
-private fun JobCard(
-    job: JobEntity,
-    onOpenJob: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onOpenJob)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+private fun JobCard(job: JobEntity, onClick: () -> Unit) {
+    IndustrialCard(onClick = onClick) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = job.clientName.ifBlank { job.jobName.ifBlank { "Unnamed Job" } },
-                style = MaterialTheme.typography.titleMedium
-            )
-            Text(
-                text = job.propertyAddress,
-                style = MaterialTheme.typography.bodyMedium
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                Surface(
+                    modifier = Modifier.size(48.dp),
+                    shape = AppShapes.medium,
+                    color = IndustrialGold.copy(alpha = 0.1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Work,
+                        contentDescription = null,
+                        tint = IndustrialGold,
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
+
+                Column {
+                    Text(
+                        text = job.clientName.ifBlank { job.jobName.ifBlank { "Unnamed Job" } },
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = IndustrialGold
+                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Place,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = TextMuted
+                        )
+                        Text(
+                            text = job.propertyAddress,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextMuted
+                        )
+                    }
+                }
+            }
+
+            // Status badge (if you have status in JobEntity, otherwise default to ACTIVE for now)
+            Surface(
+                shape = MaterialTheme.shapes.extraLarge,
+                color = IndustrialGold.copy(alpha = 0.2f)
+            ) {
+                Text(
+                    text = "ACTIVE",
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = IndustrialGold
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        HorizontalDivider(color = BorderColor)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Job ID",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextMuted
+                )
+                Text(
+                    text = "#${job.jobId}",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = IndustrialGold
+                )
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Client Name",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextMuted
+                )
+                Text(
+                    text = job.clientName.ifBlank { "N/A" },
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = IndustrialGold
+                )
+            }
         }
     }
 }

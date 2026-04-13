@@ -1,5 +1,7 @@
 package com.example.propaintersplastererspayment.feature.client.vm
 
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -18,18 +20,18 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class ClientFormState(
-    val name: String = "",
+    val name: TextFieldValue = TextFieldValue(""),
     val clientType: String = "PRIVATE",   // "PRIVATE" or "BUSINESS"
-    val address: String = "",
-    val phoneNumber: String = "",
-    val email: String = "",
-    val notes: String = "",
+    val address: TextFieldValue = TextFieldValue(""),
+    val phoneNumber: TextFieldValue = TextFieldValue(""),
+    val email: TextFieldValue = TextFieldValue(""),
+    val notes: TextFieldValue = TextFieldValue(""),
     val errorMessage: String? = null
 ) {
-    val isValid: Boolean get() = name.isNotBlank()
+    val isValid: Boolean get() = name.text.isNotBlank()
 
     val phoneFormatError: String?
-        get() = if (phoneNumber.isNotBlank() && !PhoneFormatUtils.isValid(phoneNumber)) {
+        get() = if (phoneNumber.text.isNotBlank() && !PhoneFormatUtils.isValid(phoneNumber.text)) {
             "Use format 000-0000000"
         } else {
             null
@@ -79,33 +81,44 @@ class AddEditClientViewModel(
                 if (client != null) {
                     isExistingClient.value = true
                     formState.value = ClientFormState(
-                        name = client.name,
+                        name = TextFieldValue(client.name),
                         clientType = client.clientType,
-                        address = client.address,
-                        phoneNumber = PhoneFormatUtils.formatInput(client.phoneNumber),
-                        email = client.email,
-                        notes = client.notes
+                        address = TextFieldValue(client.address),
+                        phoneNumber = TextFieldValue(PhoneFormatUtils.formatInput(client.phoneNumber)),
+                        email = TextFieldValue(client.email),
+                        notes = TextFieldValue(client.notes)
                     )
                 }
             }
         }
     }
 
-    fun onNameChange(value: String) = formState.update { it.copy(name = value, errorMessage = null) }
+    fun onNameChange(value: TextFieldValue) = formState.update { it.copy(name = value, errorMessage = null) }
     fun onClientTypeChange(value: String) = formState.update { it.copy(clientType = value) }
-    fun onAddressChange(value: String) = formState.update { it.copy(address = value) }
-    fun onPhoneChange(value: String) =
-        formState.update { it.copy(phoneNumber = PhoneFormatUtils.formatInput(value)) }
-    fun onEmailChange(value: String) = formState.update { it.copy(email = value) }
-    fun onNotesChange(value: String) = formState.update { it.copy(notes = value) }
+    fun onAddressChange(value: TextFieldValue) = formState.update { it.copy(address = value) }
+    fun onPhoneChange(value: TextFieldValue) {
+        val formatted = PhoneFormatUtils.formatInput(value.text)
+        val diff = formatted.length - value.text.length
+        val newCursor = (value.selection.start + diff).coerceIn(0, formatted.length)
+        formState.update {
+            it.copy(
+                phoneNumber = value.copy(
+                    text = formatted,
+                    selection = TextRange(newCursor)
+                )
+            )
+        }
+    }
+    fun onEmailChange(value: TextFieldValue) = formState.update { it.copy(email = value) }
+    fun onNotesChange(value: TextFieldValue) = formState.update { it.copy(notes = value) }
 
     fun saveClient() {
         val form = formState.value
-        if (form.name.isBlank()) {
+        if (form.name.text.isBlank()) {
             formState.update { it.copy(errorMessage = "Name is required.") }
             return
         }
-        if (form.phoneNumber.isNotBlank() && !PhoneFormatUtils.isValid(form.phoneNumber)) {
+        if (form.phoneNumber.text.isNotBlank() && !PhoneFormatUtils.isValid(form.phoneNumber.text)) {
             formState.update { it.copy(errorMessage = "Phone number must match 000-0000000.") }
             return
         }
@@ -115,12 +128,12 @@ class AddEditClientViewModel(
                 val savedClientId = clientRepository.saveClient(
                     ClientEntity(
                         clientId = clientId ?: 0L,
-                        name = form.name.trim(),
+                        name = form.name.text.trim(),
                         clientType = form.clientType,
-                        address = form.address.trim(),
-                        phoneNumber = form.phoneNumber.trim(),
-                        email = form.email.trim(),
-                        notes = form.notes.trim()
+                        address = form.address.text.trim(),
+                        phoneNumber = form.phoneNumber.text.trim(),
+                        email = form.email.text.trim(),
+                        notes = form.notes.text.trim()
                     )
                 )
                 _savedEvent.emit(savedClientId)

@@ -1,29 +1,13 @@
 package com.example.propaintersplastererspayment.feature.job.ui
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.PrimaryTabRow
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -31,14 +15,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
 import com.example.propaintersplastererspayment.R
 import com.example.propaintersplastererspayment.feature.invoice.ui.InvoiceRoute
 import com.example.propaintersplastererspayment.feature.materials.ui.MaterialsRoute
 import com.example.propaintersplastererspayment.feature.timesheet.ui.TimesheetRoute
-import com.example.propaintersplastererspayment.ui.theme.GoldAccent
-import com.example.propaintersplastererspayment.ui.theme.OxfordBlue
+import com.example.propaintersplastererspayment.ui.theme.*
 
 private enum class JobDetailTab(val titleRes: Int) {
     TIMESHEET(R.string.job_tab_timesheet),
@@ -46,7 +28,6 @@ private enum class JobDetailTab(val titleRes: Int) {
     INVOICE(R.string.job_tab_invoice)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JobDetailScreen(
     jobId: Long,
@@ -57,47 +38,81 @@ fun JobDetailScreen(
     val job by application.container.jobRepository.observeJob(jobId).collectAsState(initial = null)
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = remember { JobDetailTab.entries }
-    val screenTitle = job?.propertyAddress?.takeIf { it.isNotBlank() }
+    val screenTitle = job?.clientName?.takeIf { it.isNotBlank() }
         ?: stringResource(R.string.job_detail_title, jobId)
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = CharcoalBackground,
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = screenTitle,
-                            style = MaterialTheme.typography.titleLarge,
-                            color = Color.White,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        job?.clientName?.let {
-                            if (it.isNotBlank()) {
-                                Text(
-                                    text = it,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = Color.White.copy(alpha = 0.7f)
-                                )
-                            }
-                        }
-                    }
-                },
-                navigationIcon = {
+            Column(
+                modifier = Modifier
+                    .background(CharcoalBackground)
+                    .padding(top = 16.dp, start = 8.dp, end = 8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color.White
+                            tint = IndustrialGold
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = OxfordBlue
-                )
-            )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = screenTitle,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = IndustrialGold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        job?.propertyAddress?.takeIf { it.isNotBlank() }?.let {
+                            Text(
+                                text = it,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextMuted
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                PrimaryScrollableTabRow(
+                    selectedTabIndex = selectedTab,
+                    containerColor = CharcoalBackground,
+                    contentColor = IndustrialGold,
+                    edgePadding = 16.dp,
+                    indicator = {
+                        TabRowDefaults.PrimaryIndicator(
+                            modifier = Modifier.tabIndicatorOffset(selectedTabIndex = selectedTab),
+                            color = IndustrialGold,
+                            width = 64.dp
+                        )
+                    },
+                    divider = {}
+                ) {
+                    tabs.forEachIndexed { index, tab ->
+                        Tab(
+                            selected = selectedTab == index,
+                            onClick = { selectedTab = index },
+                            text = {
+                                Text(
+                                    text = stringResource(tab.titleRes),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Medium
+                                )
+                            },
+                            selectedContentColor = IndustrialGold,
+                            unselectedContentColor = TextMuted
+                        )
+                    }
+                }
+            }
         }
     ) { innerPadding ->
         Column(
@@ -105,57 +120,13 @@ fun JobDetailScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            PrimaryTabRow(
-                selectedTabIndex = selectedTab,
-                containerColor = OxfordBlue,
-                contentColor = Color.White,
-                indicator = {
-                    TabRowDefaults.PrimaryIndicator(
-                        modifier = Modifier.tabIndicatorOffset(selectedTabIndex = selectedTab),
-                        width = 64.dp,
-                        color = GoldAccent
-                    )
-                },
-                divider = {}
-            ) {
-                tabs.forEachIndexed { index, tab ->
-                    Tab(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
-                        text = {
-                            Text(
-                                text = stringResource(tab.titleRes),
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Medium,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        selectedContentColor = GoldAccent,
-                        unselectedContentColor = Color.White.copy(alpha = 0.6f)
-                    )
-                }
-            }
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                verticalArrangement = Arrangement.Top
-            ) {
+            Box(modifier = Modifier.weight(1f)) {
                 when (tabs[selectedTab]) {
                     JobDetailTab.TIMESHEET -> TimesheetRoute(jobId = jobId)
                     JobDetailTab.MATERIALS -> MaterialsRoute(jobId = jobId)
                     JobDetailTab.INVOICE -> InvoiceRoute(jobId = jobId)
                 }
             }
-
-            Text(
-                text = stringResource(R.string.job_detail_hint),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.outline,
-                modifier = Modifier.padding(16.dp)
-            )
         }
     }
 }

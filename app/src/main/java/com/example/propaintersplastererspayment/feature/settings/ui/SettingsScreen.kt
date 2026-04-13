@@ -23,6 +23,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -37,14 +39,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import com.example.propaintersplastererspayment.ui.components.*
+import com.example.propaintersplastererspayment.ui.theme.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.graphics.Color
-import com.example.propaintersplastererspayment.ui.theme.GoldAccent
-import com.example.propaintersplastererspayment.ui.theme.OxfordBlue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -53,6 +55,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -66,7 +69,7 @@ import com.example.propaintersplastererspayment.data.local.entity.AppSettingsEnt
 import com.example.propaintersplastererspayment.feature.settings.vm.SettingsFormState
 import com.example.propaintersplastererspayment.feature.settings.vm.SettingsUiState
 import com.example.propaintersplastererspayment.feature.settings.vm.SettingsViewModel
-import com.example.propaintersplastererspayment.ui.theme.ProPaintersPlasterersPaymentTheme
+import com.example.propaintersplastererspayment.ui.theme.ProPaintersTheme
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Route — wires the ViewModel to the screen
@@ -127,14 +130,14 @@ fun SettingsRoute(
 fun SettingsScreen(
     uiState: SettingsUiState,
     onBack: () -> Unit,
-    onBusinessNameChange: (String) -> Unit,
-    onAddressChange: (String) -> Unit,
-    onPhoneNumberChange: (String) -> Unit,
-    onEmailChange: (String) -> Unit,
-    onGstNumberChange: (String) -> Unit,
-    onBankAccountNumberChange: (String) -> Unit,
-    onDefaultLabourRateChange: (String) -> Unit,
-    onDefaultGstPercentChange: (String) -> Unit,
+    onBusinessNameChange: (TextFieldValue) -> Unit,
+    onAddressChange: (TextFieldValue) -> Unit,
+    onPhoneNumberChange: (TextFieldValue) -> Unit,
+    onEmailChange: (TextFieldValue) -> Unit,
+    onGstNumberChange: (TextFieldValue) -> Unit,
+    onBankAccountNumberChange: (TextFieldValue) -> Unit,
+    onDefaultLabourRateChange: (TextFieldValue) -> Unit,
+    onDefaultGstPercentChange: (TextFieldValue) -> Unit,
     onGstEnabledChange: (Boolean) -> Unit,
     onSave: () -> Unit,
     onMessageShown: () -> Unit,
@@ -151,12 +154,13 @@ fun SettingsScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        containerColor = CharcoalBackground,
         topBar = {
             TopAppBar(
                 title = {
                     Text(
                         text = stringResource(R.string.settings_title),
-                        color = Color.White,
+                        color = OffWhite,
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -165,12 +169,12 @@ fun SettingsScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color.White
+                            tint = IndustrialGold
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = OxfordBlue
+                    containerColor = CharcoalBackground
                 )
             )
         },
@@ -178,14 +182,13 @@ fun SettingsScreen(
     ) { innerPadding ->
         when {
             uiState.isLoading -> {
-                Column(
+                Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                    contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(color = IndustrialGold)
                 }
             }
 
@@ -195,8 +198,8 @@ fun SettingsScreen(
                         .fillMaxSize()
                         .padding(innerPadding)
                         .verticalScroll(rememberScrollState())
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                        .padding(AppDimensions.screenPadding),
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -204,155 +207,175 @@ fun SettingsScreen(
                         Text(
                             text = stringResource(R.string.settings_title),
                             style = MaterialTheme.typography.headlineSmall,
-                            color = OxfordBlue,
+                            color = IndustrialGold,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = stringResource(R.string.settings_description),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.outline
+                            color = TextMuted
                         )
                     }
 
-                    // ── Business Info Card ───────────────────────────────
-                    SettingsSectionCard(title = stringResource(R.string.settings_section_business)) {
-                        OutlinedTextField(
+                    // ── Business Info Section ────────────────────────────
+                    SettingsSection(title = stringResource(R.string.settings_section_business)) {
+                        IndustrialTextField(
                             value = uiState.formState.businessName,
                             onValueChange = onBusinessNameChange,
-                            label = { Text(stringResource(R.string.settings_business_name), color = Color.White.copy(alpha = 0.7f)) },
-                            modifier = Modifier.fillMaxWidth(),
+                            label = stringResource(R.string.settings_business_name),
+                            placeholder = "Enter business name",
                             singleLine = true
                         )
-                        OutlinedTextField(
+                        IndustrialTextField(
                             value = uiState.formState.address,
                             onValueChange = onAddressChange,
-                            label = { Text(stringResource(R.string.settings_address), color = Color.White.copy(alpha = 0.7f)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            minLines = 2
+                            label = stringResource(R.string.settings_address),
+                            placeholder = "Enter business address",
+                            singleLine = false
                         )
                     }
 
-                    // ── Contact Card ─────────────────────────────────────
-                    SettingsSectionCard(title = stringResource(R.string.settings_section_contact)) {
-                        OutlinedTextField(
+                    // ── Contact Section ──────────────────────────────────
+                    SettingsSection(title = stringResource(R.string.settings_section_contact)) {
+                        IndustrialTextField(
                             value = uiState.formState.phoneNumber,
                             onValueChange = onPhoneNumberChange,
-                            label = { Text(stringResource(R.string.settings_phone), color = Color.White.copy(alpha = 0.7f)) },
-                            isError = uiState.formState.phoneFormatError != null,
-                            supportingText = {
-                                Text(
-                                    text = uiState.formState.phoneFormatError ?: "Format: 000-0000000",
-                                    color = if (uiState.formState.phoneFormatError != null) MaterialTheme.colorScheme.error else Color.White.copy(alpha = 0.5f)
-                                )
-                            },
-                            modifier = Modifier.fillMaxWidth(),
+                            label = stringResource(R.string.settings_phone),
+                            placeholder = "000-0000000",
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                         )
-                        OutlinedTextField(
+                        if (uiState.formState.phoneFormatError != null) {
+                            Text(
+                                text = uiState.formState.phoneFormatError ?: "",
+                                color = ErrorRed,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+                        IndustrialTextField(
                             value = uiState.formState.email,
                             onValueChange = onEmailChange,
-                            label = { Text(stringResource(R.string.settings_email), color = Color.White.copy(alpha = 0.7f)) },
-                            modifier = Modifier.fillMaxWidth(),
+                            label = stringResource(R.string.settings_email),
+                            placeholder = "business@email.com",
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                         )
                     }
 
-                    // ── Invoice & Tax Card ───────────────────────────────
-                    SettingsSectionCard(title = stringResource(R.string.settings_section_invoice)) {
-                        OutlinedTextField(
+                    // ── Invoice & Tax Section ────────────────────────────
+                    SettingsSection(title = stringResource(R.string.settings_section_invoice)) {
+                        IndustrialTextField(
                             value = uiState.formState.gstNumber,
                             onValueChange = onGstNumberChange,
-                            label = { Text(stringResource(R.string.settings_gst_number), color = Color.White.copy(alpha = 0.7f)) },
-                            modifier = Modifier.fillMaxWidth(),
+                            label = stringResource(R.string.settings_gst_number),
+                            placeholder = "Enter GST number",
                             singleLine = true
                         )
-                        OutlinedTextField(
+                        IndustrialTextField(
                             value = uiState.formState.defaultLabourRateText,
                             onValueChange = onDefaultLabourRateChange,
-                            label = { Text(stringResource(R.string.settings_labour_rate), color = Color.White.copy(alpha = 0.7f)) },
-                            supportingText = { Text(stringResource(R.string.settings_labour_rate_hint), color = Color.White.copy(alpha = 0.5f)) },
-                            modifier = Modifier.fillMaxWidth(),
+                            label = stringResource(R.string.settings_labour_rate),
+                            placeholder = "0.00",
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                         )
-                        OutlinedTextField(
+                        IndustrialTextField(
                             value = uiState.formState.defaultGstPercentText,
                             onValueChange = onDefaultGstPercentChange,
-                            label = { Text(stringResource(R.string.settings_gst_percent), color = Color.White.copy(alpha = 0.7f)) },
-                            supportingText = { Text(stringResource(R.string.settings_gst_percent_hint), color = Color.White.copy(alpha = 0.5f)) },
-                            modifier = Modifier.fillMaxWidth(),
+                            label = stringResource(R.string.settings_gst_percent),
+                            placeholder = "15",
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                         )
+                        
                         // Labour rate preview
                         if (uiState.formState.parsedLabourRate != null) {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.1f))
+                                shape = AppShapes.medium,
+                                colors = CardDefaults.cardColors(containerColor = CharcoalMuted),
+                                border = BorderStroke(1.dp, BorderColor)
                             ) {
-                                Text(
-                                    text = "${stringResource(R.string.settings_labour_rate_preview)}: ${
-                                        CurrencyFormatUtils.formatCurrency(uiState.formState.parsedLabourRate!!)
-                                    }",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = GoldAccent,
-                                    modifier = Modifier.padding(12.dp)
-                                )
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.Info, null, tint = IndustrialGold, modifier = Modifier.size(20.dp))
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(
+                                        text = "${stringResource(R.string.settings_labour_rate_preview)}: ${
+                                            CurrencyFormatUtils.formatCurrency(uiState.formState.parsedLabourRate!!)
+                                        }",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = OffWhite
+                                    )
+                                }
                             }
                         }
 
                         // GST toggle
-                        Row(
+                        Card(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            shape = AppShapes.medium,
+                            colors = CardDefaults.cardColors(containerColor = CharcoalMuted),
+                            border = BorderStroke(1.dp, BorderColor)
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.settings_gst_enabled),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color.White
-                                )
-                                Text(
-                                    text = stringResource(R.string.settings_gst_enabled_hint),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = Color.White.copy(alpha = 0.7f)
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = stringResource(R.string.settings_gst_enabled),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = OffWhite
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.settings_gst_enabled_hint),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = TextMuted
+                                    )
+                                }
+                                Switch(
+                                    checked = uiState.formState.gstEnabledByDefault,
+                                    onCheckedChange = onGstEnabledChange,
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = IndustrialGold,
+                                        checkedTrackColor = IndustrialGold.copy(alpha = 0.5f)
+                                    )
                                 )
                             }
-                            Switch(
-                                checked = uiState.formState.gstEnabledByDefault,
-                                onCheckedChange = onGstEnabledChange
-                            )
                         }
                     }
 
-                    // ── Banking Card ─────────────────────────────────────
-                    SettingsSectionCard(title = stringResource(R.string.settings_section_banking)) {
-                        OutlinedTextField(
+                    // ── Banking Section ──────────────────────────────────
+                    SettingsSection(title = stringResource(R.string.settings_section_banking)) {
+                        IndustrialTextField(
                             value = uiState.formState.bankAccountNumber,
                             onValueChange = onBankAccountNumberChange,
-                            label = { Text(stringResource(R.string.settings_bank_account), color = Color.White.copy(alpha = 0.7f)) },
-                            isError = uiState.formState.bankAccountFormatError != null,
-                            supportingText = {
-                                Text(
-                                    text = uiState.formState.bankAccountFormatError ?: "Format: 00-0000-0000000-00",
-                                    color = if (uiState.formState.bankAccountFormatError != null) MaterialTheme.colorScheme.error else Color.White.copy(alpha = 0.5f)
-                                )
-                            },
-                            modifier = Modifier.fillMaxWidth(),
+                            label = stringResource(R.string.settings_bank_account),
+                            placeholder = "00-0000-0000000-00",
                             singleLine = true
                         )
+                        if (uiState.formState.bankAccountFormatError != null) {
+                            Text(
+                                text = uiState.formState.bankAccountFormatError ?: "",
+                                color = ErrorRed,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
                     }
 
                     // ── Validation errors ──────────────────────────────
                     uiState.formState.errorMessage?.let { error ->
                         Text(
                             text = error,
-                            color = MaterialTheme.colorScheme.error,
+                            color = ErrorRed,
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(horizontal = 4.dp)
                         )
@@ -361,43 +384,37 @@ fun SettingsScreen(
                     // ── Save button & status ───────────────────────────
                     Column(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Button(
+                        PrimaryButton(
+                            text = stringResource(R.string.settings_save),
                             onClick = onSave,
                             enabled = !uiState.isSaving && uiState.formState.isValid,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = GoldAccent,
-                                contentColor = OxfordBlue
-                            )
-                        ) {
-                            if (uiState.isSaving) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.padding(end = 8.dp).size(20.dp),
-                                    strokeWidth = 2.dp,
-                                    color = OxfordBlue
-                                )
+                            icon = {
+                                if (uiState.isSaving) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        strokeWidth = 2.dp,
+                                        color = CharcoalBackground
+                                    )
+                                } else {
+                                    Icon(Icons.Default.Save, null)
+                                }
                             }
-                            Text(
-                                text = stringResource(R.string.settings_save),
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                        )
 
                         // Last saved timestamp
                         if (uiState.lastSavedAt != null) {
                             Text(
                                 text = "${stringResource(R.string.settings_last_saved)} ${uiState.lastSavedAt}",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.outline
+                                color = TextMuted
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
             }
         }
@@ -409,67 +426,24 @@ fun SettingsScreen(
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun SettingsSectionCard(
+private fun SettingsSection(
     title: String,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = OxfordBlue),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-    ) {
-        Box {
-            Box(
-                modifier = Modifier
-                    .width(6.dp)
-                    .matchParentSize()
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                GoldAccent,
-                                GoldAccent.copy(alpha = 0.7f)
-                            )
-                        )
-                    )
+    IndustrialCard {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = IndustrialGold
             )
-            Column(
-                modifier = Modifier.padding(start = 22.dp).padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = GoldAccent
-                )
-                content()
-            }
+            content()
         }
     }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Sub-composables
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Section header with a clean style.
- * (Deprecated: using SettingsSectionCard now)
- */
-@Composable
-private fun SectionHeader(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.SemiBold,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(top = 8.dp)
-    )
-}
-
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Preview
@@ -478,7 +452,7 @@ private fun SectionHeader(text: String) {
 @Preview(showBackground = true)
 @Composable
 private fun SettingsScreenPreview() {
-    ProPaintersPlasterersPaymentTheme {
+    ProPaintersTheme {
         SettingsScreen(
             uiState = SettingsUiState(
                 isLoading = false,
@@ -494,14 +468,14 @@ private fun SettingsScreenPreview() {
                     gstEnabledByDefault = true
                 ),
                 formState = SettingsFormState(
-                    businessName = "Pro Painters & Plasterers",
-                    address = "123 Main St, Sydney NSW 2000",
-                    phoneNumber = "02 9123 4567",
-                    email = "info@propainters.com.au",
-                    gstNumber = "12 345 678 901",
-                    bankAccountNumber = "12-1234-1234567-12",
-                    defaultLabourRateText = "65",
-                    defaultGstPercentText = "15",
+                    businessName = TextFieldValue("Pro Painters & Plasterers"),
+                    address = TextFieldValue("123 Main St, Sydney NSW 2000"),
+                    phoneNumber = TextFieldValue("02 9123 4567"),
+                    email = TextFieldValue("info@propainters.com.au"),
+                    gstNumber = TextFieldValue("12 345 678 901"),
+                    bankAccountNumber = TextFieldValue("12-1234-1234567-12"),
+                    defaultLabourRateText = TextFieldValue("65"),
+                    defaultGstPercentText = TextFieldValue("15"),
                     gstEnabledByDefault = true
                 ),
                 lastSavedAt = "14:32"

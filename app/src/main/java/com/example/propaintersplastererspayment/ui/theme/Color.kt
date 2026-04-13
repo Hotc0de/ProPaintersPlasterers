@@ -2,38 +2,20 @@ package com.example.propaintersplastererspayment.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Premium Professional Palette
-val OxfordBlue = Color(0xFF1B263B)
-val RoyalBlue = Color(0xFF415A77)
-val SlateGray = Color(0xFF778DA9)
-val Silver = Color(0xFFE0E1DD)
+// Dark Theme - Industrial Professional
+val CharcoalBackground = Color(0xFF1A1A1B)
+val CharcoalCard = Color(0xFF252527)
+val CharcoalSecondary = Color(0xFF2F2F31)
+val CharcoalMuted = Color(0xFF3A3A3C)
 
-val DarkSlate = Color(0xFF0D1B2A)
-val GoldAccent = Color(0xFFC5A059) // Subtle elegant gold
+val IndustrialGold = Color(0xFFFFB800)
+val IndustrialGoldLight = Color(0xFFFFC933)
+val IndustrialGoldDark = Color(0xFFFF8C00)
 
-// Material 3 mappings
-val PrimaryLight = OxfordBlue
-val OnPrimaryLight = Color.White
-val PrimaryContainerLight = Silver
-val OnPrimaryContainerLight = DarkSlate
+val OffWhite = Color(0xFFF5F5F0)
+val TextMuted = Color(0xFFA0A0A0)
+val TextSubdued = Color(0xFF5A5A5C)
 
-val SecondaryLight = RoyalBlue
-val OnSecondaryLight = Color.White
-
-val TertiaryLight = GoldAccent
-val OnTertiaryLight = Color.White
-
-val BackgroundLight = Color(0xFFF8F9FA)
-val SurfaceLight = Color.White
-val OnSurfaceLight = OxfordBlue
-val SurfaceVariantLight = Color(0xFFF1F3F5)
-
-// Dark Mode
-val PrimaryDark = Silver
-val OnPrimaryDark = DarkSlate
-val PrimaryContainerDark = RoyalBlue
-val OnPrimaryContainerDark = Color.White
-
-val BackgroundDark = DarkSlate
-val SurfaceDark = DarkSlate
-val OnSurfaceDark = Silver
+val ErrorRed = Color(0xFFFF4444)
+val SuccessGreen = Color(0xFF4CAF50)
+val BorderColor = Color(0x1AFFFFFF)

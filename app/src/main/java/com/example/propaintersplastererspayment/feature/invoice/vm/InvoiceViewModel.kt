@@ -1,5 +1,6 @@
 package com.example.propaintersplastererspayment.feature.invoice.vm
 
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -34,7 +35,10 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import java.util.Locale
+import kotlin.math.abs
 
 // ─────────────────────────────────────────────────────────────────────────────
 // UI state data classes
@@ -48,13 +52,13 @@ import java.util.Locale
  */
 data class InvoiceHeaderFormState(
     val invoiceId: Long? = null,
-    val invoiceNumber: String = "",
-    val billToName: String = "",
-    val issueDate: String = DateFormatUtils.todayDisplayDate(),
+    val invoiceNumber: TextFieldValue = TextFieldValue(""),
+    val billToName: TextFieldValue = TextFieldValue(""),
+    val issueDate: TextFieldValue = TextFieldValue(DateFormatUtils.todayDisplayDate()),
     val includeGst: Boolean = true,
     val gstRate: Double = InvoiceUtils.DEFAULT_GST_RATE,
-    val otherAmountText: String = "0",
-    val notes: String = "",
+    val otherAmountText: TextFieldValue = TextFieldValue("0"),
+    val notes: TextFieldValue = TextFieldValue(""),
     val errorMessage: String? = null
 )
 
@@ -68,16 +72,16 @@ data class InvoiceHeaderFormState(
 data class InvoiceLineFormState(
     val lineId: Long? = null,
     val sortOrder: Int = 0,
-    val description: String = "",
-    val qtyText: String = "1",
-    val rateText: String = "",
-    val amountText: String = "",
+    val description: TextFieldValue = TextFieldValue(""),
+    val qtyText: TextFieldValue = TextFieldValue("1"),
+    val rateText: TextFieldValue = TextFieldValue(""),
+    val amountText: TextFieldValue = TextFieldValue(""),
     val isManualAmount: Boolean = false,
     val errorMessage: String? = null
 ) {
-    val parsedQty: Double? get() = qtyText.trim().toDoubleOrNull()
-    val parsedRate: Double? get() = rateText.trim().toDoubleOrNull()
-    val parsedAmount: Double? get() = amountText.trim().toDoubleOrNull()
+    val parsedQty: Double? get() = qtyText.text.trim().toDoubleOrNull()
+    val parsedRate: Double? get() = rateText.text.trim().toDoubleOrNull()
+    val parsedAmount: Double? get() = amountText.text.trim().toDoubleOrNull()
 
     /**
      * The amount that will be saved.
@@ -165,6 +169,40 @@ class InvoiceViewModel(
     private val pdfExportRequests = MutableSharedFlow<InvoicePdfData>()
 
     val pdfExportEvents: SharedFlow<InvoicePdfData> = pdfExportRequests.asSharedFlow()
+
+    init {
+        observeAndSyncImportedLines()
+    }
+
+    /**
+     * Reactively observes labour hours, materials, and settings.
+     * If corresponding "Labour" or "Materials" lines exist in the current invoice,
+     * they are updated automatically to ensure real-time synchronization.
+     */
+    private fun observeAndSyncImportedLines() {
+        viewModelScope.launch {
+            invoiceRepository.observeInvoiceForJob(jobId)
+                .map { it?.invoiceId }
+                .distinctUntilChanged()
+                .flatMapLatest { invoiceId ->
+                    if (invoiceId == null) return@flatMapLatest flowOf(null)
+                    combine(
+                        workEntryRepository.observeTotalHoursForJob(jobId),
+                        materialRepository.observeTotalMaterialCostForJob(jobId),
+                        settingsRepository.observeSettings(),
+                        invoiceRepository.observeInvoiceLines(invoiceId),
+                        invoiceRepository.observeInvoiceForJob(jobId)
+                    ) { hours, matCost, settings, lines, invoice ->
+                        if (invoice == null) null
+                        else SyncPackage(hours, matCost, settings?.defaultLabourRate ?: 0.0, invoice, lines)
+                    }
+                }.collect { pkg ->
+                    if (pkg != null) {
+                        performAutoSync(pkg)
+                    }
+                }
+        }
+    }
 
     // ── Database streams ───────────────────────────────────────────────────
 
@@ -271,8 +309,8 @@ class InvoiceViewModel(
                 else -> ""
             }
             headerFormState.value = InvoiceHeaderFormState(
-                invoiceNumber = invoiceNumber,
-                billToName = defaultBillTo,
+                invoiceNumber = TextFieldValue(invoiceNumber, selection = androidx.compose.ui.text.TextRange(invoiceNumber.length)),
+                billToName = TextFieldValue(defaultBillTo, selection = androidx.compose.ui.text.TextRange(defaultBillTo.length)),
                 includeGst = settings?.gstEnabledByDefault ?: true,
                 gstRate = settings?.defaultGstRate ?: InvoiceUtils.DEFAULT_GST_RATE
             )
@@ -291,15 +329,17 @@ class InvoiceViewModel(
                     it.name.equals(invoice.billToName, ignoreCase = true)
                 }
             }
+        val otherAmountStr = if (invoice.otherAmount == 0.0) "0" else invoice.otherAmount.toString()
+        val issueDateStr = DateFormatUtils.formatDisplayDate(invoice.issueDate)
         headerFormState.value = InvoiceHeaderFormState(
             invoiceId = invoice.invoiceId,
-            invoiceNumber = invoice.invoiceNumber,
-            billToName = selectedClient?.name ?: invoice.billToName,
-            issueDate = DateFormatUtils.formatDisplayDate(invoice.issueDate),
+            invoiceNumber = TextFieldValue(invoice.invoiceNumber, selection = androidx.compose.ui.text.TextRange(invoice.invoiceNumber.length)),
+            billToName = TextFieldValue(selectedClient?.name ?: invoice.billToName, selection = androidx.compose.ui.text.TextRange((selectedClient?.name ?: invoice.billToName).length)),
+            issueDate = TextFieldValue(issueDateStr, selection = androidx.compose.ui.text.TextRange(issueDateStr.length)),
             includeGst = invoice.includeGst,
             gstRate = invoice.gstRate,
-            otherAmountText = if (invoice.otherAmount == 0.0) "0" else invoice.otherAmount.toString(),
-            notes = invoice.notes
+            otherAmountText = TextFieldValue(otherAmountStr, selection = androidx.compose.ui.text.TextRange(otherAmountStr.length)),
+            notes = TextFieldValue(invoice.notes, selection = androidx.compose.ui.text.TextRange(invoice.notes.length))
         )
         selectedBillToClientId.value = selectedClient?.clientId
         isEditingHeader.value = true
@@ -312,21 +352,21 @@ class InvoiceViewModel(
         selectedBillToClientId.value = null
     }
 
-    fun onInvoiceNumberChange(value: String) {
+    fun onInvoiceNumberChange(value: TextFieldValue) {
         headerFormState.update { it.copy(invoiceNumber = value, errorMessage = null) }
     }
 
-    fun onBillToNameChange(value: String) {
+    fun onBillToNameChange(value: TextFieldValue) {
         headerFormState.update { it.copy(billToName = value, errorMessage = null) }
         selectedBillToClientId.value = null
     }
 
     fun onBillToClientSelected(client: ClientEntity) {
-        headerFormState.update { it.copy(billToName = client.name, errorMessage = null) }
+        headerFormState.update { it.copy(billToName = TextFieldValue(client.name, selection = androidx.compose.ui.text.TextRange(client.name.length)), errorMessage = null) }
         selectedBillToClientId.value = client.clientId
     }
 
-    fun onIssueDateChange(value: String) {
+    fun onIssueDateChange(value: TextFieldValue) {
         headerFormState.update { it.copy(issueDate = value, errorMessage = null) }
     }
 
@@ -334,11 +374,11 @@ class InvoiceViewModel(
         headerFormState.update { it.copy(includeGst = value) }
     }
 
-    fun onOtherAmountChange(value: String) {
+    fun onOtherAmountChange(value: TextFieldValue) {
         headerFormState.update { it.copy(otherAmountText = value, errorMessage = null) }
     }
 
-    fun onNotesChange(value: String) {
+    fun onNotesChange(value: TextFieldValue) {
         headerFormState.update { it.copy(notes = value) }
     }
 
@@ -346,25 +386,25 @@ class InvoiceViewModel(
     fun saveHeader() {
         val form = headerFormState.value
         val error = InvoiceUtils.validateHeader(
-            invoiceNumber = form.invoiceNumber,
-            billToName = form.billToName,
-            issueDate = form.issueDate,
-            otherAmountText = form.otherAmountText
+            invoiceNumber = form.invoiceNumber.text,
+            billToName = form.billToName.text,
+            issueDate = form.issueDate.text,
+            otherAmountText = form.otherAmountText.text
         )
         if (error != null) {
             headerFormState.update { it.copy(errorMessage = error) }
             return
         }
 
-        val otherAmount = InvoiceUtils.parseAmount(form.otherAmountText) ?: 0.0
-        val storedIssueDate = DateFormatUtils.toStoredDate(form.issueDate) ?: run {
+        val otherAmount = InvoiceUtils.parseAmount(form.otherAmountText.text) ?: 0.0
+        val storedIssueDate = DateFormatUtils.toStoredDate(form.issueDate.text) ?: run {
             headerFormState.update { it.copy(errorMessage = "Use date format dd-MM-yyyy.") }
             return
         }
 
         viewModelScope.launch {
             val now = System.currentTimeMillis()
-            val trimmedBillTo = form.billToName.trim()
+            val trimmedBillTo = form.billToName.text.trim()
 
             val linkedClient = selectedBillToClientId.value?.let { clientRepository.getClient(it) }
                 ?: clientRepository.observeClients().first().firstOrNull {
@@ -382,7 +422,7 @@ class InvoiceViewModel(
                     invoiceId = form.invoiceId ?: 0L,
                     jobId = jobId,
                     clientId = linkedClient?.clientId,
-                    invoiceNumber = form.invoiceNumber.trim(),
+                    invoiceNumber = form.invoiceNumber.text.trim(),
                     invoiceDate = storedIssueDate,
                     billToNameSnapshot = trimmedBillTo.ifBlank { linkedClient?.name.orEmpty() },
                     billToAddressSnapshot = linkedClient?.address.orEmpty(),
@@ -394,7 +434,7 @@ class InvoiceViewModel(
                     gstAmount = gstAmount,
                     otherAmount = otherAmount,
                     totalAmount = totalAmount,
-                    notes = form.notes.trim(),
+                    notes = form.notes.text.trim(),
                     createdAt = existingInvoice?.createdAt ?: now,
                     updatedAt = now
                 )
@@ -417,9 +457,10 @@ class InvoiceViewModel(
             val settings = settingsRepository.observeSettings().first()
             val defaultRate = settings?.defaultLabourRate ?: 0.0
             val nextOrder = (uiState.value.lines.maxOfOrNull { it.sortOrder } ?: 0) + 1
+            val rateStr = if (defaultRate > 0) defaultRate.toString() else ""
             lineFormState.value = InvoiceLineFormState(
                 sortOrder = nextOrder,
-                rateText = if (defaultRate > 0) defaultRate.toString() else ""
+                rateText = TextFieldValue(rateStr, selection = androidx.compose.ui.text.TextRange(rateStr.length))
             )
             isEditingLine.value = true
         }
@@ -427,13 +468,16 @@ class InvoiceViewModel(
 
     /** Opens the line dialog pre-filled with an existing line's data. */
     fun openEditLine(line: InvoiceLineEntity) {
+        val qtyStr = line.qty.toString()
+        val rateStr = line.rate.toString()
+        val amountStr = line.amount.toString()
         lineFormState.value = InvoiceLineFormState(
             lineId = line.lineId,
             sortOrder = line.sortOrder,
-            description = line.description,
-            qtyText = line.qty.toString(),
-            rateText = line.rate.toString(),
-            amountText = line.amount.toString(),
+            description = TextFieldValue(line.description, selection = androidx.compose.ui.text.TextRange(line.description.length)),
+            qtyText = TextFieldValue(qtyStr, selection = androidx.compose.ui.text.TextRange(qtyStr.length)),
+            rateText = TextFieldValue(rateStr, selection = androidx.compose.ui.text.TextRange(rateStr.length)),
+            amountText = TextFieldValue(amountStr, selection = androidx.compose.ui.text.TextRange(amountStr.length)),
             isManualAmount = line.isManualAmount
         )
         isEditingLine.value = true
@@ -444,19 +488,19 @@ class InvoiceViewModel(
         lineFormState.value = InvoiceLineFormState()
     }
 
-    fun onLineDescriptionChange(value: String) {
+    fun onLineDescriptionChange(value: TextFieldValue) {
         lineFormState.update { it.copy(description = value, errorMessage = null) }
     }
 
-    fun onLineQtyChange(value: String) {
+    fun onLineQtyChange(value: TextFieldValue) {
         lineFormState.update { it.copy(qtyText = value, errorMessage = null) }
     }
 
-    fun onLineRateChange(value: String) {
+    fun onLineRateChange(value: TextFieldValue) {
         lineFormState.update { it.copy(rateText = value, errorMessage = null) }
     }
 
-    fun onLineAmountChange(value: String) {
+    fun onLineAmountChange(value: TextFieldValue) {
         lineFormState.update { it.copy(amountText = value, errorMessage = null) }
     }
 
@@ -471,10 +515,10 @@ class InvoiceViewModel(
         val invoiceId = uiState.value.invoice?.invoiceId ?: return
 
         val error = InvoiceUtils.validateLine(
-            description = form.description,
-            qtyText = form.qtyText,
-            rateText = form.rateText,
-            amountText = form.amountText,
+            description = form.description.text,
+            qtyText = form.qtyText.text,
+            rateText = form.rateText.text,
+            amountText = form.amountText.text,
             isManualAmount = form.isManualAmount
         )
         if (error != null) {
@@ -491,7 +535,7 @@ class InvoiceViewModel(
                 InvoiceLineEntity(
                     invoiceLineId = form.lineId ?: 0L,
                     invoiceId = invoiceId,
-                    description = form.description.trim(),
+                    description = form.description.text.trim(),
                     qty = qty,
                     rate = rate,
                     amount = effectiveAmount,
@@ -544,12 +588,16 @@ class InvoiceViewModel(
             val labourAmount = InvoiceUtils.calculateLabourCost(totalHours, defaultRate)
             val nextOrder = (uiState.value.lines.maxOfOrNull { it.sortOrder } ?: 0) + 1
 
+            val qtyStr = String.format(Locale.US, "%.2f", totalHours)
+            val rateStr = if (defaultRate > 0) String.format(Locale.US, "%.2f", defaultRate) else ""
+            val amountStr = String.format(Locale.US, "%.2f", labourAmount)
+
             lineFormState.value = InvoiceLineFormState(
                 sortOrder = nextOrder,
-                description = LABOUR_LINE_DESCRIPTION,
-                qtyText = String.format(Locale.US, "%.2f", totalHours),
-                rateText = if (defaultRate > 0) String.format(Locale.US, "%.2f", defaultRate) else "",
-                amountText = String.format(Locale.US, "%.2f", labourAmount),
+                description = TextFieldValue(LABOUR_LINE_DESCRIPTION, selection = androidx.compose.ui.text.TextRange(LABOUR_LINE_DESCRIPTION.length)),
+                qtyText = TextFieldValue(qtyStr, selection = androidx.compose.ui.text.TextRange(qtyStr.length)),
+                rateText = TextFieldValue(rateStr, selection = androidx.compose.ui.text.TextRange(rateStr.length)),
+                amountText = TextFieldValue(amountStr, selection = androidx.compose.ui.text.TextRange(amountStr.length)),
                 isManualAmount = false
             )
             isEditingLine.value = true
@@ -574,12 +622,15 @@ class InvoiceViewModel(
             val totalMaterials = getTotalMaterialCostForJob()
             val nextOrder = (uiState.value.lines.maxOfOrNull { it.sortOrder } ?: 0) + 1
 
+            val rateStr = String.format(Locale.US, "%.2f", totalMaterials)
+            val amountStr = String.format(Locale.US, "%.2f", totalMaterials)
+
             lineFormState.value = InvoiceLineFormState(
                 sortOrder = nextOrder,
-                description = MATERIALS_LINE_DESCRIPTION,
-                qtyText = "1",
-                rateText = String.format(Locale.US, "%.2f", totalMaterials),
-                amountText = String.format(Locale.US, "%.2f", totalMaterials),
+                description = TextFieldValue(MATERIALS_LINE_DESCRIPTION, selection = androidx.compose.ui.text.TextRange(MATERIALS_LINE_DESCRIPTION.length)),
+                qtyText = TextFieldValue("1", selection = androidx.compose.ui.text.TextRange(1)),
+                rateText = TextFieldValue(rateStr, selection = androidx.compose.ui.text.TextRange(rateStr.length)),
+                amountText = TextFieldValue(amountStr, selection = androidx.compose.ui.text.TextRange(amountStr.length)),
                 isManualAmount = true
             )
             isEditingLine.value = true
@@ -687,6 +738,53 @@ class InvoiceViewModel(
         return InvoiceUtils.calculateTotalMaterialCost(materials.map { it.price })
     }
 
+    /**
+     * Automatically updates existing imported lines (Labour/Materials) if the source data
+     * has changed. Skips syncing for a line if the user is currently editing it in the dialog.
+     */
+    private suspend fun performAutoSync(pkg: SyncPackage) {
+        var changed = false
+        val currentLineEditingId = if (isEditingLine.value) lineFormState.value.lineId else null
+
+        // Sync Labour
+        pkg.lines.firstOrNull { it.description.trim().equals(LABOUR_LINE_DESCRIPTION, ignoreCase = true) }?.let { line ->
+            // Only sync if not manual override and not currently being edited
+            if (!line.manualAmountOverride && line.lineId != currentLineEditingId) {
+                val expectedAmount = pkg.totalHours * pkg.labourRate
+                if (abs(line.qty - pkg.totalHours) > 0.001 || 
+                    abs(line.rate - pkg.labourRate) > 0.001 || 
+                    abs(line.amount - expectedAmount) > 0.001) {
+                    
+                    invoiceRepository.saveInvoiceLine(line.copy(
+                        qty = pkg.totalHours,
+                        rate = pkg.labourRate,
+                        amount = expectedAmount
+                    ))
+                    changed = true
+                }
+            }
+        }
+
+        // Sync Materials
+        pkg.lines.firstOrNull { it.description.trim().equals(MATERIALS_LINE_DESCRIPTION, ignoreCase = true) }?.let { line ->
+            // Materials are usually manual override (lump sum), but we still sync the total cost
+            if (line.manualAmountOverride && line.lineId != currentLineEditingId) {
+                if (abs(line.amount - pkg.totalMaterialCost) > 0.001) {
+                    invoiceRepository.saveInvoiceLine(line.copy(
+                        amount = pkg.totalMaterialCost,
+                        rate = pkg.totalMaterialCost,
+                        qty = 1.0
+                    ))
+                    changed = true
+                }
+            }
+        }
+
+        if (changed) {
+            syncStoredInvoiceTotals(pkg.invoice.invoiceId)
+        }
+    }
+
     private suspend fun syncStoredInvoiceTotals(invoiceId: Long) {
         val invoice = invoiceRepository.observeInvoiceWithLines(invoiceId).first()?.invoice ?: return
         val lines = invoiceRepository.observeInvoiceLines(invoiceId).first()
@@ -694,14 +792,21 @@ class InvoiceViewModel(
         val taxableBase = subtotal + invoice.otherAmount
         val gstAmount = if (invoice.gstEnabled) taxableBase * invoice.gstRate else 0.0
         val total = taxableBase + gstAmount
-        invoiceRepository.saveInvoice(
-            invoice.copy(
-                subtotalExclusiveGst = subtotal,
-                gstAmount = gstAmount,
-                totalAmount = total,
-                updatedAt = System.currentTimeMillis()
+
+        // Only update if numerical values changed to avoid infinite loop via updatedAt
+        if (abs(invoice.subtotalExclusiveGst - subtotal) > 0.001 ||
+            abs(invoice.gstAmount - gstAmount) > 0.001 ||
+            abs(invoice.totalAmount - total) > 0.001) {
+            
+            invoiceRepository.saveInvoice(
+                invoice.copy(
+                    subtotalExclusiveGst = subtotal,
+                    gstAmount = gstAmount,
+                    totalAmount = total,
+                    updatedAt = System.currentTimeMillis()
+                )
             )
-        )
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -720,6 +825,14 @@ class InvoiceViewModel(
         val isEditingLine: Boolean,
         val lineFormState: InvoiceLineFormState,
         val userMessage: String?
+    )
+
+    private data class SyncPackage(
+        val totalHours: Double,
+        val totalMaterialCost: Double,
+        val labourRate: Double,
+        val invoice: InvoiceEntity,
+        val lines: List<InvoiceLineEntity>
     )
 
     // ─────────────────────────────────────────────────────────────────────

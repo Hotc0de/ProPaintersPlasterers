@@ -1,14 +1,13 @@
 package com.example.propaintersplastererspayment.feature.client.ui
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,15 +15,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -32,7 +28,6 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -46,9 +41,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -58,8 +53,8 @@ import com.example.propaintersplastererspayment.core.ui.isCompactPhoneWidth
 import com.example.propaintersplastererspayment.feature.client.vm.AddEditClientUiState
 import com.example.propaintersplastererspayment.feature.client.vm.AddEditClientViewModel
 import com.example.propaintersplastererspayment.feature.client.vm.ClientFormState
-import com.example.propaintersplastererspayment.ui.theme.GoldAccent
-import com.example.propaintersplastererspayment.ui.theme.OxfordBlue
+import com.example.propaintersplastererspayment.ui.components.*
+import com.example.propaintersplastererspayment.ui.theme.*
 
 @Composable
 fun AddEditClientRoute(
@@ -102,12 +97,12 @@ fun AddEditClientRoute(
 @Composable
 fun AddEditClientScreen(
     uiState: AddEditClientUiState,
-    onNameChange: (String) -> Unit,
+    onNameChange: (TextFieldValue) -> Unit,
     onClientTypeChange: (String) -> Unit,
-    onAddressChange: (String) -> Unit,
-    onPhoneChange: (String) -> Unit,
-    onEmailChange: (String) -> Unit,
-    onNotesChange: (String) -> Unit,
+    onAddressChange: (TextFieldValue) -> Unit,
+    onPhoneChange: (TextFieldValue) -> Unit,
+    onEmailChange: (TextFieldValue) -> Unit,
+    onNotesChange: (TextFieldValue) -> Unit,
     onSave: () -> Unit,
     onDelete: () -> Unit,
     onBack: () -> Unit,
@@ -126,13 +121,14 @@ fun AddEditClientScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        containerColor = CharcoalBackground,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
                     Text(
                         text = if (uiState.isExistingClient) "Edit Client" else "New Client",
-                        color = Color.White,
+                        color = OffWhite,
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -141,72 +137,51 @@ fun AddEditClientScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color.White
+                            tint = IndustrialGold
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = OxfordBlue
+                    containerColor = CharcoalBackground
                 )
             )
         }
     ) { innerPadding ->
         if (uiState.isLoading) {
-            Column(
+            Box(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) { CircularProgressIndicator() }
+                contentAlignment = Alignment.Center
+            ) { CircularProgressIndicator(color = IndustrialGold) }
         } else {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
                     .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .padding(AppDimensions.screenPadding),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = OxfordBlue),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                ) {
-                    Box {
-                        Box(
-                            modifier = Modifier
-                                .width(6.dp)
-                                .matchParentSize()
-                                .background(
-                                    brush = Brush.verticalGradient(
-                                        colors = listOf(
-                                            GoldAccent,
-                                            GoldAccent.copy(alpha = 0.7f)
-                                        )
-                                    )
-                                )
-                        )
-                        Column(
-                            modifier = Modifier.padding(start = 22.dp).padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            // Client type selector
+                IndustrialCard {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // Client type selector
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
                                 "Client Type",
                                 style = MaterialTheme.typography.labelLarge,
-                                color = GoldAccent,
+                                color = TextMuted,
                                 fontWeight = FontWeight.Bold
                             )
                             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                                 val compactLayout = isCompactPhoneWidth(maxWidth)
 
                                 val chipColors = FilterChipDefaults.filterChipColors(
-                                    containerColor = Color.White.copy(alpha = 0.05f),
-                                    labelColor = Color.White.copy(alpha = 0.7f),
-                                    selectedContainerColor = GoldAccent.copy(alpha = 0.2f),
-                                    selectedLabelColor = GoldAccent,
-                                    selectedLeadingIconColor = GoldAccent
+                                    containerColor = CharcoalMuted,
+                                    labelColor = TextMuted,
+                                    selectedContainerColor = IndustrialGold.copy(alpha = 0.2f),
+                                    selectedLabelColor = IndustrialGold,
+                                    selectedLeadingIconColor = IndustrialGold
                                 )
 
                                 if (compactLayout) {
@@ -215,13 +190,25 @@ fun AddEditClientScreen(
                                             selected = form.clientType == "PRIVATE",
                                             onClick = { onClientTypeChange("PRIVATE") },
                                             label = { Text("Private") },
-                                            colors = chipColors
+                                            colors = chipColors,
+                                            border = FilterChipDefaults.filterChipBorder(
+                                                borderColor = BorderColor,
+                                                selectedBorderColor = IndustrialGold,
+                                                enabled = true,
+                                                selected = form.clientType == "PRIVATE"
+                                            )
                                         )
                                         FilterChip(
                                             selected = form.clientType == "BUSINESS",
                                             onClick = { onClientTypeChange("BUSINESS") },
                                             label = { Text("Business") },
-                                            colors = chipColors
+                                            colors = chipColors,
+                                            border = FilterChipDefaults.filterChipBorder(
+                                                borderColor = BorderColor,
+                                                selectedBorderColor = IndustrialGold,
+                                                enabled = true,
+                                                selected = form.clientType == "BUSINESS"
+                                            )
                                         )
                                     }
                                 } else {
@@ -230,110 +217,116 @@ fun AddEditClientScreen(
                                             selected = form.clientType == "PRIVATE",
                                             onClick = { onClientTypeChange("PRIVATE") },
                                             label = { Text("Private") },
-                                            colors = chipColors
+                                            colors = chipColors,
+                                            border = FilterChipDefaults.filterChipBorder(
+                                                borderColor = BorderColor,
+                                                selectedBorderColor = IndustrialGold,
+                                                enabled = true,
+                                                selected = form.clientType == "PRIVATE"
+                                            )
                                         )
                                         FilterChip(
                                             selected = form.clientType == "BUSINESS",
                                             onClick = { onClientTypeChange("BUSINESS") },
                                             label = { Text("Business") },
-                                            colors = chipColors
+                                            colors = chipColors,
+                                            border = FilterChipDefaults.filterChipBorder(
+                                                borderColor = BorderColor,
+                                                selectedBorderColor = IndustrialGold,
+                                                enabled = true,
+                                                selected = form.clientType == "BUSINESS"
+                                            )
                                         )
                                     }
                                 }
                             }
+                        }
 
-                            OutlinedTextField(
-                                value = form.name,
-                                onValueChange = onNameChange,
-                                label = { Text("Name *", color = Color.White.copy(alpha = 0.7f)) },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                isError = form.errorMessage != null && form.name.isBlank()
-                            )
+                        IndustrialTextField(
+                            value = form.name,
+                            onValueChange = onNameChange,
+                            label = "Name *",
+                            placeholder = "Enter client name",
+                            singleLine = true
+                        )
 
-                            OutlinedTextField(
-                                value = form.address,
-                                onValueChange = onAddressChange,
-                                label = { Text("Address", color = Color.White.copy(alpha = 0.7f)) },
-                                modifier = Modifier.fillMaxWidth(),
-                                minLines = 2
-                            )
+                        IndustrialTextField(
+                            value = form.address,
+                            onValueChange = onAddressChange,
+                            label = "Address",
+                            placeholder = "Enter client address",
+                            singleLine = false
+                        )
 
-                            OutlinedTextField(
-                                value = form.phoneNumber,
-                                onValueChange = onPhoneChange,
-                                label = { Text("Phone", color = Color.White.copy(alpha = 0.7f)) },
-                                isError = form.phoneFormatError != null,
-                                supportingText = { Text(form.phoneFormatError ?: "Format: 000-0000000", color = if (form.phoneFormatError != null) MaterialTheme.colorScheme.error else Color.White.copy(alpha = 0.5f)) },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
-                            )
-
-                            OutlinedTextField(
-                                value = form.email,
-                                onValueChange = onEmailChange,
-                                label = { Text("Email", color = Color.White.copy(alpha = 0.7f)) },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
-                            )
-
-                            OutlinedTextField(
-                                value = form.notes,
-                                onValueChange = onNotesChange,
-                                label = { Text("Notes", color = Color.White.copy(alpha = 0.7f)) },
-                                modifier = Modifier.fillMaxWidth(),
-                                minLines = 3
+                        IndustrialTextField(
+                            value = form.phoneNumber,
+                            onValueChange = onPhoneChange,
+                            label = "Phone",
+                            placeholder = "000-0000000",
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                        )
+                        if (form.phoneFormatError != null) {
+                            Text(
+                                text = form.phoneFormatError ?: "",
+                                color = ErrorRed,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(top = 4.dp)
                             )
                         }
+
+                        IndustrialTextField(
+                            value = form.email,
+                            onValueChange = onEmailChange,
+                            label = "Email",
+                            placeholder = "example@email.com",
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                        )
+
+                        IndustrialTextField(
+                            value = form.notes,
+                            onValueChange = onNotesChange,
+                            label = "Notes",
+                            placeholder = "Additional information...",
+                            singleLine = false
+                        )
                     }
                 }
 
                 if (form.errorMessage != null) {
                     Text(
                         text = form.errorMessage,
-                        color = MaterialTheme.colorScheme.error,
+                        color = ErrorRed,
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(horizontal = 4.dp)
                     )
                 }
 
-                Button(
+                PrimaryButton(
+                    text = if (uiState.isExistingClient) "Save Changes" else "Add Client",
                     onClick = onSave,
-                    modifier = Modifier.fillMaxWidth(),
                     enabled = !uiState.isSaving,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = GoldAccent,
-                        contentColor = OxfordBlue
-                    )
-                ) {
-                    if (uiState.isSaving) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.padding(end = 8.dp).size(20.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
+                    icon = {
+                        if (uiState.isSaving) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = CharcoalBackground
+                            )
+                        } else {
+                            Icon(Icons.Default.Save, null)
+                        }
                     }
-                    Text(
-                        text = if (uiState.isExistingClient) "Save Changes" else "Add Client",
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                )
 
                 if (uiState.isExistingClient) {
-                    Button(
+                    SecondaryButton(
+                        text = "Delete Client",
                         onClick = onDelete,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer,
-                            contentColor = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                    ) {
-                        Text("Delete Client", fontWeight = FontWeight.Bold)
-                    }
+                        icon = { Icon(Icons.Default.Delete, null, tint = ErrorRed) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         }

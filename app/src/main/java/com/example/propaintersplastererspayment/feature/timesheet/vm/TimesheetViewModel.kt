@@ -1,5 +1,6 @@
 package com.example.propaintersplastererspayment.feature.timesheet.vm
 
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -33,12 +34,12 @@ data class WorkEntryFormState(
     val entryId: Long? = null,
     val workDate: String = defaultWorkDate(),
     val workerName: String = "",
-    val startTime: String = "",
-    val finishTime: String = "",
+    val startTime: TextFieldValue = TextFieldValue(""),
+    val finishTime: TextFieldValue = TextFieldValue(""),
     val errorMessage: String? = null
 ) {
     val calculatedHours: Double?
-        get() = WorkEntryTimeUtils.calculateHoursWorked(startTime = startTime, finishTime = finishTime)
+        get() = WorkEntryTimeUtils.calculateHoursWorked(startTime = startTime.text, finishTime = finishTime.text)
 }
 
 data class TimesheetUiState(
@@ -106,8 +107,8 @@ class TimesheetViewModel(
             entryId = entry.entryId,
             workDate = DateFormatUtils.formatDisplayDate(entry.workDate),
             workerName = entry.workerName,
-            startTime = entry.startTime,
-            finishTime = entry.finishTime,
+            startTime = TextFieldValue(entry.startTime, selection = androidx.compose.ui.text.TextRange(entry.startTime.length)),
+            finishTime = TextFieldValue(entry.finishTime, selection = androidx.compose.ui.text.TextRange(entry.finishTime.length)),
             errorMessage = null
         )
         isFormVisible.value = true
@@ -126,11 +127,11 @@ class TimesheetViewModel(
         formState.update { current -> current.copy(workerName = value, errorMessage = null) }
     }
 
-    fun onStartTimeChange(value: String) {
+    fun onStartTimeChange(value: TextFieldValue) {
         formState.update { current -> current.copy(startTime = value, errorMessage = null) }
     }
 
-    fun onFinishTimeChange(value: String) {
+    fun onFinishTimeChange(value: TextFieldValue) {
         formState.update { current -> current.copy(finishTime = value, errorMessage = null) }
     }
 
@@ -191,8 +192,8 @@ class TimesheetViewModel(
         val validationMessage = WorkEntryTimeUtils.validateWorkEntry(
             workDate = currentForm.workDate,
             workerName = currentForm.workerName,
-            startTime = currentForm.startTime,
-            finishTime = currentForm.finishTime
+            startTime = currentForm.startTime.text,
+            finishTime = currentForm.finishTime.text
         )
 
         if (validationMessage != null) {
@@ -210,8 +211,8 @@ class TimesheetViewModel(
                     jobOwnerId = jobId,
                     workDate = storedWorkDate,
                     workerName = currentForm.workerName.trim(),
-                    startTime = currentForm.startTime,
-                    finishTime = currentForm.finishTime,
+                    startTime = currentForm.startTime.text,
+                    finishTime = currentForm.finishTime.text,
                     hoursWorked = hoursWorked
                 )
             )

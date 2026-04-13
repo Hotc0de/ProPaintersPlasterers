@@ -7,14 +7,14 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import com.example.propaintersplastererspayment.app.navigation.AppNavGraph
-import com.example.propaintersplastererspayment.ui.theme.ProPaintersPlasterersPaymentTheme
+import com.example.propaintersplastererspayment.ui.theme.ProPaintersTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            ProPaintersPlasterersPaymentTheme {
+            ProPaintersTheme {
                 AppNavGraph(modifier = Modifier.fillMaxSize())
             }
         }

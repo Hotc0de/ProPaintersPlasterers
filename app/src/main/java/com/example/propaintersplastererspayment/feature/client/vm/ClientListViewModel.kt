@@ -1,5 +1,6 @@
 package com.example.propaintersplastererspayment.feature.client.vm
 
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -11,13 +12,14 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class ClientListUiState(
     val clients: List<ClientEntity> = emptyList(),
-    val searchQuery: String = "",
+    val searchQuery: TextFieldValue = TextFieldValue(""),
     val isLoading: Boolean = true
 )
 
@@ -26,9 +28,10 @@ class ClientListViewModel(
     private val clientRepository: ClientRepository
 ) : ViewModel() {
 
-    private val searchQuery = MutableStateFlow("")
+    private val searchQuery = MutableStateFlow(TextFieldValue(""))
 
     private val filteredClients: StateFlow<List<ClientEntity>> = searchQuery
+        .map { it.text }
         .flatMapLatest { query ->
             if (query.isBlank()) {
                 clientRepository.observeClients()
@@ -57,7 +60,7 @@ class ClientListViewModel(
         initialValue = ClientListUiState()
     )
 
-    fun onSearchQueryChange(query: String) {
+    fun onSearchQueryChange(query: TextFieldValue) {
         searchQuery.update { query }
     }
 

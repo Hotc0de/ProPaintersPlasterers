@@ -1,5 +1,6 @@
 package com.example.propaintersplastererspayment.feature.job.vm
 
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -16,12 +17,12 @@ import kotlinx.coroutines.launch
 
 data class JobFormUiState(
     val jobId: Long? = null,
-    val address: String = "",
-    val clientQuery: String = "",
+    val address: TextFieldValue = TextFieldValue(""),
+    val clientQuery: TextFieldValue = TextFieldValue(""),
     val selectedClientId: Long? = null,
     val selectedClientName: String = "",
     val clients: List<ClientEntity> = emptyList(),
-    val notes: String = "",
+    val notes: TextFieldValue = TextFieldValue(""),
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
     val errorMessage: String? = null,
@@ -29,7 +30,7 @@ data class JobFormUiState(
 ) {
     val filteredClients: List<ClientEntity>
         get() {
-            val q = clientQuery.trim()
+            val q = clientQuery.text.trim()
             // Show all clients when: query is empty, OR query equals the already-selected
             // client name (dropdown opened for browsing, not for a new search).
             if (q.isEmpty() || q.equals(selectedClientName, ignoreCase = true)) return clients
@@ -83,11 +84,11 @@ class JobFormViewModel(
                 mutableUiState.update {
                     it.copy(
                         jobId = job.jobId,
-                        address = job.propertyAddress,
+                        address = TextFieldValue(job.propertyAddress, selection = androidx.compose.ui.text.TextRange(job.propertyAddress.length)),
                         selectedClientId = job.clientId,
                         selectedClientName = selectedName,
-                        clientQuery = selectedName,
-                        notes = job.notes,
+                        clientQuery = TextFieldValue(selectedName, selection = androidx.compose.ui.text.TextRange(selectedName.length)),
+                        notes = TextFieldValue(job.notes, selection = androidx.compose.ui.text.TextRange(job.notes.length)),
                         isLoading = false
                     )
                 }
@@ -97,11 +98,11 @@ class JobFormViewModel(
         }
     }
 
-    fun onAddressChange(value: String) {
+    fun onAddressChange(value: TextFieldValue) {
         mutableUiState.update { it.copy(address = value, errorMessage = null) }
     }
 
-    fun onClientQueryChange(value: String) {
+    fun onClientQueryChange(value: TextFieldValue) {
         mutableUiState.update {
             it.copy(
                 clientQuery = value,
@@ -118,7 +119,7 @@ class JobFormViewModel(
             it.copy(
                 selectedClientId = client.clientId,
                 selectedClientName = client.name,
-                clientQuery = client.name,
+                clientQuery = TextFieldValue(client.name, selection = androidx.compose.ui.text.TextRange(client.name.length)),
                 errorMessage = null
             )
         }
@@ -131,21 +132,21 @@ class JobFormViewModel(
                 it.copy(
                     selectedClientId = newClient.clientId,
                     selectedClientName = newClient.name,
-                    clientQuery = newClient.name,
+                    clientQuery = TextFieldValue(newClient.name, selection = androidx.compose.ui.text.TextRange(newClient.name.length)),
                     errorMessage = null
                 )
             }
         }
     }
 
-    fun onNotesChange(value: String) {
+    fun onNotesChange(value: TextFieldValue) {
         mutableUiState.update { it.copy(notes = value, errorMessage = null) }
     }
 
     fun saveJob() {
         val current = mutableUiState.value
         val validationError = when {
-            current.address.isBlank() -> "Address is required."
+            current.address.text.isBlank() -> "Address is required."
             current.selectedClientId == null -> "Please select a client/company."
             else -> null
         }
@@ -159,11 +160,11 @@ class JobFormViewModel(
             jobRepository.saveJob(
                 JobEntity(
                     jobId = current.jobId ?: 0,
-                    propertyAddress = current.address.trim(),
+                    propertyAddress = current.address.text.trim(),
                     clientId = current.selectedClientId,
                     clientNameSnapshot = current.selectedClientName.trim(),
                     jobName = current.selectedClientName.trim(),
-                    notes = current.notes.trim(),
+                    notes = current.notes.text.trim(),
                     createdAt = current.jobId?.let { existing ->
                         jobRepository.observeJob(existing).first()?.createdAt
                     } ?: System.currentTimeMillis()

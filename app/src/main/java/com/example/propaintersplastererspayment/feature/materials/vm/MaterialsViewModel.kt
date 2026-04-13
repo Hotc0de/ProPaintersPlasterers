@@ -1,5 +1,6 @@
 package com.example.propaintersplastererspayment.feature.materials.vm
 
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -18,12 +19,12 @@ import kotlinx.coroutines.launch
 
 data class MaterialFormState(
     val materialId: Long? = null,
-    val materialName: String = "",
-    val priceText: String = "",
+    val materialName: TextFieldValue = TextFieldValue(""),
+    val priceText: TextFieldValue = TextFieldValue(""),
     val errorMessage: String? = null
 ) {
     val parsedPrice: Double?
-        get() = MaterialValidationUtils.parsePrice(priceText)
+        get() = MaterialValidationUtils.parsePrice(priceText.text)
 }
 
 data class MaterialsUiState(
@@ -82,10 +83,11 @@ class MaterialsViewModel(
     }
 
     fun openEditMaterial(item: MaterialItemEntity) {
+        val priceStr = item.price.toString()
         formState.value = MaterialFormState(
             materialId = item.materialId,
-            materialName = item.materialName,
-            priceText = item.price.toString(),
+            materialName = TextFieldValue(item.materialName, selection = androidx.compose.ui.text.TextRange(item.materialName.length)),
+            priceText = TextFieldValue(priceStr, selection = androidx.compose.ui.text.TextRange(priceStr.length)),
             errorMessage = null
         )
         isFormVisible.value = true
@@ -96,11 +98,11 @@ class MaterialsViewModel(
         formState.value = MaterialFormState()
     }
 
-    fun onMaterialNameChange(value: String) {
+    fun onMaterialNameChange(value: TextFieldValue) {
         formState.update { current -> current.copy(materialName = value, errorMessage = null) }
     }
 
-    fun onPriceChange(value: String) {
+    fun onPriceChange(value: TextFieldValue) {
         formState.update { current -> current.copy(priceText = value, errorMessage = null) }
     }
 
@@ -111,8 +113,8 @@ class MaterialsViewModel(
     fun saveMaterial() {
         val currentForm = formState.value
         val validationMessage = MaterialValidationUtils.validateMaterial(
-            materialName = currentForm.materialName,
-            priceText = currentForm.priceText
+            materialName = currentForm.materialName.text,
+            priceText = currentForm.priceText.text
         )
 
         if (validationMessage != null) {
@@ -127,7 +129,7 @@ class MaterialsViewModel(
                 MaterialItemEntity(
                     materialId = currentForm.materialId ?: 0,
                     jobOwnerId = jobId,
-                    materialName = currentForm.materialName.trim(),
+                    materialName = currentForm.materialName.text.trim(),
                     price = price
                 )
             )
