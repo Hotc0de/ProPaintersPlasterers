@@ -26,7 +26,7 @@ import com.example.propaintersplastererspayment.data.local.entity.WorkEntryEntit
         InvoiceLineEntity::class,
         AppSettingsEntity::class
     ],
-    version = 6,
+    version = 8,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

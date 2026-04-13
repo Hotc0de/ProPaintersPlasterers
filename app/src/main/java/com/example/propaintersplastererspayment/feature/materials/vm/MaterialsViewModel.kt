@@ -112,24 +112,24 @@ class MaterialsViewModel(
 
     fun saveMaterial() {
         val currentForm = formState.value
-        val validationMessage = MaterialValidationUtils.validateMaterial(
-            materialName = currentForm.materialName.text,
-            priceText = currentForm.priceText.text
-        )
+        val materialName = currentForm.materialName.text.trim()
+        val price = currentForm.parsedPrice
 
-        if (validationMessage != null) {
-            formState.update { it.copy(errorMessage = validationMessage) }
+        if (materialName.isBlank()) {
+            formState.update { it.copy(errorMessage = "Material name is required.") }
             return
         }
-
-        val price = currentForm.parsedPrice ?: return
+        if (price == null || price <= 0) {
+            formState.update { it.copy(errorMessage = "Invalid price.") }
+            return
+        }
 
         viewModelScope.launch {
             materialRepository.saveMaterial(
                 MaterialItemEntity(
                     materialId = currentForm.materialId ?: 0,
                     jobOwnerId = jobId,
-                    materialName = currentForm.materialName.text.trim(),
+                    materialName = materialName,
                     price = price
                 )
             )

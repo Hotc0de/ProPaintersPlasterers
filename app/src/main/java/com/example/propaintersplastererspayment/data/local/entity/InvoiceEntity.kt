@@ -42,7 +42,6 @@ data class InvoiceEntity(
     val gstEnabled: Boolean,
     val gstRate: Double,
     val gstAmount: Double,
-    val otherAmount: Double = 0.0,
     val totalAmount: Double,
     val notes: String = "",
     val createdAt: Long = System.currentTimeMillis(),

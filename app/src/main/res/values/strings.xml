@@ -73,8 +73,6 @@
     <string name="invoice_notes">Notes (optional)</string>
     <string name="invoice_include_gst">Include GST</string>
     <string name="invoice_no_gst">GST not included</string>
-    <string name="invoice_other_amount">Other Amount</string>
-    <string name="invoice_other_amount_hint">e.g. 0.00</string>
     <string name="invoice_edit">Edit</string>
     <string name="invoice_save">Save</string>
     <string name="invoice_cancel">Cancel</string>

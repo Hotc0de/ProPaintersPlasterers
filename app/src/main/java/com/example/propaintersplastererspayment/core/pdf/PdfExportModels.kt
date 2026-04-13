@@ -57,7 +57,6 @@ data class InvoicePdfData(
     val gstRate: Double,
     val gstAmount: Double,
     val totalIncGst: Double,
-    val otherAmount: Double,
     val finalTotal: Double,
     val notes: String
 )

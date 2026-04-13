@@ -189,20 +189,24 @@ class TimesheetViewModel(
 
     fun saveEntry() {
         val currentForm = formState.value
-        val validationMessage = WorkEntryTimeUtils.validateWorkEntry(
-            workDate = currentForm.workDate,
-            workerName = currentForm.workerName,
-            startTime = currentForm.startTime.text,
-            finishTime = currentForm.finishTime.text
-        )
-
-        if (validationMessage != null) {
-            formState.update { it.copy(errorMessage = validationMessage) }
+        if (currentForm.workerName.isBlank()) {
+            formState.update { it.copy(errorMessage = "Worker name is required.") }
+            return
+        }
+        val startTime = currentForm.startTime.text
+        val finishTime = currentForm.finishTime.text
+        val hoursWorked = WorkEntryTimeUtils.calculateHoursWorked(startTime, finishTime)
+        
+        if (hoursWorked == null) {
+            formState.update { it.copy(errorMessage = "Invalid time format. Use HH:mm.") }
             return
         }
 
-        val hoursWorked = currentForm.calculatedHours ?: return
-        val storedWorkDate = DateFormatUtils.toStoredDate(currentForm.workDate) ?: return
+        val storedWorkDate = DateFormatUtils.toStoredDate(currentForm.workDate)
+        if (storedWorkDate == null) {
+            formState.update { it.copy(errorMessage = "Invalid date format.") }
+            return
+        }
 
         viewModelScope.launch {
             workEntryRepository.saveEntry(
@@ -211,8 +215,8 @@ class TimesheetViewModel(
                     jobOwnerId = jobId,
                     workDate = storedWorkDate,
                     workerName = currentForm.workerName.trim(),
-                    startTime = currentForm.startTime.text,
-                    finishTime = currentForm.finishTime.text,
+                    startTime = startTime,
+                    finishTime = finishTime,
                     hoursWorked = hoursWorked
                 )
             )

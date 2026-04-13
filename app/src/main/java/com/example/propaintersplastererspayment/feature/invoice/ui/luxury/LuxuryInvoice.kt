@@ -43,9 +43,6 @@ fun LuxuryInvoice(
     invoiceData: InvoiceData,
     modifier: Modifier = Modifier
 ) {
-    val gstAmount = invoiceData.subtotal * invoiceData.gstRate
-    val totalAmount = invoiceData.subtotal + invoiceData.otherAmount + gstAmount
-
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -86,12 +83,12 @@ fun LuxuryInvoice(
             Spacer(modifier = Modifier.height(16.dp))
             TotalsSection(
                 subtotal = invoiceData.subtotal,
-                otherAmount = invoiceData.otherAmount,
-                gst = gstAmount,
-                total = totalAmount,
+                gst = invoiceData.gstAmount,
+                total = invoiceData.total,
                 invoiceNumber = invoiceData.invoiceNumber,
                 dueDate = invoiceData.dueDate,
-                gstRate = invoiceData.gstRate
+                gstRate = invoiceData.gstRate,
+                includeGst = invoiceData.includeGst
             )
             Spacer(modifier = Modifier.height(12.dp))
             InvoiceFooter(invoiceData.businessName)
@@ -579,12 +576,12 @@ fun ServicesTable(lineItems: List<InvoiceLineItem>) {
 @Composable
 fun TotalsSection(
     subtotal: Double,
-    otherAmount: Double,
     gst: Double,
     total: Double,
     invoiceNumber: String,
     dueDate: String,
-    gstRate: Double
+    gstRate: Double,
+    includeGst: Boolean
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -602,13 +599,21 @@ fun TotalsSection(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     TotalRow("SUBTOTAL", subtotal, false)
-                    TotalRow("OTHER AMOUNT", otherAmount, false)
-                    TotalRow(
-                        "GST",
-                        gst,
-                        true,
-                        "Goods & Services Tax (${(gstRate * 100).roundToInt()}%)"
-                    )
+                    if (includeGst) {
+                        TotalRow(
+                            "GST",
+                            gst,
+                            true,
+                            "Goods & Services Tax (${(gstRate * 100).roundToInt()}%)"
+                        )
+                    } else {
+                        TotalRow(
+                            "GST (EXEMPT)",
+                            0.0,
+                            true,
+                            "No GST applied to this invoice"
+                        )
+                    }
                 }
             }
 
@@ -799,7 +804,8 @@ fun LuxuryInvoicePreview() {
             InvoiceLineItem("Premium materials and supplies", 1, 1450.0, 1450.0)
         ),
         subtotal = 11600.0,
-        otherAmount = 0.0
+        gstAmount = 1160.0,
+        total = 12760.0
     )
 
     LuxuryInvoice(invoiceData = sampleData)

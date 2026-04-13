@@ -60,15 +60,12 @@ object InvoiceUtils {
     fun validateHeader(
         invoiceNumber: String,
         billToName: String,
-        issueDate: String,
-        otherAmountText: String
+        issueDate: String
     ): String? = when {
         invoiceNumber.isBlank() -> "Invoice number is required."
         billToName.isBlank()    -> "Bill To name is required."
         issueDate.isBlank()     -> "Invoice date is required."
         !DateFormatUtils.isValidDisplayDate(issueDate) -> "Use date format dd-MM-yyyy."
-        otherAmountText.isNotBlank() && parseAmount(otherAmountText) == null ->
-            "Other amount must be a valid number."
         else -> null
     }
 

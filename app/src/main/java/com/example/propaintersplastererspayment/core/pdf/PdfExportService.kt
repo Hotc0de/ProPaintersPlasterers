@@ -819,10 +819,14 @@ class PdfExportService {
         canvas.drawRoundRect(totalsCard, 4f, 4f, whiteFillPaint)
         canvas.drawRoundRect(totalsCard, 4f, 4f, subtleBorderPaint)
         drawAmountRow(canvas, "SUBTOTAL", invoiceData.subtotal, totalsLeft + 12f, contentRight - 12f, y + 18f, sectionLabelPaint, bodyPaint)
-        drawAmountRow(canvas, "GST", invoiceData.subtotal * invoiceData.gstRate, totalsLeft + 12f, contentRight - 12f, y + 40f, sectionLabelPaint, bodyPaint)
+        if (invoiceData.includeGst) {
+            drawAmountRow(canvas, "GST", invoiceData.gstAmount, totalsLeft + 12f, contentRight - 12f, y + 40f, sectionLabelPaint, bodyPaint)
+        } else {
+            drawAmountRow(canvas, "GST (EXEMPT)", 0.0, totalsLeft + 12f, contentRight - 12f, y + 40f, sectionLabelPaint, bodyPaint)
+        }
         y += 74f
 
-        val total = invoiceData.subtotal + (invoiceData.subtotal * invoiceData.gstRate)
+        val total = invoiceData.total
         val dueCard = RectF(totalsLeft, y, contentRight, y + 74f)
         canvas.drawRoundRect(dueCard, 4f, 4f, darkFillPaint)
         canvas.drawRoundRect(dueCard, 4f, 4f, borderPaint)

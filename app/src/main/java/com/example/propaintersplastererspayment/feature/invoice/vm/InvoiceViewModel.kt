@@ -46,9 +46,6 @@ import kotlin.math.abs
 
 /**
  * Holds the form values shown in the "Create / Edit Invoice" dialog.
- *
- * The [otherAmountText] field lets the user enter extra amounts (e.g. delivery,
- * discount) that are added to the subtotal after GST.
  */
 data class InvoiceHeaderFormState(
     val invoiceId: Long? = null,
@@ -57,7 +54,6 @@ data class InvoiceHeaderFormState(
     val issueDate: TextFieldValue = TextFieldValue(DateFormatUtils.todayDisplayDate()),
     val includeGst: Boolean = true,
     val gstRate: Double = InvoiceUtils.DEFAULT_GST_RATE,
-    val otherAmountText: TextFieldValue = TextFieldValue("0"),
     val notes: TextFieldValue = TextFieldValue(""),
     val errorMessage: String? = null
 )
@@ -105,8 +101,6 @@ data class InvoiceLineFormState(
 data class InvoiceTotals(
     val subtotalExGst: Double = 0.0,
     val gstAmount: Double = 0.0,
-    val subtotalIncGst: Double = 0.0,
-    val otherAmount: Double = 0.0,
     val finalTotal: Double = 0.0
 )
 
@@ -329,7 +323,6 @@ class InvoiceViewModel(
                     it.name.equals(invoice.billToName, ignoreCase = true)
                 }
             }
-        val otherAmountStr = if (invoice.otherAmount == 0.0) "0" else invoice.otherAmount.toString()
         val issueDateStr = DateFormatUtils.formatDisplayDate(invoice.issueDate)
         headerFormState.value = InvoiceHeaderFormState(
             invoiceId = invoice.invoiceId,
@@ -338,7 +331,6 @@ class InvoiceViewModel(
             issueDate = TextFieldValue(issueDateStr, selection = androidx.compose.ui.text.TextRange(issueDateStr.length)),
             includeGst = invoice.includeGst,
             gstRate = invoice.gstRate,
-            otherAmountText = TextFieldValue(otherAmountStr, selection = androidx.compose.ui.text.TextRange(otherAmountStr.length)),
             notes = TextFieldValue(invoice.notes, selection = androidx.compose.ui.text.TextRange(invoice.notes.length))
         )
         selectedBillToClientId.value = selectedClient?.clientId
@@ -374,10 +366,6 @@ class InvoiceViewModel(
         headerFormState.update { it.copy(includeGst = value) }
     }
 
-    fun onOtherAmountChange(value: TextFieldValue) {
-        headerFormState.update { it.copy(otherAmountText = value, errorMessage = null) }
-    }
-
     fun onNotesChange(value: TextFieldValue) {
         headerFormState.update { it.copy(notes = value) }
     }
@@ -388,15 +376,13 @@ class InvoiceViewModel(
         val error = InvoiceUtils.validateHeader(
             invoiceNumber = form.invoiceNumber.text,
             billToName = form.billToName.text,
-            issueDate = form.issueDate.text,
-            otherAmountText = form.otherAmountText.text
+            issueDate = form.issueDate.text
         )
         if (error != null) {
             headerFormState.update { it.copy(errorMessage = error) }
             return
         }
 
-        val otherAmount = InvoiceUtils.parseAmount(form.otherAmountText.text) ?: 0.0
         val storedIssueDate = DateFormatUtils.toStoredDate(form.issueDate.text) ?: run {
             headerFormState.update { it.copy(errorMessage = "Use date format dd-MM-yyyy.") }
             return
@@ -412,9 +398,8 @@ class InvoiceViewModel(
                 }
 
             val subtotalExclusiveGst = uiState.value.lines.sumOf { it.amount }
-            val taxableBase = subtotalExclusiveGst + otherAmount
-            val gstAmount = if (form.includeGst) taxableBase * form.gstRate else 0.0
-            val totalAmount = taxableBase + gstAmount
+            val gstAmount = if (form.includeGst) subtotalExclusiveGst * form.gstRate else 0.0
+            val totalAmount = subtotalExclusiveGst + gstAmount
             val existingInvoice = uiState.value.invoice
 
             invoiceRepository.saveInvoice(
@@ -432,7 +417,6 @@ class InvoiceViewModel(
                     gstEnabled = form.includeGst,
                     gstRate = form.gstRate,
                     gstAmount = gstAmount,
-                    otherAmount = otherAmount,
                     totalAmount = totalAmount,
                     notes = form.notes.text.trim(),
                     createdAt = existingInvoice?.createdAt ?: now,
@@ -675,8 +659,7 @@ class InvoiceViewModel(
                 includeGst = invoice.includeGst,
                 gstRate = invoice.gstRate,
                 gstAmount = snapshot.totals.gstAmount,
-                totalIncGst = snapshot.totals.subtotalIncGst,
-                otherAmount = snapshot.totals.otherAmount,
+                totalIncGst = snapshot.totals.finalTotal,
                 finalTotal = snapshot.totals.finalTotal,
                 notes = invoice.notes
             )
@@ -708,16 +691,12 @@ class InvoiceViewModel(
         if (invoice == null) return InvoiceTotals()
 
         val subtotalExGst = lines.sumOf { it.amount }
-        val otherAmount = invoice.otherAmount
-        val taxableBase = subtotalExGst + otherAmount
-        val gstAmount = if (invoice.includeGst) taxableBase * invoice.gstRate else 0.0
-        val finalTotal = taxableBase + gstAmount
+        val gstAmount = if (invoice.includeGst) subtotalExGst * invoice.gstRate else 0.0
+        val finalTotal = subtotalExGst + gstAmount
 
         return InvoiceTotals(
             subtotalExGst = subtotalExGst,
             gstAmount = gstAmount,
-            subtotalIncGst = finalTotal,
-            otherAmount = otherAmount,
             finalTotal = finalTotal
         )
     }
@@ -789,9 +768,8 @@ class InvoiceViewModel(
         val invoice = invoiceRepository.observeInvoiceWithLines(invoiceId).first()?.invoice ?: return
         val lines = invoiceRepository.observeInvoiceLines(invoiceId).first()
         val subtotal = lines.sumOf { it.amount }
-        val taxableBase = subtotal + invoice.otherAmount
-        val gstAmount = if (invoice.gstEnabled) taxableBase * invoice.gstRate else 0.0
-        val total = taxableBase + gstAmount
+        val gstAmount = if (invoice.gstEnabled) subtotal * invoice.gstRate else 0.0
+        val total = subtotal + gstAmount
 
         // Only update if numerical values changed to avoid infinite loop via updatedAt
         if (abs(invoice.subtotalExclusiveGst - subtotal) > 0.001 ||

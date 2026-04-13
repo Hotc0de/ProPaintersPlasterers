@@ -103,14 +103,17 @@ class JobFormViewModel(
     }
 
     fun onClientQueryChange(value: TextFieldValue) {
-        mutableUiState.update {
-            it.copy(
-                clientQuery = value,
-                // Typing means selection may have changed; force explicit reselection.
-                selectedClientId = null,
-                selectedClientName = "",
-                errorMessage = null
-            )
+        mutableUiState.update { state ->
+            if (value.text == state.selectedClientName) {
+                state.copy(clientQuery = value)
+            } else {
+                state.copy(
+                    clientQuery = value,
+                    selectedClientId = null,
+                    selectedClientName = "",
+                    errorMessage = null
+                )
+            }
         }
     }
 
@@ -145,25 +148,25 @@ class JobFormViewModel(
 
     fun saveJob() {
         val current = mutableUiState.value
-        val validationError = when {
-            current.address.text.isBlank() -> "Address is required."
-            current.selectedClientId == null -> "Please select a client/company."
-            else -> null
+        if (current.address.text.isBlank()) {
+            mutableUiState.update { it.copy(errorMessage = "Address is required.") }
+            return
         }
-        if (validationError != null) {
-            mutableUiState.update { it.copy(errorMessage = validationError) }
+        if (current.selectedClientId == null) {
+            mutableUiState.update { it.copy(errorMessage = "Please select a client.") }
             return
         }
 
         viewModelScope.launch {
             mutableUiState.update { it.copy(isSaving = true) }
+
             jobRepository.saveJob(
                 JobEntity(
                     jobId = current.jobId ?: 0,
                     propertyAddress = current.address.text.trim(),
                     clientId = current.selectedClientId,
-                    clientNameSnapshot = current.selectedClientName.trim(),
-                    jobName = current.selectedClientName.trim(),
+                    clientNameSnapshot = current.selectedClientName,
+                    jobName = current.selectedClientName,
                     notes = current.notes.text.trim(),
                     createdAt = current.jobId?.let { existing ->
                         jobRepository.observeJob(existing).first()?.createdAt

@@ -220,10 +220,10 @@ class SettingsViewModel(
     // ─────────────────────────────────────────────────────────────────────
 
     fun saveSettings() {
-        val form = formState.value
-        val validationError = validateForm(form)
-        if (validationError != null) {
-            formState.update { it.copy(errorMessage = validationError) }
+        val current = formState.value
+        val error = validateForm(current)
+        if (error != null) {
+            formState.update { it.copy(errorMessage = error) }
             return
         }
 
@@ -231,21 +231,18 @@ class SettingsViewModel(
 
         viewModelScope.launch {
             try {
-                val labourRate = form.parsedLabourRate ?: 0.0
-                val gstRate = (form.parsedGstPercent ?: 0.0) / 100.0
-
                 settingsRepository.saveSettings(
                     AppSettingsEntity(
                         settingsId = 1,
-                        businessName = form.businessName.text.trim(),
-                        address = form.address.text.trim(),
-                        phoneNumber = form.phoneNumber.text.trim(),
-                        email = form.email.text.trim(),
-                        gstNumber = form.gstNumber.text.trim(),
-                        bankAccountNumber = form.bankAccountNumber.text.trim(),
-                        defaultLabourRate = labourRate,
-                        defaultGstRate = gstRate,
-                        gstEnabledByDefault = form.gstEnabledByDefault
+                        businessName = current.businessName.text.trim(),
+                        address = current.address.text.trim(),
+                        phoneNumber = current.phoneNumber.text.trim(),
+                        email = current.email.text.trim(),
+                        gstNumber = current.gstNumber.text.trim(),
+                        bankAccountNumber = current.bankAccountNumber.text.trim(),
+                        defaultLabourRate = current.parsedLabourRate ?: 0.0,
+                        defaultGstRate = (current.parsedGstPercent ?: 0.0) / 100.0,
+                        gstEnabledByDefault = current.gstEnabledByDefault
                     )
                 )
 

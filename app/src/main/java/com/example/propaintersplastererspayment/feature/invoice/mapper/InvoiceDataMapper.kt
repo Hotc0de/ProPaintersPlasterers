@@ -25,8 +25,10 @@ object InvoiceDataMapper {
                 )
             },
             subtotal = pdfData.subtotalExGst,
-            otherAmount = pdfData.otherAmount,
+            includeGst = pdfData.includeGst,
             gstRate = pdfData.gstRate,
+            gstAmount = pdfData.gstAmount,
+            total = pdfData.finalTotal,
             businessName = pdfData.business.businessName.ifBlank { "Pro Painters" },
             businessSubtitle = "& PLASTERERS",
             businessAddress = pdfData.business.address,

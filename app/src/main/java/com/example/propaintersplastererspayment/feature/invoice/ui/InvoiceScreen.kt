@@ -97,7 +97,6 @@ fun InvoiceRoute(
         onBillToClientSelected = viewModel::onBillToClientSelected,
         onIssueDateChange = viewModel::onIssueDateChange,
         onIncludeGstChange = viewModel::onIncludeGstChange,
-        onOtherAmountChange = viewModel::onOtherAmountChange,
         onNotesChange = viewModel::onNotesChange,
         onSaveHeader = viewModel::saveHeader,
         onAddLine = viewModel::openAddLine,
@@ -128,7 +127,6 @@ fun InvoiceScreen(
     onBillToClientSelected: (ClientEntity) -> Unit,
     onIssueDateChange: (TextFieldValue) -> Unit,
     onIncludeGstChange: (Boolean) -> Unit,
-    onOtherAmountChange: (TextFieldValue) -> Unit,
     onNotesChange: (TextFieldValue) -> Unit,
     onSaveHeader: () -> Unit,
     onAddLine: () -> Unit,
@@ -241,12 +239,6 @@ fun InvoiceScreen(
                                     )
                                 }
                             }
-
-                            if (uiState.totals.otherAmount != 0.0) {
-                                item {
-                                    OtherAmountIndustrialCard(otherAmount = uiState.totals.otherAmount)
-                                }
-                            }
                         }
                     }
                 }
@@ -264,7 +256,6 @@ fun InvoiceScreen(
             onBillToClientSelected = onBillToClientSelected,
             onIssueDateChange = onIssueDateChange,
             onIncludeGstChange = onIncludeGstChange,
-            onOtherAmountChange = onOtherAmountChange,
             onNotesChange = onNotesChange,
             onSave = onSaveHeader
         )
@@ -485,36 +476,6 @@ private fun InvoiceLineIndustrialCard(
 }
 
 @Composable
-private fun OtherAmountIndustrialCard(otherAmount: Double) {
-    IndustrialCard(onClick = {}) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.invoice_other_amount),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = OffWhite
-                )
-                Text(
-                    text = "Additional Costs",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextSubdued
-                )
-            }
-            Text(
-                text = CurrencyFormatUtils.formatCurrency(otherAmount),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Black,
-                color = OffWhite
-            )
-        }
-    }
-}
-
-@Composable
 fun InvoiceHeaderDialog(
     formState: InvoiceHeaderFormState,
     clientSuggestions: List<ClientEntity>,
@@ -524,7 +485,6 @@ fun InvoiceHeaderDialog(
     onBillToClientSelected: (ClientEntity) -> Unit,
     onIssueDateChange: (TextFieldValue) -> Unit,
     onIncludeGstChange: (Boolean) -> Unit,
-    onOtherAmountChange: (TextFieldValue) -> Unit,
     onNotesChange: (TextFieldValue) -> Unit,
     onSave: () -> Unit
 ) {
@@ -593,14 +553,6 @@ fun InvoiceHeaderDialog(
                     onValueChange = onIssueDateChange,
                     label = stringResource(R.string.invoice_date),
                     placeholder = "dd-MM-yyyy"
-                )
-
-                IndustrialTextField(
-                    value = formState.otherAmountText,
-                    onValueChange = onOtherAmountChange,
-                    label = stringResource(R.string.invoice_other_amount),
-                    placeholder = "0.00",
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
 
                 IndustrialTextField(
