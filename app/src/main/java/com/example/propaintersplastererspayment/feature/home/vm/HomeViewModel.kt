@@ -22,6 +22,13 @@ data class HomeUiState(
     val userMessage: String? = null
 )
 
+data class JobTimelineState(
+    val startDate: String,
+    val finishDate: String,
+    val rawStartDate: Long?,
+    val rawFinishDate: Long?
+)
+
 class HomeViewModel(
     private val jobRepository: JobRepository
 ) : ViewModel() {
@@ -59,6 +66,12 @@ class HomeViewModel(
 
     fun onSearchQueryChange(newQuery: TextFieldValue) {
         _searchQuery.value = newQuery
+    }
+
+    fun updateJobDates(jobId: Long, startDate: Long?, finishDate: Long?) {
+        viewModelScope.launch {
+            jobRepository.updateJobDates(jobId, startDate, finishDate)
+        }
     }
 
     fun deleteJob(job: JobEntity) {

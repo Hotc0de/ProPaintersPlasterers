@@ -28,7 +28,7 @@ import com.example.propaintersplastererspayment.data.local.util.Converters
         InvoiceLineEntity::class,
         AppSettingsEntity::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

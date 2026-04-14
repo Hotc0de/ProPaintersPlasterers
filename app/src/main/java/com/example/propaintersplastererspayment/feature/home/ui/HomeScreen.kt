@@ -1,14 +1,13 @@
 package com.example.propaintersplastererspayment.feature.home.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -19,6 +18,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
 import com.example.propaintersplastererspayment.R
+import com.example.propaintersplastererspayment.core.util.DateFormatUtils
 import com.example.propaintersplastererspayment.data.local.entity.JobEntity
 import com.example.propaintersplastererspayment.data.local.entity.JobStatus
 import com.example.propaintersplastererspayment.data.local.model.JobWithInvoices
@@ -26,6 +26,7 @@ import com.example.propaintersplastererspayment.feature.home.vm.HomeUiState
 import com.example.propaintersplastererspayment.feature.home.vm.HomeViewModel
 import com.example.propaintersplastererspayment.ui.components.*
 import com.example.propaintersplastererspayment.ui.theme.*
+import java.util.Calendar
 
 @Composable
 fun HomeRoute(
@@ -44,6 +45,7 @@ fun HomeRoute(
     HomeScreen(
         uiState = uiState,
         onSearchQueryChange = viewModel::onSearchQueryChange,
+        onUpdateJobDates = viewModel::updateJobDates,
         onOpenSettings = onOpenSettings,
         onAddJob = onAddJob,
         onOpenJob = onOpenJob,
@@ -56,6 +58,7 @@ fun HomeRoute(
 fun HomeScreen(
     uiState: HomeUiState,
     onSearchQueryChange: (TextFieldValue) -> Unit,
+    onUpdateJobDates: (Long, Long?, Long?) -> Unit,
     onOpenSettings: () -> Unit,
     onAddJob: () -> Unit,
     onOpenJob: (Long) -> Unit,
@@ -176,6 +179,9 @@ fun HomeScreen(
                         items(uiState.jobs, key = { it.job.jobId }) { jobWithInvoices ->
                             JobCard(
                                 jobWithInvoices = jobWithInvoices,
+                                onUpdateDates = { start, finish -> 
+                                    onUpdateJobDates(jobWithInvoices.job.jobId, start, finish)
+                                },
                                 onClick = { onOpenJob(jobWithInvoices.job.jobId) }
                             )
                         }
@@ -187,9 +193,53 @@ fun HomeScreen(
 }
 
 @Composable
-private fun JobCard(jobWithInvoices: JobWithInvoices, onClick: () -> Unit) {
+private fun JobCard(
+    jobWithInvoices: JobWithInvoices,
+    onUpdateDates: (Long?, Long?) -> Unit,
+    onClick: () -> Unit
+) {
     val job = jobWithInvoices.job
     val invoiceNumber = jobWithInvoices.invoices.firstOrNull()?.invoiceNumber ?: "N/A"
+    
+    // Timeline logic
+    val startDate = job.startDateOverride ?: jobWithInvoices.workEntries
+        .mapNotNull { DateFormatUtils.parseStoredDate(it.workDate)?.time }
+        .minOrNull()
+    val finishDate = job.finishDateOverride ?: jobWithInvoices.invoices
+        .mapNotNull { DateFormatUtils.parseStoredDate(it.invoiceDate)?.time }
+        .maxOrNull()
+
+    val startDateDisplay = startDate?.let { DateFormatUtils.formatTimestampToDisplay(it) } ?: "TBA"
+    val finishDateDisplay = if (job.status == JobStatus.WORKING && job.finishDateOverride == null) {
+        "N/A"
+    } else {
+        finishDate?.let { DateFormatUtils.formatTimestampToDisplay(it) } ?: "N/A"
+    }
+
+    var showStartDatePicker by remember { mutableStateOf(false) }
+    var showFinishDatePicker by remember { mutableStateOf(false) }
+
+    if (showStartDatePicker) {
+        IndustrialDatePickerDialog(
+            initialTimestamp = startDate ?: System.currentTimeMillis(),
+            onDateSelected = { 
+                onUpdateDates(it, job.finishDateOverride)
+                showStartDatePicker = false 
+            },
+            onDismiss = { showStartDatePicker = false }
+        )
+    }
+
+    if (showFinishDatePicker) {
+        IndustrialDatePickerDialog(
+            initialTimestamp = finishDate ?: System.currentTimeMillis(),
+            onDateSelected = { 
+                onUpdateDates(job.startDateOverride, it)
+                showFinishDatePicker = false 
+            },
+            onDismiss = { showFinishDatePicker = false }
+        )
+    }
 
     IndustrialCard(onClick = onClick) {
         Row(
@@ -239,23 +289,38 @@ private fun JobCard(jobWithInvoices: JobWithInvoices, onClick: () -> Unit) {
                 }
             }
 
-            // Status badge
+            // Status badge and Invoice
             val statusText = when (job.status) {
                 JobStatus.WORKING -> "WORKING"
                 JobStatus.WAITING_FOR_PAYMENT -> "WAITING FOR PAYMENT"
                 JobStatus.PAID -> "PAID"
             }
-            Surface(
-                shape = MaterialTheme.shapes.extraLarge,
-                color = IndustrialGold.copy(alpha = 0.2f)
-            ) {
-                Text(
-                    text = statusText,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = IndustrialGold
-                )
+            Column(horizontalAlignment = Alignment.End) {
+                Surface(
+                    shape = MaterialTheme.shapes.extraLarge,
+                    color = IndustrialGold.copy(alpha = 0.2f)
+                ) {
+                    Text(
+                        text = statusText,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = IndustrialGold
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "Invoice",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TextMuted
+                    )
+                    Text(
+                        text = invoiceNumber,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TextMuted
+                    )
+                }
             }
         }
 
@@ -263,34 +328,80 @@ private fun JobCard(jobWithInvoices: JobWithInvoices, onClick: () -> Unit) {
         HorizontalDivider(color = BorderColor)
         Spacer(modifier = Modifier.height(16.dp))
 
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = "Project Timeline",
+                style = MaterialTheme.typography.labelSmall,
+                color = TextMuted
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "Invoice",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextMuted
+                    text = startDateDisplay,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = IndustrialGold,
+                    modifier = Modifier.clickable { showStartDatePicker = true }
                 )
                 Text(
-                    text = invoiceNumber,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = IndustrialGold
-                )
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Client Name",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextMuted
+                    text = " — ",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = TextMuted,
+                    modifier = Modifier.padding(horizontal = 12.dp)
                 )
                 Text(
-                    text = job.clientName.ifBlank { "N/A" },
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = IndustrialGold
+                    text = finishDateDisplay,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = IndustrialGold,
+                    modifier = Modifier.clickable { showFinishDatePicker = true }
                 )
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun IndustrialDatePickerDialog(
+    initialTimestamp: Long,
+    onDateSelected: (Long) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initialTimestamp
+    )
+
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    datePickerState.selectedDateMillis?.let { onDateSelected(it) }
+                }
+            ) {
+                Text("OK", color = IndustrialGold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = TextMuted)
+            }
+        },
+        colors = DatePickerDefaults.colors(
+            containerColor = CharcoalSecondary
+        )
+    ) {
+        DatePicker(
+            state = datePickerState,
+            colors = DatePickerDefaults.colors(
+                todayContentColor = IndustrialGold,
+                selectedDayContainerColor = IndustrialGold,
+                selectedDayContentColor = CharcoalBackground,
+                titleContentColor = IndustrialGold,
+                headlineContentColor = IndustrialGold,
+                weekdayContentColor = TextMuted,
+                dayContentColor = OffWhite
+            )
+        )
     }
 }

@@ -12,5 +12,6 @@ interface JobRepository {
     suspend fun saveJob(job: JobEntity): Long
     suspend fun deleteJob(job: JobEntity)
     suspend fun updateJobStatus(jobId: Long, status: JobStatus)
+    suspend fun updateJobDates(jobId: Long, startDate: Long?, finishDate: Long?)
 }
 
