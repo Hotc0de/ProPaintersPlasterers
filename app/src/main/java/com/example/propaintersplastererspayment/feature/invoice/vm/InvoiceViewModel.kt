@@ -14,6 +14,7 @@ import com.example.propaintersplastererspayment.data.local.entity.ClientEntity
 import com.example.propaintersplastererspayment.data.local.entity.InvoiceEntity
 import com.example.propaintersplastererspayment.data.local.entity.InvoiceLineEntity
 import com.example.propaintersplastererspayment.data.local.entity.JobEntity
+import com.example.propaintersplastererspayment.data.local.entity.JobStatus
 import com.example.propaintersplastererspayment.domain.repository.ClientRepository
 import com.example.propaintersplastererspayment.domain.repository.InvoiceRepository
 import com.example.propaintersplastererspayment.domain.repository.JobRepository
@@ -423,8 +424,18 @@ class InvoiceViewModel(
                     updatedAt = now
                 )
             )
+            // Update job status to WAITING_FOR_PAYMENT when an invoice is created/updated
+            jobRepository.updateJobStatus(jobId, JobStatus.WAITING_FOR_PAYMENT)
+            
             userMessage.value = if (form.invoiceId == null) "Invoice created." else "Invoice updated."
             dismissHeader()
+        }
+    }
+
+    fun markAsPaid() {
+        viewModelScope.launch {
+            jobRepository.updateJobStatus(jobId, JobStatus.PAID)
+            userMessage.value = "Job marked as Paid."
         }
     }
 

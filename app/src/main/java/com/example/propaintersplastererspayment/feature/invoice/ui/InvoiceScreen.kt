@@ -111,6 +111,7 @@ fun InvoiceRoute(
         onDeleteLine = viewModel::deleteLine,
         onAddLabourLine = viewModel::openAddLabourLine,
         onAddMaterialsLine = viewModel::openAddMaterialsLine,
+        onMarkAsPaid = viewModel::markAsPaid,
         onMessageShown = viewModel::clearUserMessage
     )
 }
@@ -141,6 +142,7 @@ fun InvoiceScreen(
     onDeleteLine: (Long) -> Unit,
     onAddLabourLine: () -> Unit,
     onAddMaterialsLine: () -> Unit,
+    onMarkAsPaid: () -> Unit,
     onMessageShown: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -189,7 +191,7 @@ fun InvoiceScreen(
                 else -> {
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
-                        contentPadding = PaddingValues(vertical = 16.dp),
+                        contentPadding = PaddingValues(top = 16.dp, bottom = 90.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
                         item {
@@ -200,11 +202,21 @@ fun InvoiceScreen(
                             if (uiState.invoice == null) {
                                 NoInvoiceIndustrialCard(onCreateInvoice = onCreateInvoice)
                             } else {
-                                InvoiceHeaderIndustrialCard(
-                                    invoice = uiState.invoice,
-                                    onExportPdf = onExportPdf,
-                                    onEdit = { onEditHeader(uiState.invoice) }
-                                )
+                                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                    InvoiceHeaderIndustrialCard(
+                                        invoice = uiState.invoice,
+                                        onExportPdf = onExportPdf,
+                                        onEdit = { onEditHeader(uiState.invoice) }
+                                    )
+
+                                    if (uiState.job.status == com.example.propaintersplastererspayment.data.local.entity.JobStatus.WAITING_FOR_PAYMENT) {
+                                        PrimaryButton(
+                                            text = "Mark as Paid",
+                                            onClick = onMarkAsPaid,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
+                                }
                             }
                         }
 

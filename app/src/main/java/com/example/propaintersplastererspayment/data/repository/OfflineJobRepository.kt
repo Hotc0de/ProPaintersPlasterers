@@ -2,6 +2,8 @@ package com.example.propaintersplastererspayment.data.repository
 
 import com.example.propaintersplastererspayment.data.local.dao.JobDao
 import com.example.propaintersplastererspayment.data.local.entity.JobEntity
+import com.example.propaintersplastererspayment.data.local.entity.JobStatus
+import com.example.propaintersplastererspayment.data.local.model.JobWithInvoices
 import com.example.propaintersplastererspayment.domain.repository.JobRepository
 import kotlinx.coroutines.flow.Flow
 
@@ -9,6 +11,8 @@ class OfflineJobRepository(
     private val jobDao: JobDao
 ) : JobRepository {
     override fun observeJobs(): Flow<List<JobEntity>> = jobDao.observeJobs()
+
+    override fun observeJobsWithInvoices(): Flow<List<JobWithInvoices>> = jobDao.observeJobsWithInvoices()
 
     override fun observeJob(jobId: Long): Flow<JobEntity?> = jobDao.observeJob(jobId)
 
@@ -23,6 +27,10 @@ class OfflineJobRepository(
 
     override suspend fun deleteJob(job: JobEntity) {
         jobDao.deleteJob(job)
+    }
+
+    override suspend fun updateJobStatus(jobId: Long, status: JobStatus) {
+        jobDao.updateJobStatus(jobId, status)
     }
 }
 

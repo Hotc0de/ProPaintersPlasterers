@@ -23,6 +23,7 @@ data class JobFormUiState(
     val selectedClientName: String = "",
     val clients: List<ClientEntity> = emptyList(),
     val notes: TextFieldValue = TextFieldValue(""),
+    val status: com.example.propaintersplastererspayment.data.local.entity.JobStatus = com.example.propaintersplastererspayment.data.local.entity.JobStatus.WORKING,
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
     val errorMessage: String? = null,
@@ -89,6 +90,7 @@ class JobFormViewModel(
                         selectedClientName = selectedName,
                         clientQuery = TextFieldValue(selectedName, selection = androidx.compose.ui.text.TextRange(selectedName.length)),
                         notes = TextFieldValue(job.notes, selection = androidx.compose.ui.text.TextRange(job.notes.length)),
+                        status = job.status,
                         isLoading = false
                     )
                 }
@@ -168,6 +170,7 @@ class JobFormViewModel(
                     clientNameSnapshot = current.selectedClientName,
                     jobName = current.selectedClientName,
                     notes = current.notes.text.trim(),
+                    status = current.status,
                     createdAt = current.jobId?.let { existing ->
                         jobRepository.observeJob(existing).first()?.createdAt
                     } ?: System.currentTimeMillis()

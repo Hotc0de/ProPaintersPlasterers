@@ -138,7 +138,7 @@ fun ClientListScreen(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(vertical = 8.dp)
+                    contentPadding = PaddingValues(top = 8.dp, bottom = 90.dp)
                 ) {
                     items(clients, key = { it.clientId }) { client ->
                         ClientIndustrialCard(

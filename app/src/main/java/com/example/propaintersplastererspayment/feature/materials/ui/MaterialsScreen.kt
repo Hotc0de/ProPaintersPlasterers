@@ -121,7 +121,7 @@ fun MaterialsScreen(
                 else -> {
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
-                        contentPadding = PaddingValues(vertical = 16.dp),
+                        contentPadding = PaddingValues(top = 16.dp, bottom = 90.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
                         item {

@@ -15,10 +15,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
 import com.example.propaintersplastererspayment.R
 import com.example.propaintersplastererspayment.data.local.entity.JobEntity
+import com.example.propaintersplastererspayment.data.local.entity.JobStatus
+import com.example.propaintersplastererspayment.data.local.model.JobWithInvoices
 import com.example.propaintersplastererspayment.feature.home.vm.HomeUiState
 import com.example.propaintersplastererspayment.feature.home.vm.HomeViewModel
 import com.example.propaintersplastererspayment.ui.components.*
@@ -40,6 +43,7 @@ fun HomeRoute(
 
     HomeScreen(
         uiState = uiState,
+        onSearchQueryChange = viewModel::onSearchQueryChange,
         onOpenSettings = onOpenSettings,
         onAddJob = onAddJob,
         onOpenJob = onOpenJob,
@@ -51,6 +55,7 @@ fun HomeRoute(
 @Composable
 fun HomeScreen(
     uiState: HomeUiState,
+    onSearchQueryChange: (TextFieldValue) -> Unit,
     onOpenSettings: () -> Unit,
     onAddJob: () -> Unit,
     onOpenJob: (Long) -> Unit,
@@ -127,6 +132,21 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
+            IndustrialTextField(
+                value = uiState.searchQuery,
+                onValueChange = onSearchQueryChange,
+                label = "Search",
+                placeholder = "Search Invoice, Name or Address...",
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = null,
+                        tint = IndustrialGold
+                    )
+                },
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+            )
+
             when {
                 uiState.isLoading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -137,7 +157,10 @@ fun HomeScreen(
                 uiState.jobs.isEmpty() -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
-                            text = stringResource(R.string.home_empty_jobs),
+                            text = if (uiState.searchQuery.text.isBlank()) 
+                                stringResource(R.string.home_empty_jobs) 
+                            else 
+                                "No matching jobs found",
                             style = MaterialTheme.typography.bodyLarge,
                             color = TextMuted
                         )
@@ -147,12 +170,13 @@ fun HomeScreen(
                 else -> {
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
+                        contentPadding = PaddingValues(bottom = 90.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        items(uiState.jobs, key = { it.jobId }) { job ->
+                        items(uiState.jobs, key = { it.job.jobId }) { jobWithInvoices ->
                             JobCard(
-                                job = job,
-                                onClick = { onOpenJob(job.jobId) }
+                                jobWithInvoices = jobWithInvoices,
+                                onClick = { onOpenJob(jobWithInvoices.job.jobId) }
                             )
                         }
                     }
@@ -163,7 +187,10 @@ fun HomeScreen(
 }
 
 @Composable
-private fun JobCard(job: JobEntity, onClick: () -> Unit) {
+private fun JobCard(jobWithInvoices: JobWithInvoices, onClick: () -> Unit) {
+    val job = jobWithInvoices.job
+    val invoiceNumber = jobWithInvoices.invoices.firstOrNull()?.invoiceNumber ?: "N/A"
+
     IndustrialCard(onClick = onClick) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -212,13 +239,18 @@ private fun JobCard(job: JobEntity, onClick: () -> Unit) {
                 }
             }
 
-            // Status badge (if you have status in JobEntity, otherwise default to ACTIVE for now)
+            // Status badge
+            val statusText = when (job.status) {
+                JobStatus.WORKING -> "WORKING"
+                JobStatus.WAITING_FOR_PAYMENT -> "WAITING FOR PAYMENT"
+                JobStatus.PAID -> "PAID"
+            }
             Surface(
                 shape = MaterialTheme.shapes.extraLarge,
                 color = IndustrialGold.copy(alpha = 0.2f)
             ) {
                 Text(
-                    text = "ACTIVE",
+                    text = statusText,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
@@ -234,13 +266,13 @@ private fun JobCard(job: JobEntity, onClick: () -> Unit) {
         Row(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Job ID",
+                    text = "Invoice",
                     style = MaterialTheme.typography.bodySmall,
                     color = TextMuted
                 )
                 Text(
-                    text = "#${job.jobId}",
-                    style = MaterialTheme.typography.headlineSmall,
+                    text = invoiceNumber,
+                    style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
                     color = IndustrialGold
                 )
