@@ -263,7 +263,7 @@ class PdfExportService {
             val bx = boxRect.left + 12f
             var by = boxRect.top + 20f
             
-            canvas.drawText("JOB", bx, by, labelPaint)
+            canvas.drawText("NAME", bx, by, labelPaint)
             canvas.drawText(ellipsizeToWidth(data.jobName.ifBlank { "N/A" }, valuePaint, boxWidth - 24f), bx, by + 14f, valuePaint)
             
             by += 32f

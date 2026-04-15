@@ -12,6 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -608,6 +609,7 @@ fun InvoiceHeaderDialog(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InvoiceLineDialog(
     formState: InvoiceLineFormState,
@@ -653,11 +655,42 @@ fun InvoiceLineDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Manual Amount Override",
-                        color = OffWhite,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Manual Amount Override",
+                            color = OffWhite,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                positioning = TooltipAnchorPosition.Above
+                            ),
+                            tooltip = {
+                                PlainTooltip(
+                                    containerColor = CharcoalSecondary,
+                                    contentColor = OffWhite
+                                ) {
+                                    Text(
+                                        text = "Allows you to enter a total amount directly instead of calculating it from Quantity and Rate.\n\nExample: Use this for fixed-price tasks like 'Full Room Painting - $500' without specifying hours or hourly rates.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.padding(8.dp)
+                                    )
+                                }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = "Help",
+                                tint = IndustrialGold,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
                     Switch(
                         checked = formState.isManualAmount,
                         onCheckedChange = onManualAmountChange,

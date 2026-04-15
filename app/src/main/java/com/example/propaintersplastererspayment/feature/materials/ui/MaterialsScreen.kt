@@ -173,25 +173,49 @@ fun MaterialsScreen(
 
 @Composable
 private fun TotalMaterialHeroCard(totalMaterialCost: Double) {
-    IndustrialCard {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.Start
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = AppShapes.large,
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(IndustrialGold, IndustrialGoldDark)
+                    ),
+                    shape = AppShapes.large
+                )
+                .padding(AppDimensions.cardPadding)
         ) {
-            Text(
-                text = stringResource(R.string.materials_total_cost),
-                style = MaterialTheme.typography.labelMedium,
-                color = TextMuted,
-                fontWeight = FontWeight.Medium
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = CurrencyFormatUtils.formatCurrency(totalMaterialCost),
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Black,
-                color = IndustrialGold
-            )
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Receipt,
+                        contentDescription = null,
+                        tint = CharcoalBackground,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.materials_total_cost),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = CharcoalBackground,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = CurrencyFormatUtils.formatCurrency(totalMaterialCost),
+                    style = MaterialTheme.typography.displayLarge,
+                    fontWeight = FontWeight.Black,
+                    color = CharcoalBackground
+                )
+            }
         }
     }
 }
