@@ -22,6 +22,7 @@ import com.example.propaintersplastererspayment.feature.client.ui.ClientListRout
 import com.example.propaintersplastererspayment.feature.home.ui.HomeRoute
 import com.example.propaintersplastererspayment.feature.job.ui.JobDetailScreen
 import com.example.propaintersplastererspayment.feature.job.ui.JobFormRoute
+import com.example.propaintersplastererspayment.feature.selection.ui.MainSelectionScreen
 import com.example.propaintersplastererspayment.feature.settings.ui.SettingsRoute
 import com.example.propaintersplastererspayment.feature.setup.ui.InitialSetupRoute
 
@@ -45,7 +46,7 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
                 }
             }
             AppStartupViewModel.SetupState.SetupComplete -> {
-                navController.navigate(AppDestinations.HOME_ROUTE) {
+                navController.navigate(AppDestinations.SELECTION_ROUTE) {
                     popUpTo(AppDestinations.SPLASH_ROUTE) { inclusive = true }
                     launchSingleTop = true
                 }
@@ -70,10 +71,18 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
         composable(AppDestinations.INITIAL_SETUP_ROUTE) {
             InitialSetupRoute(
                 onSetupComplete = {
-                    navController.navigate(AppDestinations.HOME_ROUTE) {
+                    navController.navigate(AppDestinations.SELECTION_ROUTE) {
                         popUpTo(AppDestinations.INITIAL_SETUP_ROUTE) { inclusive = true }
                     }
                 }
+            )
+        }
+
+        // ── Main Selection ───────────────────────────────────────────────
+        composable(AppDestinations.SELECTION_ROUTE) {
+            MainSelectionScreen(
+                onNavigateToInvoice = { /* TODO */ },
+                onNavigateToJobs = { navController.navigate(AppDestinations.HOME_ROUTE) }
             )
         }
 
@@ -83,7 +92,8 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
                 onOpenSettings = { navController.navigate(AppDestinations.SETTINGS_ROUTE) },
                 onAddJob = { navController.navigate(AppDestinations.jobFormRoute(null)) },
                 onOpenJob = { jobId -> navController.navigate(AppDestinations.jobDetailRoute(jobId)) },
-                onOpenClients = { navController.navigate(AppDestinations.CLIENTS_ROUTE) }
+                onOpenClients = { navController.navigate(AppDestinations.CLIENTS_ROUTE) },
+                onBack = { navController.popBackStack() }
             )
         }
 

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -34,6 +35,7 @@ fun HomeRoute(
     onAddJob: () -> Unit,
     onOpenJob: (Long) -> Unit,
     onOpenClients: () -> Unit = {},
+    onBack: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val application = LocalContext.current.applicationContext as ProPaintersApplication
@@ -50,6 +52,7 @@ fun HomeRoute(
         onAddJob = onAddJob,
         onOpenJob = onOpenJob,
         onOpenClients = onOpenClients,
+        onBack = onBack,
         modifier = modifier
     )
 }
@@ -63,6 +66,7 @@ fun HomeScreen(
     onAddJob: () -> Unit,
     onOpenJob: (Long) -> Unit,
     onOpenClients: () -> Unit = {},
+    onBack: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -87,12 +91,21 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = stringResource(R.string.home_title),
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = IndustrialGold,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = IndustrialGold
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.home_title),
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = IndustrialGold,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     IconButton(

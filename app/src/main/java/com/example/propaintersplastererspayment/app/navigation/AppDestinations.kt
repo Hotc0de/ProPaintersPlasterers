@@ -2,10 +2,11 @@ package com.example.propaintersplastererspayment.app.navigation
 
 object AppDestinations {
     // Core
-    const val SPLASH_ROUTE        = "splash"
-    const val HOME_ROUTE          = "home"
-    const val SETTINGS_ROUTE      = "settings"
-    const val INITIAL_SETUP_ROUTE = "initial_setup"
+    const val SPLASH_ROUTE          = "splash"
+    const val SELECTION_ROUTE       = "selection"
+    const val HOME_ROUTE            = "home"
+    const val SETTINGS_ROUTE        = "settings"
+    const val INITIAL_SETUP_ROUTE   = "initial_setup"
 
     // Jobs
     const val JOB_FORM_ROUTE       = "job_form"
