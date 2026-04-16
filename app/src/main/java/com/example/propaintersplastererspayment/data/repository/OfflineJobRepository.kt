@@ -14,6 +14,8 @@ class OfflineJobRepository(
 
     override fun observeJobsWithInvoices(): Flow<List<JobWithInvoices>> = jobDao.observeJobsWithInvoices()
 
+    override fun observeQuickInvoicesWithInvoices(): Flow<List<JobWithInvoices>> = jobDao.observeQuickInvoicesWithInvoices()
+
     override fun observeJob(jobId: Long): Flow<JobEntity?> = jobDao.observeJob(jobId)
 
     override suspend fun saveJob(job: JobEntity): Long {
@@ -27,6 +29,10 @@ class OfflineJobRepository(
 
     override suspend fun deleteJob(job: JobEntity) {
         jobDao.deleteJob(job)
+    }
+
+    override suspend fun deleteJobById(jobId: Long) {
+        jobDao.deleteJobById(jobId)
     }
 
     override suspend fun updateJobStatus(jobId: Long, status: JobStatus) {

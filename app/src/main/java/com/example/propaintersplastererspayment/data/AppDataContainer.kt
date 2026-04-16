@@ -25,6 +25,7 @@ class AppDataContainer(
             AppDatabase::class.java,
             "propainters_db"
         )
+            .addMigrations(AppDatabase.MIGRATION_11_12)
             .fallbackToDestructiveMigration(false)
             .build()
     }

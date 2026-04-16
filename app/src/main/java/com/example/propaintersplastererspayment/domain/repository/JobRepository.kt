@@ -8,9 +8,11 @@ import kotlinx.coroutines.flow.Flow
 interface JobRepository {
     fun observeJobs(): Flow<List<JobEntity>>
     fun observeJobsWithInvoices(): Flow<List<JobWithInvoices>>
+    fun observeQuickInvoicesWithInvoices(): Flow<List<JobWithInvoices>>
     fun observeJob(jobId: Long): Flow<JobEntity?>
     suspend fun saveJob(job: JobEntity): Long
     suspend fun deleteJob(job: JobEntity)
+    suspend fun deleteJobById(jobId: Long)
     suspend fun updateJobStatus(jobId: Long, status: JobStatus)
     suspend fun updateJobDates(jobId: Long, startDate: Long?, finishDate: Long?)
 }

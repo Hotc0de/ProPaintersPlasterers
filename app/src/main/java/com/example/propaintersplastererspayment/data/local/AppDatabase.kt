@@ -3,6 +3,8 @@ package com.example.propaintersplastererspayment.data.local
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.propaintersplastererspayment.data.local.dao.AppSettingsDao
 import com.example.propaintersplastererspayment.data.local.dao.ClientDao
 import com.example.propaintersplastererspayment.data.local.dao.InvoiceDao
@@ -28,7 +30,7 @@ import com.example.propaintersplastererspayment.data.local.util.Converters
         InvoiceLineEntity::class,
         AppSettingsEntity::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -39,5 +41,12 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun clientDao(): ClientDao
     abstract fun invoiceDao(): InvoiceDao
     abstract fun appSettingsDao(): AppSettingsDao
-}
 
+    companion object {
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE jobs ADD COLUMN isQuickInvoice INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+    }
+}

@@ -96,6 +96,9 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
                     navController.navigate(AppDestinations.invoiceRoute(jobId, isQuickInvoice = true)) {
                         popUpTo(AppDestinations.INVOICE_CREATE_ROUTE) { inclusive = true }
                     }
+                },
+                onOpenQuickInvoice = { jobId ->
+                    navController.navigate(AppDestinations.invoiceRoute(jobId, isQuickInvoice = true))
                 }
             )
         }

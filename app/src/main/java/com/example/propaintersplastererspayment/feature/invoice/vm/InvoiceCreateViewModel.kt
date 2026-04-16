@@ -134,7 +134,8 @@ class InvoiceCreateViewModel(
                     jobName = jobName,
                     propertyAddress = state.address.text.trim(),
                     status = JobStatus.WAITING_FOR_PAYMENT,
-                    clientNameSnapshot = clientName.trim()
+                    clientNameSnapshot = clientName.trim(),
+                    isQuickInvoice = true
                 ))
 
                 // 3. Create Invoice

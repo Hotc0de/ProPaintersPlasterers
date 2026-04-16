@@ -24,6 +24,7 @@ data class JobFormUiState(
     val clients: List<ClientEntity> = emptyList(),
     val notes: TextFieldValue = TextFieldValue(""),
     val status: com.example.propaintersplastererspayment.data.local.entity.JobStatus = com.example.propaintersplastererspayment.data.local.entity.JobStatus.WORKING,
+    val isQuickInvoice: Boolean = false,
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
     val errorMessage: String? = null,
@@ -91,6 +92,7 @@ class JobFormViewModel(
                         clientQuery = TextFieldValue(selectedName, selection = androidx.compose.ui.text.TextRange(selectedName.length)),
                         notes = TextFieldValue(job.notes, selection = androidx.compose.ui.text.TextRange(job.notes.length)),
                         status = job.status,
+                        isQuickInvoice = job.isQuickInvoice,
                         isLoading = false
                     )
                 }
@@ -171,6 +173,7 @@ class JobFormViewModel(
                     jobName = current.selectedClientName,
                     notes = current.notes.text.trim(),
                     status = current.status,
+                    isQuickInvoice = current.isQuickInvoice,
                     createdAt = current.jobId?.let { existing ->
                         jobRepository.observeJob(existing).first()?.createdAt
                     } ?: System.currentTimeMillis()
