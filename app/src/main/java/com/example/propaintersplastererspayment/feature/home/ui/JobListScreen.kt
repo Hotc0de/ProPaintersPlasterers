@@ -304,8 +304,8 @@ private fun JobCard(
             // Status badge and Invoice
             val (statusText, statusColor, statusDesc) = when (job.status) {
                 JobStatus.WORKING -> Triple("WORKING", SuccessGreen, "Job is currently in progress")
-                JobStatus.WAITING_FOR_PAYMENT -> Triple("WAITING", IndustrialGold, "Invoice sent, awaiting payment")
-                JobStatus.PAID -> Triple("PAID", Color(0xFF42A5F5), "Payment received and job completed")
+                JobStatus.WAITING_FOR_PAYMENT -> Triple("WAITING", Color(0xFF42A5F5), "Invoice sent, awaiting payment")
+                JobStatus.PAID -> Triple("PAID", ErrorRed, "Payment received and job completed")
             }
             var showStatusTooltip by remember { mutableStateOf(false) }
 
