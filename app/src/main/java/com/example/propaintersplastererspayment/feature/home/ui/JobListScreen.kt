@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
@@ -301,23 +302,42 @@ private fun JobCard(
             }
 
             // Status badge and Invoice
-            val statusText = when (job.status) {
-                JobStatus.WORKING -> "WORKING"
-                JobStatus.WAITING_FOR_PAYMENT -> "WAITING FOR PAYMENT"
-                JobStatus.PAID -> "PAID"
+            val (statusText, statusColor, statusDesc) = when (job.status) {
+                JobStatus.WORKING -> Triple("WORKING", SuccessGreen, "Job is currently in progress")
+                JobStatus.WAITING_FOR_PAYMENT -> Triple("WAITING", IndustrialGold, "Invoice sent, awaiting payment")
+                JobStatus.PAID -> Triple("PAID", Color(0xFF42A5F5), "Payment received and job completed")
             }
+            var showStatusTooltip by remember { mutableStateOf(false) }
+
             Column(horizontalAlignment = Alignment.End) {
-                Surface(
-                    shape = MaterialTheme.shapes.extraLarge,
-                    color = IndustrialGold.copy(alpha = 0.2f)
-                ) {
-                    Text(
-                        text = statusText,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = IndustrialGold
-                    )
+                Box {
+                    Surface(
+                        shape = MaterialTheme.shapes.extraLarge,
+                        color = statusColor.copy(alpha = 0.15f),
+                        modifier = Modifier.clickable { showStatusTooltip = true }
+                    ) {
+                        Text(
+                            text = statusText,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = statusColor
+                        )
+                    }
+
+                    if (showStatusTooltip) {
+                        AlertDialog(
+                            onDismissRequest = { showStatusTooltip = false },
+                            confirmButton = {
+                                TextButton(onClick = { showStatusTooltip = false }) {
+                                    Text("OK", color = IndustrialGold)
+                                }
+                            },
+                            title = { Text(statusText, color = IndustrialGold) },
+                            text = { Text(statusDesc, color = OffWhite) },
+                            containerColor = CharcoalCard
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Column(horizontalAlignment = Alignment.End) {
