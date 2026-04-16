@@ -28,4 +28,14 @@ object AppDestinations {
 
     fun clientFormRoute(clientId: Long?): String =
         if (clientId == null) CLIENT_FORM_ROUTE else "$CLIENT_FORM_ROUTE?$CLIENT_ID_ARG=$clientId"
+
+    // Invoices
+    const val INVOICE_ROUTE        = "invoice"
+    const val INVOICE_CREATE_ROUTE = "invoice_create"
+    const val IS_QUICK_INVOICE_ARG = "isQuickInvoice"
+    const val INVOICE_WITH_ARG     = "$INVOICE_ROUTE/{$JOB_ID_ARG}?$IS_QUICK_INVOICE_ARG={$IS_QUICK_INVOICE_ARG}"
+
+    fun invoiceRoute(jobId: Long, isQuickInvoice: Boolean = false): String = 
+        "$INVOICE_ROUTE/$jobId?$IS_QUICK_INVOICE_ARG=$isQuickInvoice"
+    fun invoiceCreateRoute(): String = INVOICE_CREATE_ROUTE
 }

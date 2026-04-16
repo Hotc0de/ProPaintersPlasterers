@@ -49,6 +49,7 @@ import com.example.propaintersplastererspayment.ui.theme.*
 @Composable
 fun InvoiceRoute(
     jobId: Long,
+    isQuickInvoice: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -88,6 +89,7 @@ fun InvoiceRoute(
 
     InvoiceScreen(
         uiState = uiState,
+        isQuickInvoice = isQuickInvoice,
         modifier = modifier,
         onExportPdf = viewModel::exportInvoicePdf,
         onCreateInvoice = viewModel::openCreateInvoice,
@@ -120,6 +122,7 @@ fun InvoiceRoute(
 @Composable
 fun InvoiceScreen(
     uiState: InvoiceUiState,
+    isQuickInvoice: Boolean,
     onExportPdf: () -> Unit,
     onCreateInvoice: () -> Unit,
     onEditHeader: (InvoiceEntity) -> Unit,
@@ -226,8 +229,8 @@ fun InvoiceScreen(
                                 ImportActionsRow(
                                     onAddLabourLine = onAddLabourLine,
                                     onAddMaterialsLine = onAddMaterialsLine,
-                                    labourAlreadyAdded = uiState.hasImportedLabourLine,
-                                    materialsAlreadyAdded = uiState.hasImportedMaterialsLine
+                                    labourAlreadyAdded = uiState.hasImportedLabourLine || isQuickInvoice,
+                                    materialsAlreadyAdded = uiState.hasImportedMaterialsLine || isQuickInvoice
                                 )
                             }
 

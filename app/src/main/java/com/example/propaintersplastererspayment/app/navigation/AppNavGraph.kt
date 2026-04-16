@@ -22,6 +22,8 @@ import com.example.propaintersplastererspayment.feature.client.ui.ClientListRout
 import com.example.propaintersplastererspayment.feature.home.ui.HomeRoute
 import com.example.propaintersplastererspayment.feature.job.ui.JobDetailScreen
 import com.example.propaintersplastererspayment.feature.job.ui.JobFormRoute
+import com.example.propaintersplastererspayment.feature.invoice.ui.InvoiceCreateRoute
+import com.example.propaintersplastererspayment.feature.invoice.ui.InvoiceRoute
 import com.example.propaintersplastererspayment.feature.selection.ui.MainSelectionScreen
 import com.example.propaintersplastererspayment.feature.settings.ui.SettingsRoute
 import com.example.propaintersplastererspayment.feature.setup.ui.InitialSetupRoute
@@ -81,8 +83,40 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
         // ── Main Selection ───────────────────────────────────────────────
         composable(AppDestinations.SELECTION_ROUTE) {
             MainSelectionScreen(
-                onNavigateToInvoice = { /* TODO */ },
+                onNavigateToInvoice = { navController.navigate(AppDestinations.invoiceCreateRoute()) },
                 onNavigateToJobs = { navController.navigate(AppDestinations.HOME_ROUTE) }
+            )
+        }
+
+        // ── Quick Invoice Creation ───────────────────────────────────────
+        composable(AppDestinations.INVOICE_CREATE_ROUTE) {
+            InvoiceCreateRoute(
+                onBack = { navController.popBackStack() },
+                onInvoiceCreated = { jobId ->
+                    navController.navigate(AppDestinations.invoiceRoute(jobId, isQuickInvoice = true)) {
+                        popUpTo(AppDestinations.INVOICE_CREATE_ROUTE) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // ── Invoice Details ──────────────────────────────────────────────
+        composable(
+            route = AppDestinations.INVOICE_WITH_ARG,
+            arguments = listOf(
+                navArgument(AppDestinations.JOB_ID_ARG) { type = NavType.LongType },
+                navArgument(AppDestinations.IS_QUICK_INVOICE_ARG) {
+                    type = NavType.StringType
+                    defaultValue = "false"
+                }
+            )
+        ) { backStackEntry ->
+            val jobId = backStackEntry.arguments?.getLong(AppDestinations.JOB_ID_ARG)
+                ?: return@composable
+            val isQuickInvoice = backStackEntry.arguments?.getString(AppDestinations.IS_QUICK_INVOICE_ARG)?.toBoolean() ?: false
+            InvoiceRoute(
+                jobId = jobId,
+                isQuickInvoice = isQuickInvoice
             )
         }
 

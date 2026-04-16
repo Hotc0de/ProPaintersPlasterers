@@ -20,17 +20,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
 import com.example.propaintersplastererspayment.R
 import com.example.propaintersplastererspayment.core.util.DateFormatUtils
-import com.example.propaintersplastererspayment.data.local.entity.JobEntity
 import com.example.propaintersplastererspayment.data.local.entity.JobStatus
 import com.example.propaintersplastererspayment.data.local.model.JobWithInvoices
 import com.example.propaintersplastererspayment.feature.home.vm.HomeUiState
 import com.example.propaintersplastererspayment.feature.home.vm.HomeViewModel
 import com.example.propaintersplastererspayment.ui.components.*
 import com.example.propaintersplastererspayment.ui.theme.*
-import java.util.Calendar
 
 @Composable
-fun HomeRoute(
+fun JobListRoute(
     onOpenSettings: () -> Unit,
     onAddJob: () -> Unit,
     onOpenJob: (Long) -> Unit,
@@ -44,7 +42,7 @@ fun HomeRoute(
     )
     val uiState by viewModel.uiState.collectAsState()
 
-    HomeScreen(
+    JobListScreen(
         uiState = uiState,
         onSearchQueryChange = viewModel::onSearchQueryChange,
         onUpdateJobDates = viewModel::updateJobDates,
@@ -58,7 +56,7 @@ fun HomeRoute(
 }
 
 @Composable
-fun HomeScreen(
+fun JobListScreen(
     uiState: HomeUiState,
     onSearchQueryChange: (TextFieldValue) -> Unit,
     onUpdateJobDates: (Long, Long?, Long?) -> Unit,
