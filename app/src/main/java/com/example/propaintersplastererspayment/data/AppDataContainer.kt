@@ -25,7 +25,7 @@ class AppDataContainer(
             AppDatabase::class.java,
             "propainters_db"
         )
-            .fallbackToDestructiveMigration(true)
+            .fallbackToDestructiveMigration(false)
             .build()
     }
 
