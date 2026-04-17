@@ -125,12 +125,16 @@ fun MainSelectionScreen(
 
                 // Footer
                 Text(
-                    text = "PROFESSIONAL GRADE",
+                    text = "TRUSTED QUALITY FINISH",
                     style = MaterialTheme.typography.labelSmall.copy(
                         letterSpacing = 5.sp,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Bold,
+                        shadow = Shadow(
+                            color = IndustrialGold,
+                            blurRadius = 10f
+                        )
                     ),
-                    color = IndustrialGold.copy(alpha = 0.3f),
+                    color = IndustrialGold,
                     modifier = Modifier.padding(bottom = 40.dp)
                 )
             }
