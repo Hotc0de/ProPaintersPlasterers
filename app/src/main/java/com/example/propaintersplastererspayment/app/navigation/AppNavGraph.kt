@@ -119,7 +119,8 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
             val isQuickInvoice = backStackEntry.arguments?.getString(AppDestinations.IS_QUICK_INVOICE_ARG)?.toBoolean() ?: false
             InvoiceRoute(
                 jobId = jobId,
-                isQuickInvoice = isQuickInvoice
+                isQuickInvoice = isQuickInvoice,
+                onBack = { navController.popBackStack() }
             )
         }
 

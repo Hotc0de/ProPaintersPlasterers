@@ -10,6 +10,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.TooltipAnchorPosition
@@ -25,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
@@ -50,6 +52,7 @@ import com.example.propaintersplastererspayment.ui.theme.*
 fun InvoiceRoute(
     jobId: Long,
     isQuickInvoice: Boolean = false,
+    onBack: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -90,6 +93,7 @@ fun InvoiceRoute(
     InvoiceScreen(
         uiState = uiState,
         isQuickInvoice = isQuickInvoice,
+        onBack = onBack,
         modifier = modifier,
         onExportPdf = viewModel::exportInvoicePdf,
         onCreateInvoice = viewModel::openCreateInvoice,
@@ -123,6 +127,7 @@ fun InvoiceRoute(
 fun InvoiceScreen(
     uiState: InvoiceUiState,
     isQuickInvoice: Boolean,
+    onBack: (() -> Unit)? = null,
     onExportPdf: () -> Unit,
     onCreateInvoice: () -> Unit,
     onEditHeader: (InvoiceEntity) -> Unit,
@@ -162,6 +167,49 @@ fun InvoiceScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = CharcoalBackground,
+        topBar = {
+            if (onBack != null) {
+                val screenTitle = uiState.job?.clientNameSnapshot?.takeIf { it.isNotBlank() }
+                    ?: stringResource(R.string.invoice_title)
+                
+                Column(
+                    modifier = Modifier
+                        .background(CharcoalBackground)
+                        .padding(top = 16.dp, start = 8.dp, end = 8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = IndustrialGold
+                            )
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = screenTitle,
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = IndustrialGold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            uiState.job?.propertyAddress?.takeIf { it.isNotBlank() }?.let {
+                                Text(
+                                    text = it,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextMuted
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+        },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         floatingActionButton = {
             if (uiState.invoice != null) {

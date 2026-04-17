@@ -15,11 +15,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.propaintersplastererspayment.ProPaintersApplication
 import com.example.propaintersplastererspayment.R
 import com.example.propaintersplastererspayment.feature.invoice.ui.InvoiceRoute
 import com.example.propaintersplastererspayment.feature.materials.ui.MaterialsRoute
 import com.example.propaintersplastererspayment.feature.timesheet.ui.TimesheetRoute
+import com.example.propaintersplastererspayment.ui.components.AppLogo
 import com.example.propaintersplastererspayment.ui.theme.*
 
 private enum class JobDetailTab(val titleRes: Int) {
