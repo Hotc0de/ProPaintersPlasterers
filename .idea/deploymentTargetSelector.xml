@@ -2,7 +2,7 @@
 <project version="4">
   <component name="deploymentTargetSelector">
     <selectionStates>
-      <SelectionState runConfigName="app">
+      <SelectionState runConfigName="ProPaintersPlasterers">
         <option name="selectionMode" value="DROPDOWN" />
         <DropdownSelection timestamp="2026-04-17T11:08:38.280682Z">
           <Target type="DEFAULT_BOOT">

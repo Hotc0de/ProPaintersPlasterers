@@ -34,7 +34,7 @@ class AppDataContainer(
                 AppDatabase.MIGRATION_14_15,
                 AppDatabase.MIGRATION_15_16
             )
-            .fallbackToDestructiveMigration(false)
+            .fallbackToDestructiveMigration()
             .build()
     }
 

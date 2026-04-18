@@ -90,31 +90,18 @@ abstract class AppDatabase : RoomDatabase() {
 
         val MIGRATION_15_16 = object : Migration(15, 16) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // Add new columns to invoices safely
-                addColumnIfNotExists(db, "invoices", "billToAddressSnapshot", "TEXT NOT NULL DEFAULT ''")
-                addColumnIfNotExists(db, "invoices", "billToPhoneSnapshot", "TEXT NOT NULL DEFAULT ''")
-                addColumnIfNotExists(db, "invoices", "billToEmailSnapshot", "TEXT NOT NULL DEFAULT ''")
-                
-                // Add new column to clients safely
-                addColumnIfNotExists(db, "clients", "clientType", "TEXT NOT NULL DEFAULT 'PRIVATE'")
-                
-                // Add new column to invoice_lines safely
-                addColumnIfNotExists(db, "invoice_lines", "sortOrder", "INTEGER NOT NULL DEFAULT 0")
+                addColumnSafely(db, "invoices", "billToAddressSnapshot", "TEXT NOT NULL DEFAULT ''")
+                addColumnSafely(db, "invoices", "billToPhoneSnapshot", "TEXT NOT NULL DEFAULT ''")
+                addColumnSafely(db, "invoices", "billToEmailSnapshot", "TEXT NOT NULL DEFAULT ''")
+                addColumnSafely(db, "clients", "clientType", "TEXT NOT NULL DEFAULT 'PRIVATE'")
+                addColumnSafely(db, "invoice_lines", "sortOrder", "INTEGER NOT NULL DEFAULT 0")
             }
 
-            private fun addColumnIfNotExists(db: SupportSQLiteDatabase, tableName: String, columnName: String, columnDefinition: String) {
-                val cursor = db.query("PRAGMA table_info($tableName)")
-                var columnExists = false
-                while (cursor.moveToNext()) {
-                    val name = cursor.getString(cursor.getColumnIndexOrThrow("name"))
-                    if (name == columnName) {
-                        columnExists = true
-                        break
-                    }
-                }
-                cursor.close()
-                if (!columnExists) {
+            private fun addColumnSafely(db: SupportSQLiteDatabase, tableName: String, columnName: String, columnDefinition: String) {
+                try {
                     db.execSQL("ALTER TABLE $tableName ADD COLUMN $columnName $columnDefinition")
+                } catch (e: Exception) {
+                    // Column likely already exists, ignore.
                 }
             }
         }

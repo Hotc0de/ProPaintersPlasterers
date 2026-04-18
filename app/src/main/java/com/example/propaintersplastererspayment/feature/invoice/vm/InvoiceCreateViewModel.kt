@@ -24,6 +24,7 @@ data class InvoiceCreateUiState(
     val selectedClient: ClientEntity? = null,
     val newClientName: TextFieldValue = TextFieldValue(""),
     val address: TextFieldValue = TextFieldValue(""),
+    val propertyAddresses: List<String> = emptyList(),
     val invoiceNumber: String = "",
     val description: TextFieldValue = TextFieldValue("Labour & Materials"),
     val qty: TextFieldValue = TextFieldValue("1"),
@@ -75,7 +76,39 @@ class InvoiceCreateViewModel(
     }
 
     fun onClientSelected(client: ClientEntity) {
-        _uiState.update { it.copy(selectedClient = client, address = TextFieldValue(client.address)) }
+        // 1. Update basic client info immediately for responsive UI
+        _uiState.update { it.copy(
+            selectedClient = client,
+            address = TextFieldValue(client.address),
+            error = null
+        ) }
+
+        // 2. Load historical addresses in the background
+        viewModelScope.launch {
+            try {
+                val historical = jobRepository.getPropertyAddressesForClient(client.clientId)
+                
+                // Combine profile address and history, removing duplicates and blanks
+                val allAddresses = (listOf(client.address) + historical)
+                    .map { it.trim() }
+                    .filter { it.isNotBlank() }
+                    .distinct()
+
+                _uiState.update { state ->
+                    state.copy(
+                        propertyAddresses = allAddresses,
+                        // If current address is blank, auto-populate with the first available historical one
+                        address = if (state.address.text.isBlank() && allAddresses.isNotEmpty()) {
+                            TextFieldValue(allAddresses.first())
+                        } else {
+                            state.address
+                        }
+                    )
+                }
+            } catch (e: Exception) {
+                // Fail silently for history loading, just use profile address
+            }
+        }
     }
 
     fun onNewClientNameChange(value: TextFieldValue) {

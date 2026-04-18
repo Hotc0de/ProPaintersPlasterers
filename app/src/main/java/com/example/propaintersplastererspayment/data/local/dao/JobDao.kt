@@ -65,5 +65,8 @@ interface JobDao {
 
     @Query("UPDATE jobs SET notes = :notes WHERE jobId = :jobId")
     suspend fun updateJobNotes(jobId: Long, notes: String)
+
+    @Query("SELECT DISTINCT propertyAddress FROM jobs WHERE clientId = :clientId AND propertyAddress != ''")
+    suspend fun getPropertyAddressesForClient(clientId: Long): List<String>
 }
 

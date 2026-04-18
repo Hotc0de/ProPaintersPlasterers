@@ -17,5 +17,6 @@ interface JobRepository {
     suspend fun updateJobDates(jobId: Long, startDate: Long?, finishDate: Long?)
     suspend fun updateJobAccessInfo(jobId: Long, accessInfo: String)
     suspend fun updateJobNotes(jobId: Long, notes: String)
+    suspend fun getPropertyAddressesForClient(clientId: Long): List<String>
 }
 

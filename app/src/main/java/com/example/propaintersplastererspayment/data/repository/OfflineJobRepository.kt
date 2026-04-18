@@ -50,5 +50,9 @@ class OfflineJobRepository(
     override suspend fun updateJobNotes(jobId: Long, notes: String) {
         jobDao.updateJobNotes(jobId, notes)
     }
+
+    override suspend fun getPropertyAddressesForClient(clientId: Long): List<String> {
+        return jobDao.getPropertyAddressesForClient(clientId)
+    }
 }
 

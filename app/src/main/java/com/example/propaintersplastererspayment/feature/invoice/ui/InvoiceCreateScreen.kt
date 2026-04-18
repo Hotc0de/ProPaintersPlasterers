@@ -271,13 +271,46 @@ private fun CreateInvoiceTab(
                     )
                 }
 
-                IndustrialTextField(
-                    value = uiState.address,
-                    onValueChange = onAddressChange,
-                    label = "Property Address",
-                    placeholder = "Where the work was done",
-                    minLines = 2
-                )
+                if (uiState.clientMode == ClientMode.Existing && uiState.propertyAddresses.isNotEmpty()) {
+                    var addressExpanded by remember { mutableStateOf(false) }
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        IndustrialTextField(
+                            value = uiState.address,
+                            onValueChange = onAddressChange,
+                            label = "Property Address",
+                            placeholder = "Where the work was done",
+                            minLines = 2,
+                            trailingIcon = {
+                                IconButton(onClick = { addressExpanded = true }) {
+                                    Icon(Icons.Default.ArrowDropDown, null, tint = IndustrialGold)
+                                }
+                            }
+                        )
+                        DropdownMenu(
+                            expanded = addressExpanded,
+                            onDismissRequest = { addressExpanded = false },
+                            modifier = Modifier.background(CharcoalCard).fillMaxWidth(0.9f)
+                        ) {
+                            uiState.propertyAddresses.forEach { addr ->
+                                DropdownMenuItem(
+                                    text = { Text(addr, color = OffWhite) },
+                                    onClick = {
+                                        onAddressChange(TextFieldValue(addr))
+                                        addressExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    IndustrialTextField(
+                        value = uiState.address,
+                        onValueChange = onAddressChange,
+                        label = "Property Address",
+                        placeholder = "Where the work was done",
+                        minLines = 2
+                    )
+                }
             }
         }
 
