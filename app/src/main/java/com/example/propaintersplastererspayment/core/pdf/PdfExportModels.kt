@@ -50,6 +50,7 @@ data class InvoicePdfData(
     val jobAddress: String,
     val invoiceNumber: String,
     val issueDate: String,
+    val dueDate: String? = null,
     val billToName: String,
     val lines: List<InvoiceLinePdfRow>,
     val subtotalExGst: Double,

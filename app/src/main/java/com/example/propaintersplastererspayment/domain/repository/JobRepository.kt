@@ -15,5 +15,7 @@ interface JobRepository {
     suspend fun deleteJobById(jobId: Long)
     suspend fun updateJobStatus(jobId: Long, status: JobStatus)
     suspend fun updateJobDates(jobId: Long, startDate: Long?, finishDate: Long?)
+    suspend fun updateJobAccessInfo(jobId: Long, accessInfo: String)
+    suspend fun updateJobNotes(jobId: Long, notes: String)
 }
 

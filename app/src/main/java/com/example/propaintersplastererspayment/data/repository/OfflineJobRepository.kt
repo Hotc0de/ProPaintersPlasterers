@@ -42,5 +42,13 @@ class OfflineJobRepository(
     override suspend fun updateJobDates(jobId: Long, startDate: Long?, finishDate: Long?) {
         jobDao.updateJobDates(jobId, startDate, finishDate)
     }
+
+    override suspend fun updateJobAccessInfo(jobId: Long, accessInfo: String) {
+        jobDao.updateJobAccessInfo(jobId, accessInfo)
+    }
+
+    override suspend fun updateJobNotes(jobId: Long, notes: String) {
+        jobDao.updateJobNotes(jobId, notes)
+    }
 }
 

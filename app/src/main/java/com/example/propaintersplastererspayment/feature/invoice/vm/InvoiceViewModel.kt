@@ -53,6 +53,8 @@ data class InvoiceHeaderFormState(
     val invoiceNumber: TextFieldValue = TextFieldValue(""),
     val billToName: TextFieldValue = TextFieldValue(""),
     val issueDate: TextFieldValue = TextFieldValue(DateFormatUtils.todayDisplayDate()),
+    val dueDate: TextFieldValue = TextFieldValue(""),
+    val includeDueDate: Boolean = true,
     val includeGst: Boolean = true,
     val gstRate: Double = InvoiceUtils.DEFAULT_GST_RATE,
     val notes: TextFieldValue = TextFieldValue(""),
@@ -303,9 +305,14 @@ class InvoiceViewModel(
                 job != null -> job.clientNameSnapshot.ifBlank { job.jobName }
                 else -> ""
             }
+            val issueDate = DateFormatUtils.todayDisplayDate()
+            val dueDate = InvoiceUtils.calculateDefaultDueDate(issueDate).orEmpty()
             headerFormState.value = InvoiceHeaderFormState(
                 invoiceNumber = TextFieldValue(invoiceNumber, selection = androidx.compose.ui.text.TextRange(invoiceNumber.length)),
                 billToName = TextFieldValue(defaultBillTo, selection = androidx.compose.ui.text.TextRange(defaultBillTo.length)),
+                issueDate = TextFieldValue(issueDate, selection = androidx.compose.ui.text.TextRange(issueDate.length)),
+                dueDate = TextFieldValue(dueDate, selection = androidx.compose.ui.text.TextRange(dueDate.length)),
+                includeDueDate = true,
                 includeGst = settings?.gstEnabledByDefault ?: true,
                 gstRate = settings?.defaultGstRate ?: InvoiceUtils.DEFAULT_GST_RATE
             )
@@ -325,11 +332,14 @@ class InvoiceViewModel(
                 }
             }
         val issueDateStr = DateFormatUtils.formatDisplayDate(invoice.issueDate)
+        val dueDateStr = invoice.dueDate?.let { DateFormatUtils.formatDisplayDate(it) } ?: ""
         headerFormState.value = InvoiceHeaderFormState(
             invoiceId = invoice.invoiceId,
             invoiceNumber = TextFieldValue(invoice.invoiceNumber, selection = androidx.compose.ui.text.TextRange(invoice.invoiceNumber.length)),
             billToName = TextFieldValue(selectedClient?.name ?: invoice.billToName, selection = androidx.compose.ui.text.TextRange((selectedClient?.name ?: invoice.billToName).length)),
             issueDate = TextFieldValue(issueDateStr, selection = androidx.compose.ui.text.TextRange(issueDateStr.length)),
+            dueDate = TextFieldValue(dueDateStr, selection = androidx.compose.ui.text.TextRange(dueDateStr.length)),
+            includeDueDate = invoice.dueDate != null,
             includeGst = invoice.includeGst,
             gstRate = invoice.gstRate,
             notes = TextFieldValue(invoice.notes, selection = androidx.compose.ui.text.TextRange(invoice.notes.length))
@@ -360,7 +370,35 @@ class InvoiceViewModel(
     }
 
     fun onIssueDateChange(value: TextFieldValue) {
-        headerFormState.update { it.copy(issueDate = value, errorMessage = null) }
+        headerFormState.update { 
+            val newState = it.copy(issueDate = value, errorMessage = null)
+            if (it.includeDueDate && it.issueDate.text != value.text) {
+                val newDueDate = InvoiceUtils.calculateDefaultDueDate(value.text)
+                if (newDueDate != null) {
+                    newState.copy(dueDate = TextFieldValue(newDueDate, selection = androidx.compose.ui.text.TextRange(newDueDate.length)))
+                } else {
+                    newState
+                }
+            } else {
+                newState
+            }
+        }
+    }
+
+    fun onDueDateChange(value: TextFieldValue) {
+        headerFormState.update { it.copy(dueDate = value, errorMessage = null) }
+    }
+
+    fun onIncludeDueDateChange(value: Boolean) {
+        headerFormState.update { 
+            val dueDateValue = if (value && it.dueDate.text.isBlank()) {
+                val calculated = InvoiceUtils.calculateDefaultDueDate(it.issueDate.text).orEmpty()
+                TextFieldValue(calculated, selection = androidx.compose.ui.text.TextRange(calculated.length))
+            } else {
+                it.dueDate
+            }
+            it.copy(includeDueDate = value, dueDate = dueDateValue)
+        }
     }
 
     fun onIncludeGstChange(value: Boolean) {
@@ -385,9 +423,18 @@ class InvoiceViewModel(
         }
 
         val storedIssueDate = DateFormatUtils.toStoredDate(form.issueDate.text) ?: run {
-            headerFormState.update { it.copy(errorMessage = "Use date format dd-MM-yyyy.") }
+            headerFormState.update { it.copy(errorMessage = "Use date format dd-MM-yyyy for issue date.") }
             return
         }
+
+        val storedDueDate = if (form.includeDueDate) {
+            val d = DateFormatUtils.toStoredDate(form.dueDate.text)
+            if (d == null) {
+                headerFormState.update { it.copy(errorMessage = "Use date format dd-MM-yyyy for due date.") }
+                return
+            }
+            d
+        } else null
 
         viewModelScope.launch {
             val now = System.currentTimeMillis()
@@ -410,6 +457,7 @@ class InvoiceViewModel(
                     clientId = linkedClient?.clientId,
                     invoiceNumber = form.invoiceNumber.text.trim(),
                     invoiceDate = storedIssueDate,
+                    dueDate = storedDueDate,
                     billToNameSnapshot = trimmedBillTo.ifBlank { linkedClient?.name.orEmpty() },
                     billToAddressSnapshot = linkedClient?.address.orEmpty(),
                     billToPhoneSnapshot = linkedClient?.phoneNumber.orEmpty(),
@@ -656,6 +704,7 @@ class InvoiceViewModel(
                 jobAddress = job.propertyAddress,
                 invoiceNumber = invoice.invoiceNumber,
                 issueDate = DateFormatUtils.formatDisplayDate(invoice.issueDate),
+                dueDate = invoice.dueDate?.let { DateFormatUtils.formatDisplayDate(it) },
                 billToName = invoice.billToName,
                 lines = snapshot.lines.map { line ->
                     InvoiceLinePdfRow(

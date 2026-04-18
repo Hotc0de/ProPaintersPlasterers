@@ -25,9 +25,11 @@ import com.example.propaintersplastererspayment.ui.components.AppLogo
 import com.example.propaintersplastererspayment.ui.theme.*
 
 private enum class JobDetailTab(val titleRes: Int) {
-    TIMESHEET(R.string.job_tab_timesheet),
     MATERIALS(R.string.job_tab_materials),
-    INVOICE(R.string.job_tab_invoice)
+    TIMESHEET(R.string.job_tab_timesheet),
+    INVOICE(R.string.job_tab_invoice),
+    NOTES(R.string.job_tab_notes),
+    ACCESS(R.string.job_tab_access)
 }
 
 @Composable
@@ -126,6 +128,8 @@ fun JobDetailScreen(
                 when (tabs[selectedTab]) {
                     JobDetailTab.TIMESHEET -> TimesheetRoute(jobId = jobId)
                     JobDetailTab.MATERIALS -> MaterialsRoute(jobId = jobId)
+                    JobDetailTab.ACCESS -> JobAccessRoute(jobId = jobId)
+                    JobDetailTab.NOTES -> JobNotesRoute(jobId = jobId)
                     JobDetailTab.INVOICE -> InvoiceRoute(jobId = jobId)
                 }
             }

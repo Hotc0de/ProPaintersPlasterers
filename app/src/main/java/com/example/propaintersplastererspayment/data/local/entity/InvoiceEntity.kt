@@ -34,6 +34,7 @@ data class InvoiceEntity(
     val jobId: Long,
     val clientId: Long? = null,
     val invoiceDate: String,
+    val dueDate: String? = null,
     val billToNameSnapshot: String,
     val billToAddressSnapshot: String,
     val billToPhoneSnapshot: String,

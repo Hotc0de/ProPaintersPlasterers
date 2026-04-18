@@ -750,12 +750,11 @@ class PdfExportService {
 
         drawCardLabelValue(canvas, leftCard.left + 12f, leftCard.top + 20f, "INVOICE NUMBER", invoiceData.invoiceNumber, sectionLabelPaint, bodyBoldPaint)
         drawCardLabelValue(canvas, leftCard.left + 12f, leftCard.top + 48f, "ISSUE DATE", invoiceData.issueDate, sectionLabelPaint, bodyPaint)
-        drawCardLabelValue(canvas, leftCard.left + 130f, leftCard.top + 48f, "DUE DATE", invoiceData.dueDate, sectionLabelPaint, Paint(bodyBoldPaint).apply { color = bronze })
 
         drawCardLabelValue(canvas, rightCard.left + 12f, rightCard.top + 20f, "BILL TO", invoiceData.billTo, sectionLabelPaint, bodyBoldPaint)
         drawWrappedText(
             canvas,
-            "CLIENT ADDRESS",
+            "ADDRESS",
             invoiceData.jobAddress,
             rightCard.left + 12f,
             rightCard.top + 48f,
@@ -831,26 +830,30 @@ class PdfExportService {
         canvas.drawRoundRect(dueCard, 4f, 4f, darkFillPaint)
         canvas.drawRoundRect(dueCard, 4f, 4f, borderPaint)
         canvas.drawText("AMOUNT DUE", totalsLeft + 12f, y + 24f, bronzeTextPaint)
-        canvas.drawText("Due: ${invoiceData.dueDate}", totalsLeft + 12f, y + 40f, smallPaint.apply { color = Color.parseColor("#CBD5E1") })
+        if (invoiceData.dueDate != null) {
+            canvas.drawText("Due: ${invoiceData.dueDate}", totalsLeft + 12f, y + 40f, smallPaint.apply { color = Color.parseColor("#CBD5E1") })
+        }
         drawTextRight(canvas, CurrencyFormatUtils.formatCurrency(total), contentRight - 12f, y + 46f, whiteAmountPaint)
         y += 88f
 
         // Payment note + footer
-        val noteRect = RectF(contentLeft, y, contentRight, y + 42f)
-        fillPaint.color = lightGray2
-        canvas.drawRoundRect(noteRect, 4f, 4f, fillPaint)
-        canvas.drawRoundRect(noteRect, 4f, 4f, borderPaint)
-        drawWrappedPlainText(
-            canvas,
-            "Please make the payment in 10 working days. Reference invoice number ${invoiceData.invoiceNumber} when making payment. Direct bank transfer to the account details listed above.",
-            contentLeft + 12f,
-            y + 16f,
-            contentWidth - 24f,
-            smallPaint.apply { color = textGray },
-            11f,
-            maxLines = 3
-        )
-        y += 54f
+        if (invoiceData.dueDate != null) {
+            val noteRect = RectF(contentLeft, y, contentRight, y + 42f)
+            fillPaint.color = lightGray2
+            canvas.drawRoundRect(noteRect, 4f, 4f, fillPaint)
+            canvas.drawRoundRect(noteRect, 4f, 4f, borderPaint)
+            drawWrappedPlainText(
+                canvas,
+                "Please make the payment in 10 working days. Reference invoice number ${invoiceData.invoiceNumber} when making payment. Direct bank transfer to the account details listed above.",
+                contentLeft + 12f,
+                y + 16f,
+                contentWidth - 24f,
+                smallPaint.apply { color = textGray },
+                11f,
+                maxLines = 3
+            )
+            y += 54f
+        }
 
         canvas.drawLine(contentLeft, y, contentRight, y, subtleBorderPaint)
         y += 18f

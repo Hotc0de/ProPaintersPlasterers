@@ -76,6 +76,8 @@ fun InvoiceCreateRoute(
         onDescriptionChange = viewModel::onDescriptionChange,
         onQtyChange = viewModel::onQtyChange,
         onRateChange = viewModel::onRateChange,
+        onIncludeDueDateChange = viewModel::onIncludeDueDateChange,
+        onDueDateChange = viewModel::onDueDateChange,
         onIncludeGstChange = viewModel::onIncludeGstChange,
         onSave = viewModel::saveInvoice,
         onOpenQuickInvoice = onOpenQuickInvoice,
@@ -96,6 +98,8 @@ fun InvoiceCreateScreen(
     onDescriptionChange: (TextFieldValue) -> Unit,
     onQtyChange: (TextFieldValue) -> Unit,
     onRateChange: (TextFieldValue) -> Unit,
+    onIncludeDueDateChange: (Boolean) -> Unit,
+    onDueDateChange: (TextFieldValue) -> Unit,
     onIncludeGstChange: (Boolean) -> Unit,
     onSave: () -> Unit,
     onOpenQuickInvoice: (Long) -> Unit,
@@ -160,6 +164,8 @@ fun InvoiceCreateScreen(
                     onDescriptionChange = onDescriptionChange,
                     onQtyChange = onQtyChange,
                     onRateChange = onRateChange,
+                    onIncludeDueDateChange = onIncludeDueDateChange,
+                    onDueDateChange = onDueDateChange,
                     onIncludeGstChange = onIncludeGstChange,
                     onSave = onSave
                 )
@@ -182,6 +188,8 @@ private fun CreateInvoiceTab(
     onDescriptionChange: (TextFieldValue) -> Unit,
     onQtyChange: (TextFieldValue) -> Unit,
     onRateChange: (TextFieldValue) -> Unit,
+    onIncludeDueDateChange: (Boolean) -> Unit,
+    onDueDateChange: (TextFieldValue) -> Unit,
     onIncludeGstChange: (Boolean) -> Unit,
     onSave: () -> Unit
 ) {
@@ -300,6 +308,31 @@ private fun CreateInvoiceTab(
                         placeholder = "0.00",
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier.weight(1.5f)
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Include Due Date", color = OffWhite)
+                    Switch(
+                        checked = uiState.includeDueDate,
+                        onCheckedChange = onIncludeDueDateChange,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = IndustrialGold,
+                            checkedTrackColor = IndustrialGold.copy(alpha = 0.5f)
+                        )
+                    )
+                }
+
+                if (uiState.includeDueDate) {
+                    IndustrialTextField(
+                        value = uiState.dueDate,
+                        onValueChange = onDueDateChange,
+                        label = "Due Date",
+                        placeholder = "dd-MM-yyyy"
                     )
                 }
 
@@ -427,12 +460,17 @@ private fun QuickInvoiceListTab(
             )
         }
 
-        Box(modifier = Modifier.weight(1f)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        ) {
             if (invoices.isEmpty()) {
                 Text(
-                    if (uiState.searchQuery.isEmpty()) "No quick invoices found" else "No matches found",
+                    text = if (uiState.searchQuery.isEmpty()) "No quick invoices found" else "No matches found",
                     modifier = Modifier.align(Alignment.Center),
-                    color = TextMuted
+                    color = TextMuted,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
             } else {
                 androidx.compose.foundation.lazy.LazyColumn(

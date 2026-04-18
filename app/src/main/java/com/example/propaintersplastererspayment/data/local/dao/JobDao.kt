@@ -59,5 +59,11 @@ interface JobDao {
 
     @Query("UPDATE jobs SET startDateOverride = :startDate, finishDateOverride = :finishDate WHERE jobId = :jobId")
     suspend fun updateJobDates(jobId: Long, startDate: Long?, finishDate: Long?)
+
+    @Query("UPDATE jobs SET accessInfo = :accessInfo WHERE jobId = :jobId")
+    suspend fun updateJobAccessInfo(jobId: Long, accessInfo: String)
+
+    @Query("UPDATE jobs SET notes = :notes WHERE jobId = :jobId")
+    suspend fun updateJobNotes(jobId: Long, notes: String)
 }
 

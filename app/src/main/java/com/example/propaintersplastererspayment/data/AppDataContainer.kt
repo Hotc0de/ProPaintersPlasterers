@@ -3,12 +3,14 @@ package com.example.propaintersplastererspayment.data
 import android.content.Context
 import androidx.room.Room
 import com.example.propaintersplastererspayment.data.local.AppDatabase
+import com.example.propaintersplastererspayment.data.repository.OfflineAccessRepository
 import com.example.propaintersplastererspayment.data.repository.OfflineClientRepository
 import com.example.propaintersplastererspayment.data.repository.OfflineInvoiceRepository
 import com.example.propaintersplastererspayment.data.repository.OfflineJobRepository
 import com.example.propaintersplastererspayment.data.repository.OfflineMaterialRepository
 import com.example.propaintersplastererspayment.data.repository.OfflineSettingsRepository
 import com.example.propaintersplastererspayment.data.repository.OfflineWorkEntryRepository
+import com.example.propaintersplastererspayment.domain.repository.AccessRepository
 import com.example.propaintersplastererspayment.domain.repository.ClientRepository
 import com.example.propaintersplastererspayment.domain.repository.InvoiceRepository
 import com.example.propaintersplastererspayment.domain.repository.JobRepository
@@ -25,7 +27,13 @@ class AppDataContainer(
             AppDatabase::class.java,
             "propainters_db"
         )
-            .addMigrations(AppDatabase.MIGRATION_11_12)
+            .addMigrations(
+                AppDatabase.MIGRATION_11_12, 
+                AppDatabase.MIGRATION_12_13, 
+                AppDatabase.MIGRATION_13_14,
+                AppDatabase.MIGRATION_14_15,
+                AppDatabase.MIGRATION_15_16
+            )
             .fallbackToDestructiveMigration(false)
             .build()
     }
@@ -52,6 +60,10 @@ class AppDataContainer(
 
     override val settingsRepository: SettingsRepository by lazy {
         OfflineSettingsRepository(database.appSettingsDao())
+    }
+
+    override val accessRepository: AccessRepository by lazy {
+        OfflineAccessRepository(database.accessDao())
     }
 }
 

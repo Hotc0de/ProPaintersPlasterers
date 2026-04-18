@@ -1,5 +1,6 @@
 package com.example.propaintersplastererspayment.data
 
+import com.example.propaintersplastererspayment.domain.repository.AccessRepository
 import com.example.propaintersplastererspayment.domain.repository.ClientRepository
 import com.example.propaintersplastererspayment.domain.repository.InvoiceRepository
 import com.example.propaintersplastererspayment.domain.repository.JobRepository
@@ -14,5 +15,6 @@ interface AppContainer {
     val clientRepository: ClientRepository
     val invoiceRepository: InvoiceRepository
     val settingsRepository: SettingsRepository
+    val accessRepository: AccessRepository
 }
 

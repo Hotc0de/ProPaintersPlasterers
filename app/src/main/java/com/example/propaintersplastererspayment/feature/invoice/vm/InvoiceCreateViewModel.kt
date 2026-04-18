@@ -28,6 +28,8 @@ data class InvoiceCreateUiState(
     val description: TextFieldValue = TextFieldValue("Labour & Materials"),
     val qty: TextFieldValue = TextFieldValue("1"),
     val rate: TextFieldValue = TextFieldValue(""),
+    val includeDueDate: Boolean = true,
+    val dueDate: TextFieldValue = TextFieldValue(InvoiceUtils.calculateDefaultDueDate(DateFormatUtils.todayDisplayDate()).orEmpty()),
     val includeGst: Boolean = true,
     val isSaving: Boolean = false,
     val error: String? = null,
@@ -96,6 +98,14 @@ class InvoiceCreateViewModel(
         _uiState.update { it.copy(rate = value) }
     }
 
+    fun onIncludeDueDateChange(value: Boolean) {
+        _uiState.update { it.copy(includeDueDate = value) }
+    }
+
+    fun onDueDateChange(value: TextFieldValue) {
+        _uiState.update { it.copy(dueDate = value) }
+    }
+
     fun onIncludeGstChange(value: Boolean) {
         _uiState.update { it.copy(includeGst = value) }
     }
@@ -144,12 +154,14 @@ class InvoiceCreateViewModel(
                 val gstRate = settings?.defaultGstRate ?: InvoiceUtils.DEFAULT_GST_RATE
                 val subtotal = state.subtotal
                 val gstAmount = if (state.includeGst) subtotal * gstRate else 0.0
+                val storedDueDate = if (state.includeDueDate) DateFormatUtils.toStoredDate(state.dueDate.text) else null
 
                 val invoiceId = invoiceRepository.saveInvoice(InvoiceEntity(
                     jobId = jobId,
                     clientId = clientId,
                     invoiceNumber = state.invoiceNumber,
                     invoiceDate = DateFormatUtils.toStoredDate(DateFormatUtils.todayDisplayDate()) ?: "",
+                    dueDate = storedDueDate,
                     billToNameSnapshot = clientName.trim(),
                     billToAddressSnapshot = state.address.text.trim(),
                     billToPhoneSnapshot = if (state.clientMode == ClientMode.Existing) state.selectedClient?.phoneNumber.orEmpty() else "",

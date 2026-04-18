@@ -16,9 +16,21 @@
     <string name="job_selected_client">Selected: %1$s</string>
     <string name="job_notes">Notes</string>
     <string name="job_save">Save Job</string>
+    <string name="job_access_info_label">Access Instructions</string>
+    <string name="job_access_info_hint">Lockbox codes, alarm instructions, key locations...</string>
+    <string name="job_access_add_title">Add Access Detail</string>
+    <string name="job_access_edit_title">Edit Access Detail</string>
+    <string name="job_access_type">Type</string>
+    <string name="job_access_code">Code / Location</string>
+    <string name="job_access_instructions">Additional Instructions (Optional)</string>
+    <string name="job_access_delete_confirm">Are you sure you want to delete this access detail?</string>
+    <string name="job_notes_label">Job Notes</string>
+    <string name="job_notes_hint">Add any additional notes about the job here...</string>
     <string name="job_detail_title">Job #%1$d</string>
     <string name="job_tab_timesheet">Timesheet</string>
     <string name="job_tab_materials">Materials</string>
+    <string name="job_tab_access">Access</string>
+    <string name="job_tab_notes">Notes</string>
     <string name="job_tab_invoice">Invoice</string>
     <string name="job_detail_hint">Tip: You can edit invoice lines manually after auto-fill.</string>
     <!-- ── Timesheet screen ─────────────────────────────────────────────── -->

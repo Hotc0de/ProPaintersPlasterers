@@ -9,11 +9,10 @@ import java.util.Calendar
 object InvoiceDataMapper {
 
     fun map(pdfData: InvoicePdfData): InvoiceData {
-        val displayIssueDate = DateFormatUtils.formatDisplayDate(pdfData.issueDate)
         return InvoiceData(
             invoiceNumber = pdfData.invoiceNumber,
-            issueDate = displayIssueDate,
-            dueDate = calculateDueDate(displayIssueDate),
+            issueDate = DateFormatUtils.formatDisplayDate(pdfData.issueDate),
+            dueDate = pdfData.dueDate?.let { DateFormatUtils.formatDisplayDate(it) },
             billTo = pdfData.billToName,
             jobAddress = pdfData.jobAddress,
             lineItems = pdfData.lines.map { line ->

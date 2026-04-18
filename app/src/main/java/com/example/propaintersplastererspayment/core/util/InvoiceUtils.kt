@@ -54,6 +54,31 @@ object InvoiceUtils {
     fun calculateTotalMaterialCost(prices: List<Double>): Double = prices.sum()
 
     /**
+     * Calculates a due date that is 10 working days from the given issue date.
+     * Skips weekends (Saturday and Sunday).
+     *
+     * @param issueDate The starting date in "dd-MM-yyyy" format.
+     * @return The due date in "dd-MM-yyyy" format, or null if issueDate is invalid.
+     */
+    fun calculateDefaultDueDate(issueDate: String): String? {
+        val date = DateFormatUtils.parseDisplayDate(issueDate) ?: return null
+        val calendar = java.util.Calendar.getInstance().apply {
+            time = date
+        }
+
+        var workingDaysAdded = 0
+        while (workingDaysAdded < 10) {
+            calendar.add(java.util.Calendar.DAY_OF_YEAR, 1)
+            val dayOfWeek = calendar.get(java.util.Calendar.DAY_OF_WEEK)
+            if (dayOfWeek != java.util.Calendar.SATURDAY && dayOfWeek != java.util.Calendar.SUNDAY) {
+                workingDaysAdded++
+            }
+        }
+
+        return DateFormatUtils.formatTimestampToDisplay(calendar.timeInMillis)
+    }
+
+    /**
      * Validates the invoice header form fields.
      * Returns an error message string, or null if everything is valid.
      */

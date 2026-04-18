@@ -357,21 +357,23 @@ fun InvoiceDetailsCards(invoiceData: InvoiceData) {
                             )
                         }
 
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "DUE DATE",
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = InvoiceColors.MediumGray,
-                                letterSpacing = 1.4.sp
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = invoiceData.dueDate,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = InvoiceColors.Bronze
-                            )
+                        if (invoiceData.dueDate != null) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "DUE DATE",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = InvoiceColors.MediumGray,
+                                    letterSpacing = 1.4.sp
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = invoiceData.dueDate,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = InvoiceColors.Bronze
+                                )
+                            }
                         }
                     }
                 }
@@ -579,7 +581,7 @@ fun TotalsSection(
     gst: Double,
     total: Double,
     invoiceNumber: String,
-    dueDate: String,
+    dueDate: String?,
     gstRate: Double,
     includeGst: Boolean
 ) {
@@ -647,12 +649,14 @@ fun TotalsSection(
                             letterSpacing = 3.sp
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Due: $dueDate",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = InvoiceColors.BorderGray
-                        )
+                        if (dueDate != null) {
+                            Text(
+                                text = "Due: $dueDate",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = InvoiceColors.BorderGray
+                            )
+                        }
                     }
 
                     Column(horizontalAlignment = Alignment.End) {
@@ -667,39 +671,41 @@ fun TotalsSection(
                 }
             }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp)
-                    .background(
-                        brush = Brush.linearGradient(
-                            colors = listOf(
-                                InvoiceColors.Bronze.copy(alpha = 0.08f),
-                                Color.Transparent
-                            )
-                        ),
-                        shape = RoundedCornerShape(2.dp)
+            if (dueDate != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp)
+                        .background(
+                            brush = Brush.linearGradient(
+                                colors = listOf(
+                                    InvoiceColors.Bronze.copy(alpha = 0.08f),
+                                    Color.Transparent
+                                )
+                            ),
+                            shape = RoundedCornerShape(2.dp)
+                        )
+                        .border(1.dp, InvoiceColors.Bronze.copy(alpha = 0.2f), RoundedCornerShape(2.dp))
+                        .padding(12.dp)
+                ) {
+                    Text(
+                        text = buildAnnotatedString {
+                            withStyle(style = SpanStyle(color = InvoiceColors.TextGray)) {
+                                append("Please make the payment in 10 working days. Reference invoice number ")
+                            }
+                            withStyle(
+                                style = SpanStyle(
+                                    color = InvoiceColors.DarkSlate,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            ) {
+                                append(invoiceNumber)
+                            }
+                        },
+                        fontSize = 10.sp,
+                        lineHeight = 14.sp
                     )
-                    .border(1.dp, InvoiceColors.Bronze.copy(alpha = 0.2f), RoundedCornerShape(2.dp))
-                    .padding(12.dp)
-            ) {
-                Text(
-                    text = buildAnnotatedString {
-                        withStyle(style = SpanStyle(color = InvoiceColors.TextGray)) {
-                            append("Please make the payment in 10 working days. Reference invoice number ")
-                        }
-                        withStyle(
-                            style = SpanStyle(
-                                color = InvoiceColors.DarkSlate,
-                                fontWeight = FontWeight.Bold
-                            )
-                        ) {
-                            append(invoiceNumber)
-                        }
-                    },
-                    fontSize = 10.sp,
-                    lineHeight = 14.sp
-                )
+                }
             }
         }
     }

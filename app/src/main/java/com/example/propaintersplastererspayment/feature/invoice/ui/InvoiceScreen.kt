@@ -103,6 +103,8 @@ fun InvoiceRoute(
         onBillToNameChange = viewModel::onBillToNameChange,
         onBillToClientSelected = viewModel::onBillToClientSelected,
         onIssueDateChange = viewModel::onIssueDateChange,
+        onDueDateChange = viewModel::onDueDateChange,
+        onIncludeDueDateChange = viewModel::onIncludeDueDateChange,
         onIncludeGstChange = viewModel::onIncludeGstChange,
         onNotesChange = viewModel::onNotesChange,
         onSaveHeader = viewModel::saveHeader,
@@ -136,6 +138,8 @@ fun InvoiceScreen(
     onBillToNameChange: (TextFieldValue) -> Unit,
     onBillToClientSelected: (ClientEntity) -> Unit,
     onIssueDateChange: (TextFieldValue) -> Unit,
+    onDueDateChange: (TextFieldValue) -> Unit,
+    onIncludeDueDateChange: (Boolean) -> Unit,
     onIncludeGstChange: (Boolean) -> Unit,
     onNotesChange: (TextFieldValue) -> Unit,
     onSaveHeader: () -> Unit,
@@ -319,6 +323,8 @@ fun InvoiceScreen(
             onBillToNameChange = onBillToNameChange,
             onBillToClientSelected = onBillToClientSelected,
             onIssueDateChange = onIssueDateChange,
+            onDueDateChange = onDueDateChange,
+            onIncludeDueDateChange = onIncludeDueDateChange,
             onIncludeGstChange = onIncludeGstChange,
             onNotesChange = onNotesChange,
             onSave = onSaveHeader
@@ -447,6 +453,13 @@ private fun InvoiceHeaderIndustrialCard(
                         style = MaterialTheme.typography.bodyMedium,
                         color = IndustrialGold
                     )
+                    invoice.dueDate?.let { dueDate ->
+                        Text(
+                            text = "Due: ${DateFormatUtils.formatDisplayDate(dueDate)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextMuted
+                        )
+                    }
                 }
                 IconButton(onClick = onExportPdf) {
                     Icon(Icons.Default.PictureAsPdf, contentDescription = "Export PDF", tint = IndustrialGold)
@@ -548,6 +561,8 @@ fun InvoiceHeaderDialog(
     onBillToNameChange: (TextFieldValue) -> Unit,
     onBillToClientSelected: (ClientEntity) -> Unit,
     onIssueDateChange: (TextFieldValue) -> Unit,
+    onDueDateChange: (TextFieldValue) -> Unit,
+    onIncludeDueDateChange: (Boolean) -> Unit,
     onIncludeGstChange: (Boolean) -> Unit,
     onNotesChange: (TextFieldValue) -> Unit,
     onSave: () -> Unit
@@ -618,6 +633,35 @@ fun InvoiceHeaderDialog(
                     label = stringResource(R.string.invoice_date),
                     placeholder = "dd-MM-yyyy"
                 )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Include Due Date",
+                        color = OffWhite,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Switch(
+                        checked = formState.includeDueDate,
+                        onCheckedChange = onIncludeDueDateChange,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = IndustrialGold,
+                            checkedTrackColor = IndustrialGold.copy(alpha = 0.5f)
+                        )
+                    )
+                }
+
+                if (formState.includeDueDate) {
+                    IndustrialTextField(
+                        value = formState.dueDate,
+                        onValueChange = onDueDateChange,
+                        label = "Due Date",
+                        placeholder = "dd-MM-yyyy"
+                    )
+                }
 
                 IndustrialTextField(
                     value = formState.notes,

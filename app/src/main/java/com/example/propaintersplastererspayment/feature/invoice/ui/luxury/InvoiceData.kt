@@ -3,7 +3,7 @@ package com.example.propaintersplastererspayment.feature.invoice.ui.luxury
 data class InvoiceData(
     val invoiceNumber: String,
     val issueDate: String,
-    val dueDate: String,
+    val dueDate: String? = null,
     val billTo: String,
     val jobAddress: String,
     val lineItems: List<InvoiceLineItem>,
