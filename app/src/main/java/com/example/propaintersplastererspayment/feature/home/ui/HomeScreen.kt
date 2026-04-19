@@ -11,11 +11,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -224,12 +227,8 @@ private fun JobCard(
         .mapNotNull { DateFormatUtils.parseStoredDate(it.invoiceDate)?.time }
         .maxOrNull()
 
-    val startDateDisplay = startDate?.let { DateFormatUtils.formatTimestampToDisplay(it) } ?: "TBA"
-    val finishDateDisplay = if (job.status == JobStatus.WORKING && job.finishDateOverride == null) {
-        "N/A"
-    } else {
-        finishDate?.let { DateFormatUtils.formatTimestampToDisplay(it) } ?: "N/A"
-    }
+    val startDateDisplay = startDate?.let { DateFormatUtils.formatTimestampToDisplay(it) } ?: "Set Start"
+    val finishDateDisplay = finishDate?.let { DateFormatUtils.formatTimestampToDisplay(it) } ?: "Set Finish"
 
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showFinishDatePicker by remember { mutableStateOf(false) }
@@ -256,51 +255,49 @@ private fun JobCard(
         )
     }
 
+    val configuration = LocalConfiguration.current
+    val fontSize = if (configuration.screenWidthDp <= 360) 8.sp else 13.sp
+
     IndustrialCard(onClick = onClick) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.weight(1f)
-            ) {
-                Surface(
-                    modifier = Modifier.size(48.dp),
-                    shape = AppShapes.medium,
-                    color = IndustrialGold.copy(alpha = 0.1f)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = job.jobName.ifBlank { "Unnamed Project" },
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = IndustrialGold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = job.clientName.ifBlank { "No Client" },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = OffWhite,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Work,
+                        imageVector = Icons.Default.Place,
                         contentDescription = null,
-                        tint = IndustrialGold,
-                        modifier = Modifier.padding(12.dp)
+                        modifier = Modifier.size(16.dp),
+                        tint = TextMuted
                     )
-                }
-
-                Column {
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = job.clientName.ifBlank { job.jobName.ifBlank { "Unnamed Job" } },
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = IndustrialGold
+                        text = job.propertyAddress,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextMuted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Place,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = TextMuted
-                        )
-                        Text(
-                            text = job.propertyAddress,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = TextMuted
-                        )
-                    }
                 }
             }
 
@@ -313,84 +310,111 @@ private fun JobCard(
             var showStatusTooltip by remember { mutableStateOf(false) }
 
             Column(horizontalAlignment = Alignment.End) {
-                Box {
-                    Surface(
-                        shape = MaterialTheme.shapes.extraLarge,
-                        color = statusColor.copy(alpha = 0.15f),
-                        modifier = Modifier.clickable { showStatusTooltip = true }
-                    ) {
-                        Text(
-                            text = statusText,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = statusColor
-                        )
-                    }
-
-                    if (showStatusTooltip) {
-                        AlertDialog(
-                            onDismissRequest = { showStatusTooltip = false },
-                            confirmButton = {
-                                TextButton(onClick = { showStatusTooltip = false }) {
-                                    Text("OK", color = IndustrialGold)
-                                }
-                            },
-                            title = { Text(statusText, color = IndustrialGold) },
-                            text = { Text(statusDesc, color = OffWhite) },
-                            containerColor = CharcoalCard
-                        )
-                    }
+                Surface(
+                    shape = MaterialTheme.shapes.extraSmall,
+                    color = statusColor.copy(alpha = 0.1f),
+                    modifier = Modifier.clickable { showStatusTooltip = true }
+                ) {
+                    Text(
+                        text = statusText,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = statusColor
+                    )
                 }
+
+                if (showStatusTooltip) {
+                    AlertDialog(
+                        onDismissRequest = { showStatusTooltip = false },
+                        confirmButton = {
+                            TextButton(onClick = { showStatusTooltip = false }) {
+                                Text("OK", color = IndustrialGold)
+                            }
+                        },
+                        title = { Text(statusText, color = IndustrialGold) },
+                        text = { Text(statusDesc, color = OffWhite) },
+                        containerColor = CharcoalCard
+                    )
+                }
+                
                 Spacer(modifier = Modifier.height(8.dp))
-                Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = "Inv: $invoiceNumber",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextMuted
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        HorizontalDivider(color = BorderColor.copy(alpha = 0.5f))
+        Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Start Date Column
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Invoice",
+                        text = "Date Start",
                         style = MaterialTheme.typography.labelSmall,
                         color = TextMuted
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { showStartDatePicker = true }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = IndustrialGold
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = startDateDisplay,
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = fontSize),
+                            fontWeight = FontWeight.Medium,
+                            color = OffWhite,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+
+                // Finish Date Column
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = invoiceNumber,
+                        text = "Date Finish",
                         style = MaterialTheme.typography.labelSmall,
                         color = TextMuted
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { showFinishDatePicker = true }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = IndustrialGold
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = finishDateDisplay,
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = fontSize),
+                            fontWeight = FontWeight.Medium,
+                            color = OffWhite,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
             }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-        HorizontalDivider(color = BorderColor)
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = "Project Timeline",
-                style = MaterialTheme.typography.labelSmall,
-                color = TextMuted
-            )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = startDateDisplay,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = IndustrialGold,
-                    modifier = Modifier.clickable { showStartDatePicker = true }
-                )
-                Text(
-                    text = " — ",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = TextMuted,
-                    modifier = Modifier.padding(horizontal = 12.dp)
-                )
-                Text(
-                    text = finishDateDisplay,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = IndustrialGold,
-                    modifier = Modifier.clickable { showFinishDatePicker = true }
-                )
-            }
-        }
     }
 }
 

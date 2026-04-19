@@ -1,168 +1,105 @@
 package com.example.propaintersplastererspayment.feature.home.ui
 
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.propaintersplastererspayment.ProPaintersApplication
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.propaintersplastererspayment.R
-import com.example.propaintersplastererspayment.core.util.DateFormatUtils
 import com.example.propaintersplastererspayment.data.local.entity.JobStatus
 import com.example.propaintersplastererspayment.data.local.model.JobWithInvoices
 import com.example.propaintersplastererspayment.feature.home.vm.HomeUiState
-import com.example.propaintersplastererspayment.feature.home.vm.HomeViewModel
-import com.example.propaintersplastererspayment.ui.components.*
 import com.example.propaintersplastererspayment.ui.theme.*
+import com.example.propaintersplastererspayment.ui.components.IndustrialDatePickerDialog
+import com.example.propaintersplastererspayment.core.util.DateFormatUtils
+import java.util.*
 
 @Composable
 fun JobListRoute(
-    onOpenSettings: () -> Unit,
-    onAddJob: () -> Unit,
+    onNavigateToCreateJob: () -> Unit,
+    onNavigateToSettings: () -> Unit,
     onOpenJob: (Long) -> Unit,
-    onOpenClients: () -> Unit = {},
-    onBack: () -> Unit = {},
+    onNavigateToClients: () -> Unit,
+    onNavigateToInvoices: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val application = LocalContext.current.applicationContext as ProPaintersApplication
-    val viewModel: HomeViewModel = viewModel(
-        factory = HomeViewModel.provideFactory(application.container.jobRepository)
-    )
-    val uiState by viewModel.uiState.collectAsState()
-
-    JobListScreen(
-        uiState = uiState,
-        onSearchQueryChange = viewModel::onSearchQueryChange,
-        onUpdateJobDates = viewModel::updateJobDates,
-        onOpenSettings = onOpenSettings,
-        onAddJob = onAddJob,
-        onOpenJob = onOpenJob,
-        onOpenClients = onOpenClients,
-        onBack = onBack,
-        modifier = modifier
-    )
+    // This is a placeholder for the actual implementation that should use a ViewModel
+    // For now, it just shows a UI
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JobListScreen(
     uiState: HomeUiState,
     onSearchQueryChange: (TextFieldValue) -> Unit,
     onUpdateJobDates: (Long, Long?, Long?) -> Unit,
-    onOpenSettings: () -> Unit,
-    onAddJob: () -> Unit,
+    onNavigateToCreateJob: () -> Unit,
+    onNavigateToSettings: () -> Unit,
     onOpenJob: (Long) -> Unit,
-    onOpenClients: () -> Unit = {},
-    onBack: () -> Unit = {},
+    onNavigateToClients: () -> Unit,
+    onNavigateToInvoices: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
-        modifier = modifier.fillMaxSize(),
         containerColor = CharcoalBackground,
         floatingActionButton = {
-            IndustrialFAB(
-                onClick = onAddJob,
-                icon = Icons.Default.Add
-            )
+            FloatingActionButton(
+                onClick = onNavigateToCreateJob,
+                containerColor = IndustrialGold,
+                contentColor = CharcoalBackground,
+                shape = MaterialTheme.shapes.large
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add Job")
+            }
         }
     ) { padding ->
         Column(
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(AppDimensions.screenPadding)
+                .padding(horizontal = 16.dp)
         ) {
-            // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = IndustrialGold
-                        )
-                    }
-                    Text(
-                        text = stringResource(R.string.home_title),
-                        style = MaterialTheme.typography.headlineLarge,
-                        color = IndustrialGold,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    IconButton(
-                        onClick = onOpenClients,
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Surface(
-                            modifier = Modifier.fillMaxSize(),
-                            shape = AppShapes.large,
-                            color = CharcoalSecondary
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.People,
-                                contentDescription = "Clients",
-                                tint = OffWhite,
-                                modifier = Modifier.padding(12.dp)
-                            )
-                        }
-                    }
-
-                    IconButton(
-                        onClick = onOpenSettings,
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Surface(
-                            modifier = Modifier.fillMaxSize(),
-                            shape = AppShapes.large,
-                            color = CharcoalSecondary
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Settings,
-                                contentDescription = "Settings",
-                                tint = OffWhite,
-                                modifier = Modifier.padding(12.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            IndustrialTextField(
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Search Bar
+            OutlinedTextField(
                 value = uiState.searchQuery,
                 onValueChange = onSearchQueryChange,
-                label = "Search",
-                placeholder = "Search Invoice, Name or Address...",
-                leadingIcon = {
-                    Icon(
-                        Icons.Default.Search,
-                        contentDescription = null,
-                        tint = IndustrialGold
-                    )
-                },
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Search jobs or clients...", color = TextMuted) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextMuted) },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = IndustrialGold,
+                    unfocusedBorderColor = BorderColor,
+                    focusedContainerColor = CharcoalCard,
+                    unfocusedContainerColor = CharcoalCard,
+                    focusedTextColor = OffWhite,
+                    unfocusedTextColor = OffWhite
+                ),
+                shape = MaterialTheme.shapes.medium,
+                singleLine = true
             )
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             when {
                 uiState.isLoading -> {
@@ -225,12 +162,8 @@ private fun JobCard(
         .mapNotNull { DateFormatUtils.parseStoredDate(it.invoiceDate)?.time }
         .maxOrNull()
 
-    val startDateDisplay = startDate?.let { DateFormatUtils.formatTimestampToDisplay(it) } ?: "TBA"
-    val finishDateDisplay = if (job.status == JobStatus.WORKING && job.finishDateOverride == null) {
-        "N/A"
-    } else {
-        finishDate?.let { DateFormatUtils.formatTimestampToDisplay(it) } ?: "N/A"
-    }
+    val startDateDisplay = startDate?.let { DateFormatUtils.formatTimestampToDisplay(it) } ?: "Set Start"
+    val finishDateDisplay = finishDate?.let { DateFormatUtils.formatTimestampToDisplay(it) } ?: "Set Finish"
 
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showFinishDatePicker by remember { mutableStateOf(false) }
@@ -238,8 +171,8 @@ private fun JobCard(
     if (showStartDatePicker) {
         IndustrialDatePickerDialog(
             initialTimestamp = startDate ?: System.currentTimeMillis(),
-            onDateSelected = { 
-                onUpdateDates(it, job.finishDateOverride)
+            onDateSelected = { selected -> 
+                onUpdateDates(selected, job.finishDateOverride)
                 showStartDatePicker = false 
             },
             onDismiss = { showStartDatePicker = false }
@@ -249,48 +182,49 @@ private fun JobCard(
     if (showFinishDatePicker) {
         IndustrialDatePickerDialog(
             initialTimestamp = finishDate ?: System.currentTimeMillis(),
-            onDateSelected = { 
-                onUpdateDates(job.startDateOverride, it)
+            onDateSelected = { selected -> 
+                onUpdateDates(job.startDateOverride, selected)
                 showFinishDatePicker = false 
             },
             onDismiss = { showFinishDatePicker = false }
         )
     }
 
-    IndustrialCard(
-        onClick = onClick,
-        modifier = modifier
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.weight(1f)
-            ) {
-                Surface(
-                    modifier = Modifier.size(48.dp),
-                    shape = AppShapes.medium,
-                    color = IndustrialGold.copy(alpha = 0.1f)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Work,
-                        contentDescription = null,
-                        tint = IndustrialGold,
-                        modifier = Modifier.padding(12.dp)
-                    )
-                }
+    // Adaptive font size based on screen width
+    val configuration = LocalConfiguration.current
+    val fontSize = if (configuration.screenWidthDp <= 360) 8.sp else 13.sp
 
-                Column {
+    Surface(
+        onClick = onClick,
+        modifier = modifier,
+        color = CharcoalCard,
+        shape = MaterialTheme.shapes.large,
+        border = BorderStroke(1.dp, BorderColor)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = job.clientName.ifBlank { job.jobName.ifBlank { "Unnamed Job" } },
-                        style = MaterialTheme.typography.titleLarge,
+                        text = job.jobName,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = IndustrialGold
+                        color = IndustrialGold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
+                    Text(
+                        text = job.clientNameSnapshot,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = OffWhite,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
@@ -299,34 +233,35 @@ private fun JobCard(
                             modifier = Modifier.size(16.dp),
                             tint = TextMuted
                         )
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = job.propertyAddress,
                             style = MaterialTheme.typography.bodySmall,
-                            color = TextMuted
+                            color = TextMuted,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
-            }
 
-            // Status badge and Invoice
-            val (statusText, statusColor, statusDesc) = when (job.status) {
-                JobStatus.WORKING -> Triple("WORKING", SuccessGreen, "Job is currently in progress")
-                JobStatus.WAITING_FOR_PAYMENT -> Triple("WAITING", ErrorRed, "Invoice sent, awaiting payment")
-                JobStatus.PAID -> Triple("PAID", Color(0xFF42A5F5), "Payment received and job completed")
-            }
-            var showStatusTooltip by remember { mutableStateOf(false) }
+                // Status badge and Invoice
+                val (statusText, statusColor, statusDesc) = when (job.status) {
+                    JobStatus.WORKING -> Triple("WORKING", SuccessGreen, "Job is currently in progress")
+                    JobStatus.WAITING_FOR_PAYMENT -> Triple("WAITING", ErrorRed, "Invoice sent, awaiting payment")
+                    JobStatus.PAID -> Triple("PAID", Color(0xFF42A5F5), "Payment received and job completed")
+                }
+                var showStatusTooltip by remember { mutableStateOf(false) }
 
-            Column(horizontalAlignment = Alignment.End) {
-                Box {
+                Column(horizontalAlignment = Alignment.End) {
                     Surface(
-                        shape = MaterialTheme.shapes.extraLarge,
-                        color = statusColor.copy(alpha = 0.15f),
+                        shape = MaterialTheme.shapes.extraSmall,
+                        color = statusColor.copy(alpha = 0.1f),
                         modifier = Modifier.clickable { showStatusTooltip = true }
                     ) {
                         Text(
                             text = statusText,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                            style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = statusColor
                         )
@@ -345,58 +280,110 @@ private fun JobCard(
                             containerColor = CharcoalCard
                         )
                     }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Inv: $invoiceNumber",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TextMuted
+                    )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-                Column(horizontalAlignment = Alignment.End) {
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            HorizontalDivider(color = BorderColor.copy(alpha = 0.5f))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Start Date Column
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Invoice",
+                        text = "Date Start",
                         style = MaterialTheme.typography.labelSmall,
                         color = TextMuted
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { showStartDatePicker = true }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = IndustrialGold
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = startDateDisplay,
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = fontSize),
+                            fontWeight = FontWeight.Medium,
+                            color = OffWhite,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+
+                // Finish Date Column
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = invoiceNumber,
+                        text = "Date Finish",
                         style = MaterialTheme.typography.labelSmall,
                         color = TextMuted
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { showFinishDatePicker = true }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = IndustrialGold
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = finishDateDisplay,
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = fontSize),
+                            fontWeight = FontWeight.Medium,
+                            color = OffWhite,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
             }
         }
+    }
+}
 
-        Spacer(modifier = Modifier.height(16.dp))
-        HorizontalDivider(color = BorderColor)
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = "Project Timeline",
-                style = MaterialTheme.typography.labelSmall,
-                color = TextMuted
+@androidx.compose.ui.tooling.preview.Preview(name = "Folded Fold5", widthDp = 320)
+@androidx.compose.ui.tooling.preview.Preview(name = "Normal Phone", widthDp = 411)
+@Composable
+fun JobCardPreview() {
+    val sampleJob = JobWithInvoices(
+        job = com.example.propaintersplastererspayment.data.local.entity.JobEntity(
+            jobId = 1,
+            jobName = "Maria Ozawa Project",
+            clientNameSnapshot = "Maria Ozawa",
+            propertyAddress = "123 Tall & Narrow St",
+            status = com.example.propaintersplastererspayment.data.local.entity.JobStatus.WORKING
+        ),
+        invoices = emptyList(),
+        workEntries = emptyList()
+    )
+    ProPaintersTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            JobCard(
+                jobWithInvoices = sampleJob,
+                onUpdateDates = { _, _ -> },
+                onClick = {}
             )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = startDateDisplay,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = IndustrialGold,
-                    modifier = Modifier.clickable { showStartDatePicker = true }
-                )
-                Text(
-                    text = " — ",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = TextMuted,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-                Text(
-                    text = finishDateDisplay,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = IndustrialGold,
-                    modifier = Modifier.clickable { showFinishDatePicker = true }
-                )
-            }
         }
     }
 }
