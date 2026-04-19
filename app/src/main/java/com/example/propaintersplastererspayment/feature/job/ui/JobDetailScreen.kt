@@ -52,7 +52,8 @@ fun JobDetailScreen(
             Column(
                 modifier = Modifier
                     .background(CharcoalBackground)
-                    .padding(top = 16.dp, start = 8.dp, end = 8.dp)
+                    .statusBarsPadding()
+                    .padding(top = 24.dp, start = 8.dp, end = 8.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
