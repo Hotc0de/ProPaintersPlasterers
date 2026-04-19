@@ -1,9 +1,21 @@
 package com.example.propaintersplastererspayment.feature.home.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -11,7 +23,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -47,6 +61,7 @@ fun JobListRoute(
         uiState = uiState,
         onSearchQueryChange = viewModel::onSearchQueryChange,
         onUpdateJobDates = viewModel::updateJobDates,
+        onDeleteJob = { viewModel.deleteJob(it.job) },
         onOpenSettings = onOpenSettings,
         onAddJob = onAddJob,
         onOpenJob = onOpenJob,
@@ -56,11 +71,13 @@ fun JobListRoute(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun JobListScreen(
     uiState: HomeUiState,
     onSearchQueryChange: (TextFieldValue) -> Unit,
     onUpdateJobDates: (Long, Long?, Long?) -> Unit,
+    onDeleteJob: (JobWithInvoices) -> Unit,
     onOpenSettings: () -> Unit,
     onAddJob: () -> Unit,
     onOpenJob: (Long) -> Unit,
@@ -68,6 +85,30 @@ fun JobListScreen(
     onBack: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    var jobToDelete by remember { mutableStateOf<JobWithInvoices?>(null) }
+
+    if (jobToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { jobToDelete = null },
+            title = { Text("Delete Job", color = OffWhite) },
+            text = { Text("Are you sure you want to delete this job and all its related data? This action cannot be undone.", color = OffWhite) },
+            containerColor = CharcoalCard,
+            confirmButton = {
+                TextButton(onClick = {
+                    jobToDelete?.let { onDeleteJob(it) }
+                    jobToDelete = null
+                }) {
+                    Text("Delete", color = ErrorRed)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { jobToDelete = null }) {
+                    Text("Cancel", color = IndustrialGold)
+                }
+            }
+        )
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = CharcoalBackground,
@@ -183,19 +224,80 @@ fun JobListScreen(
                 }
 
                 else -> {
+                    val haptic = LocalHapticFeedback.current
+                    var jobInDeleteMode by remember { mutableLongStateOf(-1L) }
+
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         contentPadding = PaddingValues(bottom = 90.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(uiState.jobs, key = { it.job.jobId }) { jobWithInvoices ->
-                            JobCard(
-                                jobWithInvoices = jobWithInvoices,
-                                onUpdateDates = { start, finish -> 
-                                    onUpdateJobDates(jobWithInvoices.job.jobId, start, finish)
-                                },
-                                onClick = { onOpenJob(jobWithInvoices.job.jobId) }
-                            )
+                            val isDeleteMode = jobInDeleteMode == jobWithInvoices.job.jobId
+                            
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .animateContentSize()
+                            ) {
+                                JobCard(
+                                    jobWithInvoices = jobWithInvoices,
+                                    onUpdateDates = { start, finish -> 
+                                        onUpdateJobDates(jobWithInvoices.job.jobId, start, finish)
+                                    },
+                                    onClick = { 
+                                        if (jobInDeleteMode != -1L) {
+                                            jobInDeleteMode = -1L
+                                        } else {
+                                            onOpenJob(jobWithInvoices.job.jobId)
+                                        }
+                                    },
+                                    onLongClick = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        jobInDeleteMode = jobWithInvoices.job.jobId
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+
+                                androidx.compose.animation.AnimatedVisibility(
+                                    visible = isDeleteMode,
+                                    enter = fadeIn() + expandVertically(),
+                                    exit = fadeOut() + shrinkVertically(),
+                                    modifier = Modifier.matchParentSize()
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(
+                                                ErrorRed.copy(alpha = 0.9f),
+                                                shape = AppShapes.large
+                                            )
+                                            .clickable { jobToDelete = jobWithInvoices },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Icon(Icons.Default.Delete, contentDescription = null, tint = Color.White)
+                                            Text(
+                                                "Tap to Confirm Delete",
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Bold,
+                                                style = MaterialTheme.typography.titleMedium
+                                            )
+                                        }
+                                        
+                                        // Small cancel button
+                                        IconButton(
+                                            onClick = { jobInDeleteMode = -1L },
+                                            modifier = Modifier.align(Alignment.TopEnd).padding(4.dp)
+                                        ) {
+                                            Icon(Icons.Default.Close, contentDescription = "Cancel", tint = Color.White)
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -204,11 +306,14 @@ fun JobListScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun JobCard(
     jobWithInvoices: JobWithInvoices,
     onUpdateDates: (Long?, Long?) -> Unit,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val job = jobWithInvoices.job
     val invoiceNumber = jobWithInvoices.invoices.firstOrNull()?.invoiceNumber ?: "N/A"
@@ -253,7 +358,12 @@ private fun JobCard(
         )
     }
 
-    IndustrialCard(onClick = onClick) {
+    IndustrialCard(
+        modifier = modifier.combinedClickable(
+            onClick = onClick,
+            onLongClick = onLongClick
+        )
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
@@ -390,5 +500,3 @@ private fun JobCard(
         }
     }
 }
-
-
