@@ -3,6 +3,7 @@ package com.example.propaintersplastererspayment.feature.home.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,6 +15,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -22,8 +25,6 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
 import com.example.propaintersplastererspayment.R
@@ -56,6 +57,7 @@ fun HomeRoute(
         uiState = uiState,
         onSearchQueryChange = viewModel::onSearchQueryChange,
         onUpdateJobDates = viewModel::updateJobDates,
+        onDeleteJob = viewModel::deleteJob,
         onOpenSettings = onOpenSettings,
         onAddJob = onAddJob,
         onOpenJob = onOpenJob,
@@ -70,6 +72,7 @@ fun HomeScreen(
     uiState: HomeUiState,
     onSearchQueryChange: (TextFieldValue) -> Unit,
     onUpdateJobDates: (Long, Long?, Long?) -> Unit,
+    onDeleteJob: (JobEntity) -> Unit,
     onOpenSettings: () -> Unit,
     onAddJob: () -> Unit,
     onOpenJob: (Long) -> Unit,
@@ -77,6 +80,37 @@ fun HomeScreen(
     onBack: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    var jobToDelete by remember { mutableStateOf<JobWithInvoices?>(null) }
+
+    if (jobToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { jobToDelete = null },
+            title = { Text("Delete Job?", color = IndustrialGold) },
+            text = { 
+                Text(
+                    "Are you sure you want to delete \"${jobToDelete?.job?.jobName}\"? This will also delete all associated work entries and materials. This action cannot be undone.",
+                    color = OffWhite
+                ) 
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        jobToDelete?.let { onDeleteJob(it.job) }
+                        jobToDelete = null
+                    }
+                ) {
+                    Text("DELETE", color = ErrorRed, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { jobToDelete = null }) {
+                    Text("CANCEL", color = OffWhite)
+                }
+            },
+            containerColor = CharcoalCard
+        )
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = CharcoalBackground,
@@ -203,7 +237,8 @@ fun HomeScreen(
                                 onUpdateDates = { start, finish -> 
                                     onUpdateJobDates(jobWithInvoices.job.jobId, start, finish)
                                 },
-                                onClick = { onOpenJob(jobWithInvoices.job.jobId) }
+                                onClick = { onOpenJob(jobWithInvoices.job.jobId) },
+                                onDeleteClick = { jobToDelete = jobWithInvoices }
                             )
                         }
                     }
@@ -217,7 +252,8 @@ fun HomeScreen(
 private fun JobCard(
     jobWithInvoices: JobWithInvoices,
     onUpdateDates: (Long?, Long?) -> Unit,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onDeleteClick: () -> Unit
 ) {
     val job = jobWithInvoices.job
     val invoiceNumber = jobWithInvoices.invoices.firstOrNull()?.invoiceNumber ?: "N/A"
@@ -261,7 +297,14 @@ private fun JobCard(
     val configuration = LocalConfiguration.current
     val fontSize = if (configuration.screenWidthDp <= 360) 8.sp else 13.sp
 
-    IndustrialCard(onClick = onClick) {
+    IndustrialCard(
+        modifier = Modifier.pointerInput(Unit) {
+            detectTapGestures(
+                onTap = { onClick() },
+                onLongPress = { onDeleteClick() }
+            )
+        }
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -457,5 +500,3 @@ private fun JobCard(
             }
     }
 }
-
-

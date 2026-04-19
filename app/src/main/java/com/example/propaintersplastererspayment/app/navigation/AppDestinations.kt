@@ -5,6 +5,7 @@ object AppDestinations {
     const val SPLASH_ROUTE          = "splash"
     const val SELECTION_ROUTE       = "selection"
     const val HOME_ROUTE            = "home"
+    const val PAINT_ROUTE           = "paint"
     const val SETTINGS_ROUTE        = "settings"
     const val INITIAL_SETUP_ROUTE   = "initial_setup"
 
@@ -38,4 +39,20 @@ object AppDestinations {
     fun invoiceRoute(jobId: Long, isQuickInvoice: Boolean = false): String = 
         "$INVOICE_ROUTE/$jobId?$IS_QUICK_INVOICE_ARG=$isQuickInvoice"
     fun invoiceCreateRoute(): String = INVOICE_CREATE_ROUTE
+
+    // Paint
+    const val PAINT_BRAND_DETAIL_ROUTE = "paint_brand_detail"
+    const val PAINT_ITEM_FORM_ROUTE    = "paint_item_form"
+    const val BRAND_ID_ARG             = "brandId"
+    const val PAINT_ID_ARG             = "paintId"
+    const val PAINT_BRAND_DETAIL_WITH_ARG = "$PAINT_BRAND_DETAIL_ROUTE/{$BRAND_ID_ARG}"
+    const val PAINT_ITEM_FORM_WITH_ARG    = "$PAINT_ITEM_FORM_ROUTE?$BRAND_ID_ARG={$BRAND_ID_ARG}&$PAINT_ID_ARG={$PAINT_ID_ARG}"
+
+    fun paintBrandDetailRoute(brandId: Long): String = "$PAINT_BRAND_DETAIL_ROUTE/$brandId"
+    fun paintItemFormRoute(brandId: Long?, paintId: Long?): String {
+        val bArg = if (brandId != null) "$BRAND_ID_ARG=$brandId" else ""
+        val pArg = if (paintId != null) "$PAINT_ID_ARG=$paintId" else ""
+        val joiner = if (bArg.isNotEmpty() && pArg.isNotEmpty()) "&" else ""
+        return if (bArg.isEmpty() && pArg.isEmpty()) PAINT_ITEM_FORM_ROUTE else "$PAINT_ITEM_FORM_ROUTE?$bArg$joiner$pArg"
+    }
 }

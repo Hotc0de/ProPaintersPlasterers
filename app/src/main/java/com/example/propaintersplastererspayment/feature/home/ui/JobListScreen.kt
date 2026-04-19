@@ -4,9 +4,11 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
@@ -17,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -24,14 +27,13 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.shape.CircleShape
 import com.example.propaintersplastererspayment.R
+import com.example.propaintersplastererspayment.core.util.DateFormatUtils
 import com.example.propaintersplastererspayment.data.local.entity.JobStatus
 import com.example.propaintersplastererspayment.data.local.model.JobWithInvoices
 import com.example.propaintersplastererspayment.feature.home.vm.HomeUiState
-import com.example.propaintersplastererspayment.ui.theme.*
 import com.example.propaintersplastererspayment.ui.components.IndustrialDatePickerDialog
-import com.example.propaintersplastererspayment.core.util.DateFormatUtils
+import com.example.propaintersplastererspayment.ui.theme.*
 import java.util.*
 
 @Composable
@@ -53,6 +55,7 @@ fun JobListScreen(
     uiState: HomeUiState,
     onSearchQueryChange: (TextFieldValue) -> Unit,
     onUpdateJobDates: (Long, Long?, Long?) -> Unit,
+    onDeleteJob: (com.example.propaintersplastererspayment.data.local.entity.JobEntity) -> Unit,
     onNavigateToCreateJob: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onOpenJob: (Long) -> Unit,
@@ -60,6 +63,37 @@ fun JobListScreen(
     onNavigateToInvoices: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var jobToDelete by remember { mutableStateOf<com.example.propaintersplastererspayment.data.local.model.JobWithInvoices?>(null) }
+
+    if (jobToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { jobToDelete = null },
+            title = { Text("Delete Job?", color = IndustrialGold) },
+            text = { 
+                Text(
+                    "Are you sure you want to delete \"${jobToDelete?.job?.jobName}\"? This action cannot be undone.",
+                    color = OffWhite
+                ) 
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        jobToDelete?.let { onDeleteJob(it.job) }
+                        jobToDelete = null
+                    }
+                ) {
+                    Text("DELETE", color = ErrorRed, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { jobToDelete = null }) {
+                    Text("CANCEL", color = OffWhite)
+                }
+            },
+            containerColor = CharcoalCard
+        )
+    }
+
     Scaffold(
         containerColor = CharcoalBackground,
         floatingActionButton = {
@@ -135,6 +169,7 @@ fun JobListScreen(
                                     onUpdateJobDates(jobWithInvoices.job.jobId, start, finish)
                                 },
                                 onClick = { onOpenJob(jobWithInvoices.job.jobId) },
+                                onDeleteClick = { jobToDelete = jobWithInvoices },
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
@@ -146,10 +181,11 @@ fun JobListScreen(
 }
 
 @Composable
-private fun JobCard(
+fun JobCard(
     jobWithInvoices: JobWithInvoices,
     onUpdateDates: (Long?, Long?) -> Unit,
     onClick: () -> Unit,
+    onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val job = jobWithInvoices.job
@@ -196,8 +232,12 @@ private fun JobCard(
     val fontSize = if (configuration.screenWidthDp <= 360) 8.sp else 13.sp
 
     Surface(
-        onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.pointerInput(Unit) {
+            detectTapGestures(
+                onTap = { onClick() },
+                onLongPress = { onDeleteClick() }
+            )
+        },
         color = CharcoalCard,
         shape = MaterialTheme.shapes.large,
         border = BorderStroke(1.dp, BorderColor)
@@ -421,7 +461,8 @@ fun JobCardPreview() {
             JobCard(
                 jobWithInvoices = sampleJob,
                 onUpdateDates = { _, _ -> },
-                onClick = {}
+                onClick = {},
+                onDeleteClick = {}
             )
         }
     }

@@ -8,6 +8,7 @@ import com.example.propaintersplastererspayment.data.repository.OfflineClientRep
 import com.example.propaintersplastererspayment.data.repository.OfflineInvoiceRepository
 import com.example.propaintersplastererspayment.data.repository.OfflineJobRepository
 import com.example.propaintersplastererspayment.data.repository.OfflineMaterialRepository
+import com.example.propaintersplastererspayment.data.repository.OfflinePaintRepository
 import com.example.propaintersplastererspayment.data.repository.OfflineSettingsRepository
 import com.example.propaintersplastererspayment.data.repository.OfflineWorkEntryRepository
 import com.example.propaintersplastererspayment.domain.repository.AccessRepository
@@ -15,6 +16,7 @@ import com.example.propaintersplastererspayment.domain.repository.ClientReposito
 import com.example.propaintersplastererspayment.domain.repository.InvoiceRepository
 import com.example.propaintersplastererspayment.domain.repository.JobRepository
 import com.example.propaintersplastererspayment.domain.repository.MaterialRepository
+import com.example.propaintersplastererspayment.domain.repository.PaintRepository
 import com.example.propaintersplastererspayment.domain.repository.SettingsRepository
 import com.example.propaintersplastererspayment.domain.repository.WorkEntryRepository
 
@@ -32,7 +34,8 @@ class AppDataContainer(
                 AppDatabase.MIGRATION_12_13, 
                 AppDatabase.MIGRATION_13_14,
                 AppDatabase.MIGRATION_14_15,
-                AppDatabase.MIGRATION_15_16
+                AppDatabase.MIGRATION_15_16,
+                AppDatabase.MIGRATION_16_17
             )
             .fallbackToDestructiveMigration()
             .build()
@@ -64,6 +67,10 @@ class AppDataContainer(
 
     override val accessRepository: AccessRepository by lazy {
         OfflineAccessRepository(database.accessDao())
+    }
+
+    override val paintRepository: PaintRepository by lazy {
+        OfflinePaintRepository(database.paintDao(), database.jobPaintDao())
     }
 }
 

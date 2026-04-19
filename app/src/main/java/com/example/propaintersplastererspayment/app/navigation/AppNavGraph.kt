@@ -25,6 +25,10 @@ import com.example.propaintersplastererspayment.feature.job.ui.JobFormRoute
 import com.example.propaintersplastererspayment.feature.invoice.ui.InvoiceCreateRoute
 import com.example.propaintersplastererspayment.feature.invoice.ui.InvoiceRoute
 import com.example.propaintersplastererspayment.feature.selection.ui.MainSelectionScreen
+import com.example.propaintersplastererspayment.feature.paint.ui.AddEditPaintScreen
+import com.example.propaintersplastererspayment.feature.paint.ui.BrandDetailScreen
+import com.example.propaintersplastererspayment.feature.paint.ui.PaintBrandListScreen
+import com.example.propaintersplastererspayment.feature.paint.vm.PaintViewModel
 import com.example.propaintersplastererspayment.feature.settings.ui.SettingsRoute
 import com.example.propaintersplastererspayment.feature.setup.ui.InitialSetupRoute
 
@@ -84,7 +88,57 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
         composable(AppDestinations.SELECTION_ROUTE) {
             MainSelectionScreen(
                 onNavigateToInvoice = { navController.navigate(AppDestinations.invoiceCreateRoute()) },
-                onNavigateToJobs = { navController.navigate(AppDestinations.HOME_ROUTE) }
+                onNavigateToJobs = { navController.navigate(AppDestinations.HOME_ROUTE) },
+                onNavigateToPaint = { navController.navigate(AppDestinations.PAINT_ROUTE) }
+            )
+        }
+
+        // ── Paint Library ───────────────────────────────────────────────
+        composable(AppDestinations.PAINT_ROUTE) {
+            val paintViewModel: PaintViewModel = viewModel(
+                factory = PaintViewModel.provideFactory(application.container.paintRepository)
+            )
+            PaintBrandListScreen(
+                onBrandClick = { brandId -> navController.navigate(AppDestinations.paintBrandDetailRoute(brandId)) },
+                onBack = { navController.popBackStack() },
+                viewModel = paintViewModel
+            )
+        }
+
+        composable(
+            route = AppDestinations.PAINT_BRAND_DETAIL_WITH_ARG,
+            arguments = listOf(navArgument(AppDestinations.BRAND_ID_ARG) { type = NavType.LongType })
+        ) { backStackEntry ->
+            val brandId = backStackEntry.arguments?.getLong(AppDestinations.BRAND_ID_ARG) ?: return@composable
+            val paintViewModel: PaintViewModel = viewModel(
+                factory = PaintViewModel.provideFactory(application.container.paintRepository)
+            )
+            BrandDetailScreen(
+                brandId = brandId,
+                onAddPaint = { navController.navigate(AppDestinations.paintItemFormRoute(brandId, null)) },
+                onEditPaint = { paintId -> navController.navigate(AppDestinations.paintItemFormRoute(brandId, paintId)) },
+                onBack = { navController.popBackStack() },
+                viewModel = paintViewModel
+            )
+        }
+
+        composable(
+            route = AppDestinations.PAINT_ITEM_FORM_WITH_ARG,
+            arguments = listOf(
+                navArgument(AppDestinations.BRAND_ID_ARG) { type = NavType.LongType; defaultValue = -1L },
+                navArgument(AppDestinations.PAINT_ID_ARG) { type = NavType.LongType; defaultValue = -1L }
+            )
+        ) { backStackEntry ->
+            val brandId = backStackEntry.arguments?.getLong(AppDestinations.BRAND_ID_ARG)?.takeIf { it > 0 } ?: return@composable
+            val paintId = backStackEntry.arguments?.getLong(AppDestinations.PAINT_ID_ARG)?.takeIf { it > 0 }
+            val paintViewModel: PaintViewModel = viewModel(
+                factory = PaintViewModel.provideFactory(application.container.paintRepository)
+            )
+            AddEditPaintScreen(
+                brandId = brandId,
+                paintId = paintId,
+                onBack = { navController.popBackStack() },
+                viewModel = paintViewModel
             )
         }
 

@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.FormatPaint
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -26,6 +27,7 @@ import com.example.propaintersplastererspayment.ui.theme.IndustrialGold
 fun MainSelectionScreen(
     onNavigateToInvoice: () -> Unit,
     onNavigateToJobs: () -> Unit,
+    onNavigateToPaint: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -118,6 +120,12 @@ fun MainSelectionScreen(
                         text = "JOB",
                         icon = Icons.Default.Work,
                         onClick = onNavigateToJobs
+                    )
+
+                    SelectionMenuButton(
+                        text = "PAINT",
+                        icon = Icons.Default.FormatPaint,
+                        onClick = onNavigateToPaint
                     )
                 }
 

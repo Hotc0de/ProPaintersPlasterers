@@ -12,6 +12,11 @@ import com.example.propaintersplastererspayment.data.local.dao.InvoiceDao
 import com.example.propaintersplastererspayment.data.local.dao.JobDao
 import com.example.propaintersplastererspayment.data.local.dao.MaterialDao
 import com.example.propaintersplastererspayment.data.local.dao.WorkEntryDao
+import com.example.propaintersplastererspayment.data.local.dao.JobPaintDao
+import com.example.propaintersplastererspayment.data.local.dao.PaintDao
+import com.example.propaintersplastererspayment.data.local.entity.JobPaintEntity
+import com.example.propaintersplastererspayment.data.local.entity.PaintBrandEntity
+import com.example.propaintersplastererspayment.data.local.entity.PaintItemEntity
 import com.example.propaintersplastererspayment.data.local.entity.AccessItemEntity
 import com.example.propaintersplastererspayment.data.local.entity.AppSettingsEntity
 import com.example.propaintersplastererspayment.data.local.entity.ClientEntity
@@ -31,9 +36,12 @@ import com.example.propaintersplastererspayment.data.local.util.Converters
         InvoiceEntity::class,
         InvoiceLineEntity::class,
         AppSettingsEntity::class,
-        AccessItemEntity::class
+        AccessItemEntity::class,
+        PaintBrandEntity::class,
+        PaintItemEntity::class,
+        JobPaintEntity::class
     ],
-    version = 16,
+    version = 17,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -45,8 +53,59 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun invoiceDao(): InvoiceDao
     abstract fun appSettingsDao(): AppSettingsDao
     abstract fun accessDao(): AccessDao
+    abstract fun paintDao(): PaintDao
+    abstract fun jobPaintDao(): JobPaintDao
 
     companion object {
+        val MIGRATION_16_17 = object : Migration(16, 17) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Create paint_brands table
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `paint_brands` (
+                        `brandId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `brandName` TEXT NOT NULL, 
+                        `notes` TEXT NOT NULL DEFAULT '', 
+                        `isActive` INTEGER NOT NULL DEFAULT 1
+                    )
+                """.trimIndent())
+
+                // Create paint_items table
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `paint_items` (
+                        `paintId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `brandId` INTEGER NOT NULL, 
+                        `paintName` TEXT NOT NULL, 
+                        `paintCode` TEXT NOT NULL DEFAULT '', 
+                        `hexCode` TEXT NOT NULL DEFAULT '', 
+                        `finishType` TEXT NOT NULL DEFAULT '', 
+                        `notes` TEXT NOT NULL DEFAULT '', 
+                        `isArchived` INTEGER NOT NULL DEFAULT 0, 
+                        FOREIGN KEY(`brandId`) REFERENCES `paint_brands`(`brandId`) ON UPDATE NO ACTION ON DELETE CASCADE 
+                    )
+                """.trimIndent())
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_paint_items_brandId` ON `paint_items` (`brandId`)")
+
+                // Create job_paints table
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `job_paints` (
+                        `jobPaintId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `jobId` INTEGER NOT NULL, 
+                        `paintId` INTEGER NOT NULL, 
+                        `notes` TEXT NOT NULL DEFAULT '', 
+                        FOREIGN KEY(`jobId`) REFERENCES `jobs`(`jobId`) ON UPDATE NO ACTION ON DELETE CASCADE, 
+                        FOREIGN KEY(`paintId`) REFERENCES `paint_items`(`paintId`) ON UPDATE NO ACTION ON DELETE CASCADE 
+                    )
+                """.trimIndent())
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_job_paints_jobId` ON `job_paints` (`jobId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_job_paints_paintId` ON `job_paints` (`paintId`)")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_job_paints_jobId_paintId` ON `job_paints` (`jobId`, `paintId`)")
+                
+                // Seed default brands
+                db.execSQL("INSERT INTO paint_brands (brandName) VALUES ('Resene')")
+                db.execSQL("INSERT INTO paint_brands (brandName) VALUES ('Dulux')")
+                db.execSQL("INSERT INTO paint_brands (brandName) VALUES ('Wattyl')")
+            }
+        }
         val MIGRATION_11_12 = object : Migration(11, 12) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE jobs ADD COLUMN isQuickInvoice INTEGER NOT NULL DEFAULT 0")

@@ -25,6 +25,7 @@ import com.example.propaintersplastererspayment.ui.components.AppLogo
 import com.example.propaintersplastererspayment.ui.theme.*
 
 private enum class JobDetailTab(val titleRes: Int) {
+    PAINT(R.string.job_tab_paint),
     MATERIALS(R.string.job_tab_materials),
     TIMESHEET(R.string.job_tab_timesheet),
     INVOICE(R.string.job_tab_invoice),
@@ -127,6 +128,7 @@ fun JobDetailScreen(
         ) {
             Box(modifier = Modifier.weight(1f)) {
                 when (tabs[selectedTab]) {
+                    JobDetailTab.PAINT -> JobPaintRoute(jobId = jobId)
                     JobDetailTab.TIMESHEET -> TimesheetRoute(jobId = jobId)
                     JobDetailTab.MATERIALS -> MaterialsRoute(jobId = jobId)
                     JobDetailTab.ACCESS -> JobAccessRoute(jobId = jobId)
