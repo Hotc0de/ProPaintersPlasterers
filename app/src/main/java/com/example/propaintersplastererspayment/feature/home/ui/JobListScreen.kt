@@ -309,7 +309,10 @@ private fun JobCard(
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.clickable { showStartDatePicker = true }
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(24.dp)
+                            .clickable { showStartDatePicker = true }
                     ) {
                         Icon(
                             imageVector = Icons.Default.DateRange,
@@ -339,7 +342,10 @@ private fun JobCard(
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.clickable { showFinishDatePicker = true }
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(24.dp)
+                            .clickable { showFinishDatePicker = true }
                     ) {
                         Icon(
                             imageVector = Icons.Default.DateRange,
@@ -404,7 +410,8 @@ fun JobCardPreview() {
             jobName = "Maria Ozawa Project",
             clientNameSnapshot = "Maria Ozawa",
             propertyAddress = "123 Tall & Narrow St",
-            status = com.example.propaintersplastererspayment.data.local.entity.JobStatus.WORKING
+            status = com.example.propaintersplastererspayment.data.local.entity.JobStatus.WORKING,
+            finishDateOverride = System.currentTimeMillis() + (5 * 24 * 60 * 60 * 1000) // 5 days left
         ),
         invoices = emptyList(),
         workEntries = emptyList()

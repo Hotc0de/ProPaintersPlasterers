@@ -368,7 +368,10 @@ private fun JobCard(
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.clickable { showStartDatePicker = true }
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(24.dp)
+                            .clickable { showStartDatePicker = true }
                     ) {
                         Icon(
                             imageVector = Icons.Default.DateRange,
@@ -398,7 +401,10 @@ private fun JobCard(
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.clickable { showFinishDatePicker = true }
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(24.dp)
+                            .clickable { showFinishDatePicker = true }
                     ) {
                         Icon(
                             imageVector = Icons.Default.DateRange,
@@ -433,14 +439,14 @@ private fun JobCard(
                             
                             Box(
                                 modifier = Modifier
-                                    .size(24.dp)
+                                    .size(30.dp)
                                     .background(indicatorColor.copy(alpha = 0.1f), CircleShape)
                                     .border(1.dp, indicatorColor.copy(alpha = 0.5f), CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
                                     text = daysLeft.coerceAtLeast(0).toString(),
-                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 15.sp),
                                     fontWeight = FontWeight.Bold,
                                     color = indicatorColor
                                 )
