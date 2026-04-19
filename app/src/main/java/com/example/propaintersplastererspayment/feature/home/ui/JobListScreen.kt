@@ -24,6 +24,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.shape.CircleShape
 import com.example.propaintersplastererspayment.R
 import com.example.propaintersplastererspayment.data.local.entity.JobStatus
 import com.example.propaintersplastererspayment.data.local.model.JobWithInvoices
@@ -355,6 +356,37 @@ private fun JobCard(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
+
+                        // Days Left Indicator
+                        val daysLeft = finishDate?.let {
+                            val diff = it - System.currentTimeMillis()
+                            (diff / (1000 * 60 * 60 * 24)).toInt()
+                        }
+
+                        if (daysLeft != null && job.status != JobStatus.PAID) {
+                            val indicatorColor = when {
+                                daysLeft <= 3 -> ErrorRed
+                                daysLeft <= 7 -> Color(0xFFFF9800) // Orange
+                                else -> SuccessGreen
+                            }
+                            
+                            Spacer(modifier = Modifier.weight(1f))
+                            
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .background(indicatorColor.copy(alpha = 0.1f), CircleShape)
+                                    .border(1.dp, indicatorColor.copy(alpha = 0.5f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = daysLeft.coerceAtLeast(0).toString(),
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                    fontWeight = FontWeight.Bold,
+                                    color = indicatorColor
+                                )
+                            }
+                        }
                     }
                 }
             }

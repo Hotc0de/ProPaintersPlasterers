@@ -1,9 +1,12 @@
 package com.example.propaintersplastererspayment.feature.home.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -412,6 +415,37 @@ private fun JobCard(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
+
+                        // Days Left Indicator
+                        val daysLeft = finishDate?.let {
+                            val diff = it - System.currentTimeMillis()
+                            (diff / (1000 * 60 * 60 * 24)).toInt()
+                        }
+
+                        if (daysLeft != null && job.status != JobStatus.PAID) {
+                            val indicatorColor = when {
+                                daysLeft <= 3 -> ErrorRed
+                                daysLeft <= 7 -> Color(0xFFFF9800) // Orange
+                                else -> SuccessGreen
+                            }
+                            
+                            Spacer(modifier = Modifier.weight(1f))
+                            
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .background(indicatorColor.copy(alpha = 0.1f), CircleShape)
+                                    .border(1.dp, indicatorColor.copy(alpha = 0.5f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = daysLeft.coerceAtLeast(0).toString(),
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                    fontWeight = FontWeight.Bold,
+                                    color = indicatorColor
+                                )
+                            }
+                        }
                     }
                 }
             }
