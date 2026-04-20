@@ -21,6 +21,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
 import com.example.propaintersplastererspayment.R
 import com.example.propaintersplastererspayment.data.local.model.RoomWithSurfaces
+import com.example.propaintersplastererspayment.feature.job.util.RoomIconUtils
 import com.example.propaintersplastererspayment.feature.job.vm.RoomViewModel
 import com.example.propaintersplastererspayment.ui.components.IndustrialFAB
 import com.example.propaintersplastererspayment.ui.theme.IndustrialGold
@@ -130,6 +131,16 @@ private fun RoomCard(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Room Type Icon
+            Icon(
+                imageVector = RoomIconUtils.getIconForRoomType(room.roomType),
+                contentDescription = room.roomType.name,
+                tint = IndustrialGold,
+                modifier = Modifier
+                    .size(32.dp)
+                    .padding(end = 12.dp)
+            )
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = room.displayName,
