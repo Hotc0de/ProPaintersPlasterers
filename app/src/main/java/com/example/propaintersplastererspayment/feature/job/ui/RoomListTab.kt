@@ -80,17 +80,18 @@ fun RoomListTab(
                     Spacer(modifier = Modifier.height(80.dp)) // Space for FAB
                 }
             }
-        }
 
-        FloatingActionButton(
-            onClick = { viewModel.onAddRoomClick() },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp),
-            containerColor = IndustrialGold,
-            contentColor = MaterialTheme.colorScheme.onPrimary
-        ) {
-            Icon(Icons.Default.Add, contentDescription = "Add Room")
+            // FAB only shows when rooms.isNotEmpty()
+            FloatingActionButton(
+                onClick = { viewModel.onAddRoomClick() },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+                containerColor = IndustrialGold,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add Room")
+            }
         }
     }
 }
@@ -122,13 +123,13 @@ private fun RoomCard(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = room.name,
+                    text = room.roomName,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = IndustrialGold
                 )
                 Text(
-                    text = room.type.name.lowercase().replaceFirstChar { it.uppercase() },
+                    text = room.roomType.name.lowercase().replaceFirstChar { it.uppercase() },
                     style = MaterialTheme.typography.bodyMedium,
                     color = TextMuted
                 )
