@@ -137,6 +137,7 @@ private fun SurfaceRow(
 ) {
     val surface = surfaceWithPaint.surface
     var showConfirm by remember { mutableStateOf(false) }
+    val accentColor = surfaceWithPaint.maincoatHexCode?.let { parseColor(it) } ?: IndustrialGold
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -152,12 +153,12 @@ private fun SurfaceRow(
                     .height(4.dp)
                     .background(
                         Brush.horizontalGradient(
-                            colors = listOf(Color.Black, IndustrialGold, Color.Black)
+                            colors = listOf(Color.Black, accentColor, Color.Black)
                         )
                     )
             )
 
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(12.dp)) {
                 // 2. Header section
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -167,15 +168,15 @@ private fun SurfaceRow(
                         imageVector = com.example.propaintersplastererspayment.feature.job.util.SurfaceIconUtils.getIconForSurfaceType(surface.surfaceType),
                         contentDescription = null,
                         tint = IndustrialGold,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                     
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = surface.displayName,
-                            style = MaterialTheme.typography.headlineSmall,
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
@@ -183,25 +184,25 @@ private fun SurfaceRow(
                             text = surface.surfaceType.name.lowercase().replaceFirstChar { it.uppercase() },
                             style = MaterialTheme.typography.bodySmall,
                             color = IndustrialGold.copy(alpha = 0.7f),
-                            fontSize = 14.sp
+                            fontSize = 11.sp
                         )
                     }
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         // Edit button with gold border
                         Surface(
                             onClick = onEdit,
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(6.dp),
                             color = Color.Transparent,
                             border = BorderStroke(1.dp, IndustrialGold.copy(alpha = 0.5f)),
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(28.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     Icons.Default.Edit,
                                     contentDescription = "Edit",
                                     tint = IndustrialGold,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(14.dp)
                                 )
                             }
                         }
@@ -209,34 +210,34 @@ private fun SurfaceRow(
                         // Delete button with red border
                         Surface(
                             onClick = { showConfirm = true },
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(6.dp),
                             color = Color.Transparent,
                             border = BorderStroke(1.dp, Color.Red.copy(alpha = 0.5f)),
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(28.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     Icons.Default.Delete,
                                     contentDescription = "Delete",
                                     tint = Color.Red,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(14.dp)
                                 )
                             }
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 // 3. Finish section
                 val finish = surface.finishTypeOverride?.takeIf { it.isNotBlank() } ?: "Flat"
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(6.dp))
                         .background(Color(0xFF121212))
                         .drawBehind {
-                            val strokeWidth = 4.dp.toPx()
+                            val strokeWidth = 3.dp.toPx()
                             drawLine(
                                 color = IndustrialGold,
                                 start = Offset(strokeWidth / 2, 0f),
@@ -244,28 +245,29 @@ private fun SurfaceRow(
                                 strokeWidth = strokeWidth
                             )
                         }
-                        .padding(start = 16.dp, top = 10.dp, bottom = 10.dp, end = 12.dp)
+                        .padding(start = 12.dp, top = 6.dp, bottom = 6.dp, end = 8.dp)
                 ) {
                     Column {
                         Text(
                             text = "FINISH TYPE",
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.Gray,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 9.sp
                         )
                         Text(
                             text = finish,
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = IndustrialGold,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // 4. Paint coats section
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     // Undercoat (UC)
                     if (surfaceWithPaint.undercoatPaintId != null) {
                         PaintCoatRow(
@@ -312,7 +314,7 @@ private fun PaintCoatRow(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(8.dp),
         color = Color(0xFF0A0A0A),
         border = BorderStroke(
             width = 1.dp,
@@ -320,26 +322,27 @@ private fun PaintCoatRow(
         )
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(16.dp))
+                    .size(32.dp)
+                    .clip(RoundedCornerShape(10.dp))
                     .background(parseColor(hexCode ?: "#FFFFFF"))
                     .then(
                         if (hexCode?.lowercase() == "#ffffff") {
-                            Modifier.background(Color.White, shape = RoundedCornerShape(16.dp))
+                            Modifier.background(Color.White, shape = RoundedCornerShape(10.dp))
                         } else Modifier
                     )
             )
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = "$label: $paintName",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 color = if (isMainCoat) IndustrialGold else Color.Gray,
-                fontWeight = if (isMainCoat) FontWeight.SemiBold else FontWeight.Normal
+                fontWeight = if (isMainCoat) FontWeight.SemiBold else FontWeight.Normal,
+                fontSize = 11.sp
             )
         }
     }
