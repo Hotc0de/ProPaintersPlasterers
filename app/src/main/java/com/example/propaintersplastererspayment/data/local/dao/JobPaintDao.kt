@@ -32,7 +32,9 @@ data class JobPaintDisplay(
     val brandName: String,
     val paintName: String,
     val paintCode: String,
+    val finishType: String,
     val hexCode: String,
+    val paintScope: String,
     val notes: String
 )
 
@@ -45,7 +47,9 @@ interface JobPaintDao {
             b.brandName, 
             p.paintName, 
             p.paintCode, 
+            p.finishType,
             p.hexCode, 
+            p.paintScope,
             jp.notes
         FROM job_paints jp
         INNER JOIN paint_items p ON jp.paintId = p.paintId

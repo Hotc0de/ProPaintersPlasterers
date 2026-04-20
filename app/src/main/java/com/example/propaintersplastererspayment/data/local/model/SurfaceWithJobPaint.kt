@@ -5,11 +5,16 @@ import com.example.propaintersplastererspayment.data.local.entity.SurfaceEntity
 
 data class SurfaceWithJobPaint(
     @Embedded val surface: SurfaceEntity,
-    val jobPaintId: Long? = null,
-    val paintId: Long? = null,
-    val brandName: String? = null,
-    val paintName: String? = null,
-    val paintCode: String? = null,
-    val hexCode: String? = null,
-    val jobPaintNotes: String? = null
+    
+    // Undercoat Details
+    val undercoatPaintId: Long? = null,
+    val undercoatBrandName: String? = null,
+    val undercoatPaintName: String? = null,
+    val undercoatHexCode: String? = null,
+
+    // Maincoat Details
+    val maincoatPaintId: Long? = null,
+    val maincoatBrandName: String? = null,
+    val maincoatPaintName: String? = null,
+    val maincoatHexCode: String? = null
 )

@@ -30,8 +30,15 @@ fun AddEditPaintScreen(
 ) {
     var name by remember { mutableStateOf("") }
     var code by remember { mutableStateOf("") }
-    var hex by remember { mutableStateOf("") }
-    var finishType by remember { mutableStateOf("") }
+    // Hex field always starts with '#' and cannot be removed by the user.
+    var hex by remember { mutableStateOf("#") }
+    // finish options: include Matt and Satin; if user selects "Specify", they can enter a custom finish
+    val finishOptions = listOf("Flat", "Matt", "Satin", "Gloss", "Low Sheen", "Semi-Gloss", "Specify")
+    var selectedFinish by remember { mutableStateOf(finishOptions[0]) }
+    var finishSpec by remember { mutableStateOf("") }
+    // Paint scope (Interior/Exterior)
+    val scopeOptions = listOf("Interior", "Exterior")
+    var selectedScope by remember { mutableStateOf(scopeOptions[0]) }
     var notes by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(paintId != null) }
 
@@ -44,15 +51,33 @@ fun AddEditPaintScreen(
             if (paintDetail != null) {
                 name = paintDetail?.paintName ?: ""
                 code = paintDetail?.paintCode ?: ""
-                hex = paintDetail?.hexCode ?: ""
-                finishType = paintDetail?.finishType ?: ""
+                // Ensure hex is normalized to start with '#' and uppercase for preview and editing
+                hex = paintDetail?.hexCode?.let { code ->
+                    if (code.isBlank()) "#" else {
+                        val cleaned = if (code.startsWith("#")) code.substring(1) else code
+                        "#${cleaned.uppercase()}"
+                    }
+                } ?: "#"
+                // Pre-fill finish selection: if matches known option, select it; otherwise use Specify + fill spec
+                val existingFinish = paintDetail?.finishType ?: ""
+                			if (existingFinish.isNotBlank()) {
+                    val matched = finishOptions.find { it.equals(existingFinish, ignoreCase = true) }
+                    if (matched != null && matched != "Specify") {
+                        selectedFinish = matched
+                        finishSpec = ""
+                    } else {
+                        selectedFinish = "Specify"
+                        finishSpec = existingFinish
+                    }
+                } else {
+                    selectedFinish = finishOptions[0]
+                    finishSpec = ""
+                }
+                    // pre-fill scope
+                    selectedScope = paintDetail?.paintScope ?: selectedScope
                 notes = paintDetail?.notes ?: ""
                 isLoading = false
-            } else if (!isLoading && paintId != null) {
-                // If it's null and we were loading, it means it's not found
-                // (Optional: handle error or just stop loading)
-                // isLoading = false
-            }
+                }
         }
     }
 
@@ -77,27 +102,30 @@ fun AddEditPaintScreen(
                 IndustrialFAB(
                     icon = Icons.Default.Done,
                     onClick = {
-                        if (name.isNotBlank()) {
-                            if (paintId == null) {
-                                viewModel.addPaint(
-                                    brandId = brandId,
-                                    name = name,
-                                    code = code,
-                                    hex = PaintColorUtils.normalizeHexCode(hex),
-                                    finishType = finishType,
-                                    notes = notes
-                                )
-                            } else {
-                                viewModel.updatePaint(
-                                    paintId = paintId,
-                                    brandId = brandId,
-                                    name = name,
-                                    code = code,
-                                    hex = PaintColorUtils.normalizeHexCode(hex),
-                                    finishType = finishType,
-                                    notes = notes
-                                )
-                            }
+                            if (name.isNotBlank()) {
+                                    val finalFinish = if (selectedFinish == "Specify") finishSpec.trim() else selectedFinish
+                                    if (paintId == null) {
+                                        viewModel.addPaint(
+                                            brandId = brandId,
+                                            name = name,
+                                            code = code,
+                                            hex = PaintColorUtils.normalizeHexCode(hex),
+                                            finishType = finalFinish,
+                                            paintScope = selectedScope,
+                                            notes = notes
+                                        )
+                                    } else {
+                                        viewModel.updatePaint(
+                                            paintId = paintId,
+                                            brandId = brandId,
+                                            name = name,
+                                            code = code,
+                                            hex = PaintColorUtils.normalizeHexCode(hex),
+                                            finishType = finalFinish,
+                                            paintScope = selectedScope,
+                                            notes = notes
+                                        )
+                                    }
                             onBack()
                         }
                     }
@@ -154,16 +182,94 @@ fun AddEditPaintScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                IndustrialTextField(
-                    value = finishType,
-                    onValueChange = { finishType = it },
-                    label = "Finish (e.g. Low Sheen, Gloss, Matt)",
+                // Scope dropdown: Interior / Exterior
+                var scopeExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = scopeExpanded,
+                    onExpandedChange = { scopeExpanded = it },
                     modifier = Modifier.fillMaxWidth()
-                )
+                ) {
+                    OutlinedTextField(
+                        value = selectedScope,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Scope") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = scopeExpanded) },
+                        modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                    )
+                    ExposedDropdownMenu(expanded = scopeExpanded, onDismissRequest = { scopeExpanded = false }) {
+                        scopeOptions.forEach { opt ->
+                            DropdownMenuItem(
+                                text = { Text(opt) },
+                                onClick = {
+                                    selectedScope = opt
+                                    scopeExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // Finish dropdown with preset options + 'Specify' for custom input
+                var finishExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = finishExpanded,
+                    onExpandedChange = { finishExpanded = it },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = selectedFinish,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Finish") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = finishExpanded) },
+                        modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                    )
+                    ExposedDropdownMenu(expanded = finishExpanded, onDismissRequest = { finishExpanded = false }) {
+                        finishOptions.forEach { opt ->
+                            DropdownMenuItem(
+                                text = { Text(opt) },
+                                onClick = {
+                                    selectedFinish = opt
+                                    finishExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                if (selectedFinish == "Specify") {
+                    IndustrialTextField(
+                        value = finishSpec,
+                        onValueChange = { finishSpec = it },
+                        label = "Specify Finish",
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
 
                 IndustrialTextField(
                     value = hex,
-                    onValueChange = { hex = it },
+                    onValueChange = { input ->
+                        // Normalize input so it always starts with '#', uppercase, and only contains hex chars
+                        var v = input.uppercase()
+                        if (v.isEmpty()) {
+                            v = "#"
+                        }
+                        if (!v.startsWith("#")) v = "#${v}"
+
+                        // keep only hex characters after the leading '#'
+                        val cleaned = v.drop(1).filter { ch ->
+                            ch.isDigit() || (ch in 'A'..'F')
+                        }
+
+                        // limit to 6 hex digits
+                        val limited = if (cleaned.length > 6) cleaned.substring(0, 6) else cleaned
+
+                        hex = "#${limited}"
+                    },
                     label = "Hex Code (e.g. #3C3F41)",
                     modifier = Modifier.fillMaxWidth()
                 )

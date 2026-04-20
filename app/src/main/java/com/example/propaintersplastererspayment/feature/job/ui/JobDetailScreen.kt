@@ -43,6 +43,8 @@ fun JobDetailScreen(
     val application = LocalContext.current.applicationContext as ProPaintersApplication
     val job by application.container.jobRepository.observeJob(jobId).collectAsState(initial = null)
     var selectedTab by remember { mutableIntStateOf(0) }
+    var selectedRoomId by remember { mutableStateOf<Long?>(null) }
+    
     val tabs = remember { JobDetailTab.entries }
     val screenTitle = job?.clientName?.takeIf { it.isNotBlank() }
         ?: stringResource(R.string.job_detail_title, jobId)
@@ -61,7 +63,13 @@ fun JobDetailScreen(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        if (selectedRoomId != null) {
+                            selectedRoomId = null
+                        } else {
+                            onBack()
+                        }
+                    }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
@@ -106,7 +114,11 @@ fun JobDetailScreen(
                     tabs.forEachIndexed { index, tab ->
                         Tab(
                             selected = selectedTab == index,
-                            onClick = { selectedTab = index },
+                            onClick = { 
+                                selectedTab = index 
+                                // Reset room drill-down when changing tabs
+                                selectedRoomId = null
+                            },
                             text = {
                                 Text(
                                     text = stringResource(tab.titleRes),
@@ -130,7 +142,20 @@ fun JobDetailScreen(
             Box(modifier = Modifier.weight(1f)) {
                 when (tabs[selectedTab]) {
                     JobDetailTab.PAINT -> JobPaintRoute(jobId = jobId)
-                    JobDetailTab.ROOMS -> RoomListTab(jobId = jobId)
+                    JobDetailTab.ROOMS -> {
+                        val roomId = selectedRoomId
+                        if (roomId != null) {
+                            SurfaceListTab(
+                                jobId = jobId,
+                                roomId = roomId
+                            )
+                        } else {
+                            RoomListTab(
+                                jobId = jobId,
+                                onRoomClick = { id -> selectedRoomId = id }
+                            )
+                        }
+                    }
                     JobDetailTab.TIMESHEET -> TimesheetRoute(jobId = jobId)
                     JobDetailTab.MATERIALS -> MaterialsRoute(jobId = jobId)
                     JobDetailTab.ACCESS -> JobAccessRoute(jobId = jobId)

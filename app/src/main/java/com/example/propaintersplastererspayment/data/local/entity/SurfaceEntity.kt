@@ -17,13 +17,20 @@ import androidx.room.PrimaryKey
         ForeignKey(
             entity = JobPaintEntity::class,
             parentColumns = ["jobPaintId"],
-            childColumns = ["selectedJobPaintId"],
+            childColumns = ["undercoatJobPaintId"],
+            onDelete = ForeignKey.SET_NULL
+        ),
+        ForeignKey(
+            entity = JobPaintEntity::class,
+            parentColumns = ["jobPaintId"],
+            childColumns = ["maincoatJobPaintId"],
             onDelete = ForeignKey.SET_NULL
         )
     ],
     indices = [
         Index(value = ["roomId"]),
-        Index(value = ["selectedJobPaintId"])
+        Index(value = ["undercoatJobPaintId"]),
+        Index(value = ["maincoatJobPaintId"])
     ]
 )
 data class SurfaceEntity(
@@ -31,14 +38,20 @@ data class SurfaceEntity(
     val surfaceId: Long = 0,
     val roomId: Long,
     val surfaceType: SurfaceType = SurfaceType.WALL,
-    val surfaceLabel: String = "",
-    val selectedJobPaintId: Long? = null,
-    val finishTypeOverride: String? = null,
-    val coatCount: Int = 2,
-    val isFeatureSurface: Boolean = false,
+    val customName: String = "",
+    val displayName: String = "",
     val notes: String? = null,
     val sortOrder: Int = 0,
+    val createdAt: Long = System.currentTimeMillis(),
+
+    // Paint-related fields
+    val undercoatJobPaintId: Long? = null,
+    val maincoatJobPaintId: Long? = null,
+    val maincoatCoatCount: Int = 2,
     
+    val finishTypeOverride: String? = null,
+    val isFeatureSurface: Boolean = false,
+
     // Future expansion fields
     val surfaceCount: Int = 1,
     val areaSize: Double? = null,

@@ -1,19 +1,16 @@
 package com.example.propaintersplastererspayment.feature.job.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import com.example.propaintersplastererspayment.data.local.dao.JobPaintDisplay
 import com.example.propaintersplastererspayment.data.local.entity.SurfaceEntity
 import com.example.propaintersplastererspayment.data.local.entity.SurfaceType
@@ -29,19 +26,29 @@ fun SurfaceFormDialog(
     onDismiss: () -> Unit,
     onSave: (SurfaceEntity) -> Unit
 ) {
-    var label by remember { mutableStateOf(surface.surfaceLabel) }
     var type by remember { mutableStateOf(surface.surfaceType) }
-    var selectedPaintId by remember { mutableStateOf(surface.selectedJobPaintId) }
-    var finishType by remember { mutableStateOf(surface.finishTypeOverride ?: "") }
-    var coatCount by remember { mutableIntStateOf(surface.coatCount) }
-    var isFeature by remember { mutableStateOf(surface.isFeatureSurface) }
-    var notes by remember { mutableStateOf(surface.notes ?: "") }
+    var customName by remember { mutableStateOf(surface.customName) }
+    var undercoatJobPaintId by remember { mutableStateOf(surface.undercoatJobPaintId) }
+    var maincoatJobPaintId by remember { mutableStateOf(surface.maincoatJobPaintId) }
+    var maincoatCoatCount by remember { mutableStateOf(surface.maincoatCoatCount.toString()) }
+    // Finish options between Undercoat and Maincoat
+    val finishOptions = listOf("Flat", "Gloss", "Low Sheen", "Semi-Gloss", "Other")
+    var selectedFinish by remember {
+        mutableStateOf(
+            surface.finishTypeOverride?.let { existing ->
+                finishOptions.find { it.equals(existing, ignoreCase = true) } ?: "Other"
+            } ?: finishOptions[0]
+        )
+    }
+    var finishSpec by remember { mutableStateOf(if (surface.finishTypeOverride != null && !finishOptions.any { it.equals(surface.finishTypeOverride, ignoreCase = true) }) surface.finishTypeOverride!! else "") }
 
     var typeExpanded by remember { mutableStateOf(false) }
-    var paintExpanded by remember { mutableStateOf(false) }
+    var undercoatExpanded by remember { mutableStateOf(false) }
+    var maincoatExpanded by remember { mutableStateOf(false) }
+    var showTypeError by remember { mutableStateOf(false) }
 
     val isNew = surface.surfaceId == 0L
-    val canSave = label.isNotBlank()
+    val canSave = type != null
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -66,108 +73,93 @@ fun SurfaceFormDialog(
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
 
-                // Surface Type
+                // Surface Type Dropdown
                 ExposedDropdownMenuBox(
                     expanded = typeExpanded,
                     onExpandedChange = { typeExpanded = it },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     OutlinedTextField(
-                        value = type.name.lowercase().replaceFirstChar { it.uppercase() },
+                        value = formatSurfaceTypeName(type),
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Surface Type") },
+                        label = { Text("Surface Type*") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeExpanded) },
                         modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                         colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
                             focusedLabelColor = IndustrialGold,
                             focusedBorderColor = IndustrialGold
-                        )
+                        ),
+                        isError = showTypeError
                     )
                     ExposedDropdownMenu(expanded = typeExpanded, onDismissRequest = { typeExpanded = false }) {
                         SurfaceType.entries.forEach { surfaceType ->
                             DropdownMenuItem(
-                                text = { Text(surfaceType.name.lowercase().replaceFirstChar { it.uppercase() }) },
+                                text = { Text(formatSurfaceTypeName(surfaceType)) },
                                 onClick = {
                                     type = surfaceType
-                                    if (label.isBlank()) {
-                                        label = surfaceType.name.lowercase().replaceFirstChar { it.uppercase() }
-                                    }
                                     typeExpanded = false
+                                    showTypeError = false
                                 }
                             )
                         }
                     }
                 }
+                if (showTypeError) {
+                    Text(
+                        text = "Surface type is required",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(start = 8.dp, top = 2.dp)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Surface Label
+                // Custom Name Field
                 OutlinedTextField(
-                    value = label,
-                    onValueChange = { label = it },
-                    label = { Text("Surface Label") },
-                    placeholder = { Text("e.g. South Wall, Main Ceiling") },
+                    value = customName,
+                    onValueChange = { customName = it },
+                    label = { Text("Custom Name (Optional)") },
+                    placeholder = { Text("e.g. Wall 1, Feature Wall, Main Ceiling") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndustrialGold, focusedLabelColor = IndustrialGold)
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Paint Selector (Job Palette Only)
+                // Undercoat Selection
                 ExposedDropdownMenuBox(
-                    expanded = paintExpanded,
-                    onExpandedChange = { paintExpanded = it },
+                    expanded = undercoatExpanded,
+                    onExpandedChange = { undercoatExpanded = it },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    val selectedPaint = availablePaints.find { it.jobPaintId == selectedPaintId }
                     OutlinedTextField(
-                        value = selectedPaint?.let { "${it.brandName} ${it.paintName}" } ?: "Select Paint",
+                        value = availablePaints.find { it.jobPaintId == undercoatJobPaintId }?.let { "${it.brandName} ${it.paintName}" } ?: "None",
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Assigned Paint") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = paintExpanded) },
-                        leadingIcon = selectedPaint?.let {
-                            {
-                                Box(
-                                    modifier = Modifier
-                                        .size(16.dp)
-                                        .clip(CircleShape)
-                                        .background(parseColor(it.hexCode))
-                                )
-                            }
-                        },
+                        label = { Text("Undercoat") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = undercoatExpanded) },
                         modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                         colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
                             focusedLabelColor = IndustrialGold,
                             focusedBorderColor = IndustrialGold
                         )
                     )
-                    ExposedDropdownMenu(expanded = paintExpanded, onDismissRequest = { paintExpanded = false }) {
+                    ExposedDropdownMenu(expanded = undercoatExpanded, onDismissRequest = { undercoatExpanded = false }) {
                         DropdownMenuItem(
-                            text = { Text("None / No Paint") },
+                            text = { Text("None") },
                             onClick = {
-                                selectedPaintId = null
-                                paintExpanded = false
+                                undercoatJobPaintId = null
+                                undercoatExpanded = false
                             }
                         )
                         availablePaints.forEach { paint ->
                             DropdownMenuItem(
-                                text = {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(12.dp)
-                                                .clip(CircleShape)
-                                                .background(parseColor(paint.hexCode))
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text("${paint.brandName} ${paint.paintName}")
-                                    }
-                                },
+                                text = { Text("${paint.brandName} ${paint.paintName}") },
                                 onClick = {
-                                    selectedPaintId = paint.jobPaintId
-                                    paintExpanded = false
+                                    undercoatJobPaintId = paint.jobPaintId
+                                    undercoatExpanded = false
                                 }
                             )
                         }
@@ -176,71 +168,123 @@ fun SurfaceFormDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    // Finish Type
-                    OutlinedTextField(
-                        value = finishType,
-                        onValueChange = { finishType = it },
-                        label = { Text("Finish") },
-                        placeholder = { Text("e.g. Low Sheen") },
-                        modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndustrialGold, focusedLabelColor = IndustrialGold)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    // Coat Count
-                    OutlinedTextField(
-                        value = coatCount.toString(),
-                        onValueChange = { coatCount = it.toIntOrNull() ?: 2 },
-                        label = { Text("Coats") },
-                        modifier = Modifier.width(80.dp),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndustrialGold, focusedLabelColor = IndustrialGold)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Feature Surface Switch
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                // Finish Selection (between Undercoat and Maincoat)
+                var finishExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = finishExpanded,
+                    onExpandedChange = { finishExpanded = it },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Is Feature Surface?", color = TextMuted)
-                    Switch(
-                        checked = isFeature,
-                        onCheckedChange = { isFeature = it },
-                        colors = SwitchDefaults.colors(checkedThumbColor = IndustrialGold, checkedTrackColor = IndustrialGold.copy(alpha = 0.5f))
+                    OutlinedTextField(
+                        value = selectedFinish,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Finish") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = finishExpanded) },
+                        modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
+                            focusedLabelColor = IndustrialGold,
+                            focusedBorderColor = IndustrialGold
+                        )
+                    )
+                    ExposedDropdownMenu(expanded = finishExpanded, onDismissRequest = { finishExpanded = false }) {
+                        finishOptions.forEach { opt ->
+                            DropdownMenuItem(
+                                text = { Text(opt) },
+                                onClick = {
+                                    selectedFinish = opt
+                                    finishExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                if (selectedFinish == "Other") {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = finishSpec,
+                        onValueChange = { finishSpec = it },
+                        label = { Text("Specify Finish") },
+                        placeholder = { Text("e.g. Low Sheen - Special") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndustrialGold, focusedLabelColor = IndustrialGold)
                     )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Notes
+                // Maincoat Selection
+                ExposedDropdownMenuBox(
+                    expanded = maincoatExpanded,
+                    onExpandedChange = { maincoatExpanded = it },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = availablePaints.find { it.jobPaintId == maincoatJobPaintId }?.let { "${it.brandName} ${it.paintName}" } ?: "None",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Maincoat") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = maincoatExpanded) },
+                        modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
+                            focusedLabelColor = IndustrialGold,
+                            focusedBorderColor = IndustrialGold
+                        )
+                    )
+                    ExposedDropdownMenu(expanded = maincoatExpanded, onDismissRequest = { maincoatExpanded = false }) {
+                        DropdownMenuItem(
+                            text = { Text("None") },
+                            onClick = {
+                                maincoatJobPaintId = null
+                                maincoatExpanded = false
+                            }
+                        )
+                        availablePaints.forEach { paint ->
+                            DropdownMenuItem(
+                                text = { Text("${paint.brandName} ${paint.paintName}") },
+                                onClick = {
+                                    maincoatJobPaintId = paint.jobPaintId
+                                    maincoatExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Maincoat Apply Count
                 OutlinedTextField(
-                    value = notes,
-                    onValueChange = { notes = it },
-                    label = { Text("Notes (Optional)") },
+                    value = maincoatCoatCount,
+                    onValueChange = { if (it.isEmpty() || it.all { char -> char.isDigit() }) maincoatCoatCount = it },
+                    label = { Text("Number of coats (Maincoat)") },
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 2,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndustrialGold, focusedLabelColor = IndustrialGold)
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Buttons
+                // Save/Cancel Buttons
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = onDismiss) { Text("Cancel", color = TextMuted) }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = {
+                            if (type == null) {
+                                showTypeError = true
+                                return@Button
+                            }
+                            val displayName = if (customName.isNotBlank()) customName else formatSurfaceTypeName(type)
                             onSave(surface.copy(
-                                surfaceLabel = label,
                                 surfaceType = type,
-                                selectedJobPaintId = selectedPaintId,
-                                finishTypeOverride = finishType.ifBlank { null },
-                                coatCount = coatCount,
-                                isFeatureSurface = isFeature,
-                                notes = notes.ifBlank { null }
+                                customName = customName,
+                                displayName = displayName,
+                                undercoatJobPaintId = undercoatJobPaintId,
+                                maincoatJobPaintId = maincoatJobPaintId,
+                                maincoatCoatCount = maincoatCoatCount.toIntOrNull() ?: 2,
+                                finishTypeOverride = if (selectedFinish == "Other") finishSpec.trim().takeIf { it.isNotBlank() } else selectedFinish
                             ))
                         },
                         enabled = canSave,
@@ -254,10 +298,11 @@ fun SurfaceFormDialog(
     }
 }
 
-private fun parseColor(hex: String): Color {
-    return try {
-        Color(android.graphics.Color.parseColor(hex))
-    } catch (e: Exception) {
-        Color.Gray
-    }
+private fun formatSurfaceTypeName(type: SurfaceType): String {
+    return type.name
+        .replace("_", " ")
+        .lowercase()
+        .replaceFirstChar { it.uppercase() }
+        .split(" ")
+        .joinToString(" ") { word -> word.replaceFirstChar { it.uppercase() } }
 }

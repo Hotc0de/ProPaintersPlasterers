@@ -341,14 +341,26 @@ fun MaterialFormDialog(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     if (formState.materialId != null) {
+                        var showConfirm by remember { mutableStateOf(false) }
                         OutlinedButton(
-                            onClick = onDelete,
+                            onClick = { showConfirm = true },
                             modifier = Modifier.weight(1f).height(56.dp),
                             shape = AppShapes.large,
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = ErrorRed),
                             border = androidx.compose.foundation.BorderStroke(1.dp, ErrorRed.copy(alpha = 0.5f))
                         ) {
                             Text("Delete", fontWeight = FontWeight.Bold)
+                        }
+                        if (showConfirm) {
+                            com.example.propaintersplastererspayment.ui.components.ConfirmDeleteDialog(
+                                title = "Delete Material",
+                                message = "Are you sure you want to delete this material?",
+                                onConfirm = {
+                                    showConfirm = false
+                                    onDelete()
+                                },
+                                onDismiss = { showConfirm = false }
+                            )
                         }
                     }
                     PrimaryButton(

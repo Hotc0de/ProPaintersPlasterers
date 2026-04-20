@@ -3,11 +3,19 @@ package com.example.propaintersplastererspayment.data.local.entity
 enum class SurfaceType {
     CEILING,
     WALL,
-    WINDOW,
-    DOOR,
     SKIRTING,
-    TRIM,
+    DOOR,
+    DOOR_FRAME,
+    WINDOW,
+    WINDOW_FRAME,
     ARCHITRAVE,
-    CABINET,
-    CUSTOM
+    CORNICE,
+    TRIM,
+    WARDROBE,
+    CUPBOARD,
+    SHELVING,
+    VANITY,
+    BEAM,
+    COLUMN,
+    OTHER
 }

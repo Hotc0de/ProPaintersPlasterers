@@ -5,14 +5,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,6 +23,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
 import com.example.propaintersplastererspayment.data.local.model.SurfaceWithJobPaint
 import com.example.propaintersplastererspayment.feature.job.vm.SurfaceViewModel
+import com.example.propaintersplastererspayment.ui.components.IndustrialFAB
 import com.example.propaintersplastererspayment.ui.theme.IndustrialGold
 import com.example.propaintersplastererspayment.ui.theme.TextMuted
 
@@ -43,62 +43,83 @@ fun SurfaceListTab(
         )
     )
     val uiState by viewModel.uiState.collectAsState()
+    val room by application.container.roomRepository.observeRoom(roomId).collectAsState(initial = null)
 
     Box(modifier = modifier.fillMaxSize()) {
-        if (uiState.isLoading) {
-            CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center),
-                color = IndustrialGold
-            )
-        } else if (uiState.surfaces.isEmpty()) {
-            Column(
-                modifier = Modifier.align(Alignment.Center),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Room Title
+            room?.let {
                 Text(
-                    text = "No surfaces in this room",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = TextMuted
+                    text = "Surfaces for ${it.room.displayName}",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = IndustrialGold,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(16.dp)
                 )
-                Button(
-                    onClick = { viewModel.onAddSurfaceClick() },
-                    colors = ButtonDefaults.buttonColors(containerColor = IndustrialGold),
-                    modifier = Modifier.padding(top = 16.dp)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Add Surface")
-                }
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(uiState.surfaces) { surfaceWithPaint ->
-                    SurfaceRow(
-                        surfaceWithPaint = surfaceWithPaint,
-                        onEdit = { viewModel.onEditSurfaceClick(surfaceWithPaint.surface) },
-                        onDelete = { viewModel.deleteSurface(surfaceWithPaint.surface) }
-                    )
+
+            if (uiState.isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = IndustrialGold)
                 }
-                item {
-                    Spacer(modifier = Modifier.height(80.dp)) // FAB space
+            } else if (uiState.surfaces.isEmpty()) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "No surfaces in this room",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = TextMuted
+                    )
+                    Button(
+                        onClick = { viewModel.onAddSurfaceClick() },
+                        colors = ButtonDefaults.buttonColors(containerColor = IndustrialGold),
+                        modifier = Modifier.padding(top = 16.dp)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Add Surface")
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(uiState.surfaces) { surfaceWithPaint ->
+                        SurfaceRow(
+                            surfaceWithPaint = surfaceWithPaint,
+                            onEdit = { viewModel.onEditSurfaceClick(surfaceWithPaint.surface) },
+                            onDelete = { viewModel.deleteSurface(surfaceWithPaint.surface) }
+                        )
+                    }
+                    item {
+                        Spacer(modifier = Modifier.height(80.dp)) // FAB space
+                    }
                 }
             }
         }
 
-        FloatingActionButton(
-            onClick = { viewModel.onAddSurfaceClick() },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp),
-            containerColor = IndustrialGold,
-            contentColor = MaterialTheme.colorScheme.onPrimary
-        ) {
-            Icon(Icons.Default.Add, contentDescription = "Add Surface")
+        if (uiState.surfaces.isNotEmpty()) {
+            IndustrialFAB(
+                onClick = { viewModel.onAddSurfaceClick() },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+            )
         }
+    }
+
+    if (uiState.isShowingSurfaceForm && uiState.selectedSurface != null) {
+        SurfaceFormDialog(
+            surface = uiState.selectedSurface!!,
+            availablePaints = uiState.availablePaints,
+            onDismiss = { viewModel.onDismissSurfaceForm() },
+            onSave = { viewModel.saveSurface(it) }
+        )
     }
 }
 
@@ -123,31 +144,83 @@ private fun SurfaceRow(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Surface icon
+            Icon(
+                imageVector = com.example.propaintersplastererspayment.feature.job.util.SurfaceIconUtils.getIconForSurfaceType(surface.surfaceType),
+                contentDescription = surface.surfaceType.name,
+                tint = IndustrialGold,
+                modifier = Modifier
+                    .size(32.dp)
+                    .padding(end = 12.dp)
+            )
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = surface.surfaceLabel,
+                    text = surface.displayName,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = surface.surfaceType.name.lowercase().replaceFirstChar { it.uppercase() },
                     style = MaterialTheme.typography.bodySmall,
-                    color = TextMuted
+                    color = IndustrialGold
                 )
+                // Show finish type if set
+                surface.finishTypeOverride?.takeIf { it.isNotBlank() }?.let { finish ->
+                    Spacer(modifier = Modifier.height(6.dp))
+                    // Highlight non-Flat finishes (e.g., Low Sheen, Semi-Gloss, Gloss, Other)
+                    val isHighlighted = !finish.equals("Flat", ignoreCase = true)
+                    val finishColor = if (isHighlighted) IndustrialGold else TextMuted
+                    val finishWeight = if (isHighlighted) FontWeight.SemiBold else FontWeight.Normal
+                    val pillBg = if (isHighlighted) IndustrialGold.copy(alpha = 0.10f) else Color.Transparent
+                    Text(
+                        text = "Finish: ${finish}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = finishColor,
+                        fontWeight = finishWeight,
+                        modifier = Modifier
+                            .background(pillBg, shape = RoundedCornerShape(12.dp))
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
                 
-                if (surfaceWithPaint.hexCode != null) {
+                // Undercoat
+                if (surfaceWithPaint.undercoatPaintId != null) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        // Colour Swatch
-                        Box(
-                            modifier = Modifier
-                                .size(16.dp)
-                                .clip(CircleShape)
-                                .background(parseColor(surfaceWithPaint.hexCode!!))
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        if (surfaceWithPaint.undercoatHexCode != null) {
+                            Box(
+                                modifier = Modifier
+                                    .size(12.dp)
+                                    .clip(CircleShape)
+                                    .background(parseColor(surfaceWithPaint.undercoatHexCode))
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
                         Text(
-                            text = "${surfaceWithPaint.brandName} ${surfaceWithPaint.paintName}",
+                            text = "UC: ${surfaceWithPaint.undercoatBrandName} ${surfaceWithPaint.undercoatPaintName}",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = TextMuted
+                        )
+                    }
+                }
+
+                // Maincoat
+                if (surfaceWithPaint.maincoatPaintId != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (surfaceWithPaint.maincoatHexCode != null) {
+                            Box(
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .clip(CircleShape)
+                                    .background(parseColor(surfaceWithPaint.maincoatHexCode))
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                        Text(
+                            text = "MC: ${surfaceWithPaint.maincoatBrandName} ${surfaceWithPaint.maincoatPaintName} (${surface.maincoatCoatCount} coats)",
                             style = MaterialTheme.typography.labelMedium,
                             color = IndustrialGold
                         )
@@ -159,8 +232,20 @@ private fun SurfaceRow(
                 IconButton(onClick = onEdit) {
                     Icon(Icons.Default.Edit, contentDescription = "Edit", tint = IndustrialGold, modifier = Modifier.size(20.dp))
                 }
-                IconButton(onClick = onDelete) {
+                var showConfirm by remember { mutableStateOf(false) }
+                IconButton(onClick = { showConfirm = true }) {
                     Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+                }
+                if (showConfirm) {
+                    com.example.propaintersplastererspayment.ui.components.ConfirmDeleteDialog(
+                        title = "Delete Surface",
+                        message = "Are you sure you want to delete '${surface.displayName}'?",
+                        onConfirm = {
+                            showConfirm = false
+                            onDelete()
+                        },
+                        onDismiss = { showConfirm = false }
+                    )
                 }
             }
         }

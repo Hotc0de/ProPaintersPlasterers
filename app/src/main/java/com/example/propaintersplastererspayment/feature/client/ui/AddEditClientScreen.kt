@@ -39,6 +39,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -321,12 +322,24 @@ fun AddEditClientScreen(
                 )
 
                 if (uiState.isExistingClient) {
+                    var showConfirm by remember { mutableStateOf(false) }
                     SecondaryButton(
                         text = "Delete Client",
-                        onClick = onDelete,
+                        onClick = { showConfirm = true },
                         icon = { Icon(Icons.Default.Delete, null, tint = ErrorRed) },
                         modifier = Modifier.fillMaxWidth()
                     )
+                    if (showConfirm) {
+                        com.example.propaintersplastererspayment.ui.components.ConfirmDeleteDialog(
+                            title = "Delete Client",
+                            message = "Are you sure you want to delete this client?",
+                            onConfirm = {
+                                showConfirm = false
+                                onDelete()
+                            },
+                            onDismiss = { showConfirm = false }
+                        )
+                    }
                 }
             }
         }

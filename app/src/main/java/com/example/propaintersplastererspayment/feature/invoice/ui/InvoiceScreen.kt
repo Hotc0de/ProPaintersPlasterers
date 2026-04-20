@@ -848,14 +848,26 @@ fun InvoiceLineDialog(
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     if (formState.lineId != null) {
+                        var showConfirm by remember { mutableStateOf(false) }
                         OutlinedButton(
-                            onClick = onDelete,
+                            onClick = { showConfirm = true },
                             modifier = Modifier.weight(0.5f).height(56.dp),
                             shape = AppShapes.large,
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = ErrorRed),
                             border = androidx.compose.foundation.BorderStroke(1.dp, ErrorRed.copy(alpha = 0.5f))
                         ) {
                             Icon(Icons.Default.Delete, null)
+                        }
+                        if (showConfirm) {
+                            com.example.propaintersplastererspayment.ui.components.ConfirmDeleteDialog(
+                                title = "Delete Line",
+                                message = "Are you sure you want to delete this invoice line?",
+                                onConfirm = {
+                                    showConfirm = false
+                                    onDelete()
+                                },
+                                onDismiss = { showConfirm = false }
+                            )
                         }
                     }
                     SecondaryButton(text = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))

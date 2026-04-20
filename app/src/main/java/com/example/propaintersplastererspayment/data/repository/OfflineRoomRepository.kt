@@ -64,7 +64,8 @@ class OfflineRoomRepository(
         val existing = surfaceDao.getSurfaceById(surfaceId) ?: return null
         val newSurface = existing.copy(
             surfaceId = 0L,
-            surfaceLabel = "${existing.surfaceLabel} (Copy)"
+            customName = "${existing.customName} (Copy)",
+            displayName = "${existing.displayName} (Copy)"
         )
         return surfaceDao.insertSurface(newSurface)
     }

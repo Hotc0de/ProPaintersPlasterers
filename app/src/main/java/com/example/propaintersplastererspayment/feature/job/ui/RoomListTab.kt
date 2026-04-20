@@ -8,9 +8,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -30,6 +28,7 @@ import com.example.propaintersplastererspayment.ui.theme.TextMuted
 @Composable
 fun RoomListTab(
     jobId: Long,
+    onRoomClick: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val application = LocalContext.current.applicationContext as ProPaintersApplication
@@ -75,7 +74,7 @@ fun RoomListTab(
                         roomWithSurfaces = roomWithSurfaces,
                         onEdit = { viewModel.onEditRoomClick(roomWithSurfaces.room) },
                         onDelete = { viewModel.deleteRoom(roomWithSurfaces.room) },
-                        onClick = { /* TODO: Navigate to Surface management */ }
+                        onClick = { onRoomClick(roomWithSurfaces.room.roomId) }
                     )
                 }
                 item {
@@ -163,8 +162,20 @@ private fun RoomCard(
                 IconButton(onClick = onEdit) {
                     Icon(Icons.Default.Edit, contentDescription = "Edit", tint = IndustrialGold)
                 }
-                IconButton(onClick = onDelete) {
+                var showConfirm by remember { mutableStateOf(false) }
+                IconButton(onClick = { showConfirm = true }) {
                     Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                }
+                if (showConfirm) {
+                    com.example.propaintersplastererspayment.ui.components.ConfirmDeleteDialog(
+                        title = "Delete Room",
+                        message = "Are you sure you want to delete '${room.displayName}' and all its surfaces?",
+                        onConfirm = {
+                            showConfirm = false
+                            onDelete()
+                        },
+                        onDismiss = { showConfirm = false }
+                    )
                 }
             }
         }

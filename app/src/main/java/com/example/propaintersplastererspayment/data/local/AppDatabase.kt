@@ -47,7 +47,7 @@ import com.example.propaintersplastererspayment.data.local.util.Converters
         RoomEntity::class,
         SurfaceEntity::class
     ],
-    version = 19,
+    version = 22,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -246,5 +246,70 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("CREATE INDEX `index_rooms_jobId` ON `rooms` (`jobId`)")
             }
         }
+
+        val MIGRATION_19_20 = object : Migration(19, 20) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Migrate surfaces table: rename surfaceLabel to customName, add displayName and createdAt
+                db.execSQL("""
+                    CREATE TABLE surfaces_new (
+                        surfaceId INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        roomId INTEGER NOT NULL, 
+                        surfaceType TEXT NOT NULL, 
+                        customName TEXT NOT NULL, 
+                        displayName TEXT NOT NULL, 
+                        notes TEXT, 
+                        sortOrder INTEGER NOT NULL, 
+                        createdAt INTEGER NOT NULL, 
+                        selectedJobPaintId INTEGER, 
+                        finishTypeOverride TEXT, 
+                        coatCount INTEGER NOT NULL, 
+                        isFeatureSurface INTEGER NOT NULL, 
+                        surfaceCount INTEGER NOT NULL, 
+                        areaSize REAL, 
+                        areaUnit TEXT, 
+                        FOREIGN KEY(`roomId`) REFERENCES `rooms`(`roomId`) ON UPDATE NO ACTION ON DELETE CASCADE, 
+                        FOREIGN KEY(`selectedJobPaintId`) REFERENCES `job_paints`(`jobPaintId`) ON UPDATE NO ACTION ON DELETE SET NULL 
+                    )
+                """.trimIndent())
+                // Migrate data: surfaceLabel becomes customName, and displayName is set to customName
+                db.execSQL("""
+                    INSERT INTO surfaces_new (surfaceId, roomId, surfaceType, customName, displayName, notes, sortOrder, createdAt, selectedJobPaintId, finishTypeOverride, coatCount, isFeatureSurface, surfaceCount, areaSize, areaUnit)
+                    SELECT surfaceId, roomId, surfaceType, surfaceLabel, surfaceLabel, notes, sortOrder, 0, selectedJobPaintId, finishTypeOverride, coatCount, isFeatureSurface, surfaceCount, areaSize, areaUnit FROM surfaces
+                """.trimIndent())
+                db.execSQL("DROP TABLE surfaces")
+                db.execSQL("ALTER TABLE surfaces_new RENAME TO surfaces")
+                db.execSQL("CREATE INDEX `index_surfaces_roomId` ON `surfaces` (`roomId`)")
+                db.execSQL("CREATE INDEX `index_surfaces_selectedJobPaintId` ON `surfaces` (`selectedJobPaintId`)")
+            }
+        }
+
+        val MIGRATION_20_21 = object : Migration(20, 21) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add new columns to surfaces table
+                db.execSQL("ALTER TABLE surfaces ADD COLUMN undercoatJobPaintId INTEGER")
+                db.execSQL("ALTER TABLE surfaces ADD COLUMN maincoatJobPaintId INTEGER")
+                db.execSQL("ALTER TABLE surfaces ADD COLUMN maincoatCoatCount INTEGER NOT NULL DEFAULT 2")
+                
+                // Migrate existing selectedJobPaintId to maincoatJobPaintId
+                db.execSQL("UPDATE surfaces SET maincoatJobPaintId = selectedJobPaintId")
+                
+                // Add indices for new FKs
+                db.execSQL("CREATE INDEX `index_surfaces_undercoatJobPaintId` ON `surfaces` (`undercoatJobPaintId`)")
+                db.execSQL("CREATE INDEX `index_surfaces_maincoatJobPaintId` ON `surfaces` (`maincoatJobPaintId`)")
+            }
+        }
+
+        val MIGRATION_21_22 = object : Migration(21, 22) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add paintScope column to paint_items to store Interior/Exterior classification
+                try {
+                    db.execSQL("ALTER TABLE paint_items ADD COLUMN paintScope TEXT NOT NULL DEFAULT 'Interior'")
+                } catch (e: Exception) {
+                    // ignore if column already exists
+                }
+            }
+        }
     }
 }
+
+

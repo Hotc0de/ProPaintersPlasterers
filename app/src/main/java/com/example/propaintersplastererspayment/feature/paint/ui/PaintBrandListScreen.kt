@@ -23,6 +23,9 @@ import com.example.propaintersplastererspayment.ui.components.IndustrialFAB
 import com.example.propaintersplastererspayment.ui.components.IndustrialTextField
 import com.example.propaintersplastererspayment.ui.theme.IndustrialGold
 
+import com.example.propaintersplastererspayment.ui.components.PrimaryButton
+import com.example.propaintersplastererspayment.ui.theme.TextMuted
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PaintBrandListScreen(
@@ -51,41 +54,68 @@ fun PaintBrandListScreen(
             )
         },
         floatingActionButton = {
-            IndustrialFAB(
-                icon = Icons.Default.Add,
-                onClick = { showAddDialog = true }
-            )
+            if (brands.isNotEmpty()) {
+                IndustrialFAB(
+                    icon = Icons.Default.Add,
+                    onClick = { showAddDialog = true }
+                )
+            }
         },
         containerColor = Color(0xFF0D0D0D)
     ) { padding ->
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(padding)
         ) {
-            items(brands) { brand ->
-                IndustrialCard(
-                    modifier = Modifier.clickable { onBrandClick(brand.brandId) }
+            if (brands.isEmpty()) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = brand.brandName,
-                            style = MaterialTheme.typography.titleLarge,
-                            color = Color.White
-                        )
-                        Icon(
-                            Icons.Default.ChevronRight,
-                            contentDescription = null,
-                            tint = IndustrialGold.copy(alpha = 0.7f)
-                        )
+                    Text(
+                        text = "No paint brands yet",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = TextMuted
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    PrimaryButton(
+                        text = "Add Paint Brand",
+                        onClick = { showAddDialog = true },
+                        modifier = Modifier.width(200.dp),
+                        icon = { Icon(Icons.Default.Add, contentDescription = null) }
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(brands) { brand ->
+                        IndustrialCard(
+                            modifier = Modifier.clickable { onBrandClick(brand.brandId) }
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(20.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = brand.brandName,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = Color.White
+                                )
+                                Icon(
+                                    Icons.Default.ChevronRight,
+                                    contentDescription = null,
+                                    tint = IndustrialGold.copy(alpha = 0.7f)
+                                )
+                            }
+                        }
                     }
                 }
             }

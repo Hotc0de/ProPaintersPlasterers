@@ -7,13 +7,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
+// import androidx.compose.material.icons.filled.Delete (removed unused)
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.background
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import com.example.propaintersplastererspayment.feature.paint.vm.PaintViewModel
 import com.example.propaintersplastererspayment.ui.components.ColorSwatch
@@ -22,6 +25,8 @@ import com.example.propaintersplastererspayment.ui.components.IndustrialFAB
 import com.example.propaintersplastererspayment.ui.components.IndustrialTextField
 import com.example.propaintersplastererspayment.ui.theme.IndustrialGold
 import com.example.propaintersplastererspayment.ui.theme.TextMuted
+
+import com.example.propaintersplastererspayment.ui.components.PrimaryButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,7 +44,7 @@ fun BrandDetailScreen(
     val paintsFlow = remember(brandId) { viewModel.getPaintsForBrand(brandId) }
     val paints by paintsFlow.collectAsState()
 
-    var paintToDelete by remember { mutableStateOf<com.example.propaintersplastererspayment.data.local.entity.PaintItemEntity?>(null) }
+    // delete flow removed for now to avoid unused-assignment warnings
     var searchQuery by remember { mutableStateOf("") }
 
     val filteredPaints = remember(paints, searchQuery) {
@@ -83,73 +88,108 @@ fun BrandDetailScreen(
             }
         },
         floatingActionButton = {
-            IndustrialFAB(
-                icon = Icons.Default.Add,
-                onClick = onAddPaint
-            )
+            if (paints.isNotEmpty()) {
+                IndustrialFAB(
+                    icon = Icons.Default.Add,
+                    onClick = onAddPaint
+                )
+            }
         },
         containerColor = Color(0xFF0D0D0D)
     ) { padding ->
-        if (paints.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("No paints added yet", color = TextMuted)
-            }
-        } else if (filteredPaints.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("No paints match your search", color = TextMuted)
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(filteredPaints) { paint ->
-                    IndustrialCard(
-                        modifier = Modifier.clickable { onEditPaint(paint.paintId) }
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+            if (paints.isEmpty()) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "No paints added yet",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = TextMuted
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    PrimaryButton(
+                        text = "Add Paint",
+                        onClick = onAddPaint,
+                        modifier = Modifier.width(200.dp),
+                        icon = { Icon(Icons.Default.Add, contentDescription = null) }
+                    )
+                }
+            } else if (filteredPaints.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No paints match your search", color = TextMuted)
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(filteredPaints) { paint ->
+                        IndustrialCard(
+                            modifier = Modifier.clickable { onEditPaint(paint.paintId) }
                         ) {
-                            ColorSwatch(hexCode = paint.hexCode, size = 48.dp)
-                            
-                            Spacer(modifier = Modifier.width(16.dp))
-                            
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = paint.paintName,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = Color.White
-                                )
-                                if (paint.paintCode.isNotBlank() || paint.finishType.isNotBlank()) {
-                                    val subtitle = listOfNotNull(
-                                        if (paint.paintCode.isNotBlank()) "Code: ${paint.paintCode}" else null,
-                                        if (paint.finishType.isNotBlank()) paint.finishType else null
-                                    ).joinToString(" • ")
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    val scope = paint.paintScope.ifBlank { "Interior" }
+                                    val scopeColor = if (scope.equals("Exterior", ignoreCase = true)) Color(0xFF4FC3F7) else IndustrialGold
+                                    Box(
+                                        modifier = Modifier
+                                            .background(scopeColor, shape = RoundedCornerShape(10.dp))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = scope,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = Color.Black,
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 12.sp
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    ColorSwatch(hexCode = paint.hexCode, size = 48.dp)
+                                }
+
+                                Spacer(modifier = Modifier.width(16.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = subtitle,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = TextMuted
+                                        text = paint.paintName,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = Color.White
+                                    )
+                                    if (paint.paintCode.isNotBlank()) {
+                                        Text(
+                                            text = "Code: ${paint.paintCode}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = TextMuted
+                                        )
+                                    }
+                                    if (paint.finishType.isNotBlank()) {
+                                        Text(
+                                            text = paint.finishType,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = TextMuted
+                                        )
+                                    }
+                                    Text(
+                                        text = paint.hexCode.uppercase(),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = IndustrialGold.copy(alpha = 0.7f)
                                     )
                                 }
-                                Text(
-                                    text = paint.hexCode.uppercase(),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = IndustrialGold.copy(alpha = 0.7f)
-                                )
-                            }
 
-                            IconButton(onClick = { paintToDelete = paint }) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete Paint",
-                                    tint = Color.Red.copy(alpha = 0.6f)
-                                )
+                                // delete action removed
                             }
                         }
                     }
@@ -158,25 +198,5 @@ fun BrandDetailScreen(
         }
     }
 
-    if (paintToDelete != null) {
-        AlertDialog(
-            onDismissRequest = { paintToDelete = null },
-            title = { Text("Delete Paint", color = Color.White) },
-            text = { Text("Are you sure you want to delete ${paintToDelete?.paintName}?", color = Color.White) },
-            confirmButton = {
-                TextButton(onClick = {
-                    paintToDelete?.let { viewModel.deletePaint(it) }
-                    paintToDelete = null
-                }) {
-                    Text("DELETE", color = Color.Red)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { paintToDelete = null }) {
-                    Text("CANCEL", color = IndustrialGold)
-                }
-            },
-            containerColor = Color(0xFF1A1A1A)
-        )
-    }
+    // delete dialog removed
 }

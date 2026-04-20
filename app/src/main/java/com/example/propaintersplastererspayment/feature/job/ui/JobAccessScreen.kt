@@ -152,8 +152,20 @@ fun AccessItemCard(
                     IconButton(onClick = onEdit) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit", tint = IndustrialGold, modifier = Modifier.size(20.dp))
                     }
-                    IconButton(onClick = onDelete) {
+                    var showConfirm by remember { mutableStateOf(false) }
+                    IconButton(onClick = { showConfirm = true }) {
                         Icon(Icons.Default.Delete, contentDescription = "Delete", tint = ErrorRed, modifier = Modifier.size(20.dp))
+                    }
+                    if (showConfirm) {
+                        com.example.propaintersplastererspayment.ui.components.ConfirmDeleteDialog(
+                            title = "Delete Access Item",
+                            message = "Are you sure you want to delete this access item?",
+                            onConfirm = {
+                                showConfirm = false
+                                onDelete()
+                            },
+                            onDismiss = { showConfirm = false }
+                        )
                     }
                 }
             }

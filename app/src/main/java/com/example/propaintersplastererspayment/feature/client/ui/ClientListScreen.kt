@@ -9,9 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -27,6 +25,8 @@ import com.example.propaintersplastererspayment.ui.components.IndustrialCard
 import com.example.propaintersplastererspayment.ui.components.IndustrialFAB
 import com.example.propaintersplastererspayment.ui.components.IndustrialTextField
 import com.example.propaintersplastererspayment.ui.theme.*
+
+import com.example.propaintersplastererspayment.ui.components.PrimaryButton
 
 @Composable
 fun ClientListRoute(
@@ -94,7 +94,9 @@ fun ClientListScreen(
             )
         },
         floatingActionButton = {
-            IndustrialFAB(onClick = onAddClient)
+            if (clients.isNotEmpty()) {
+                IndustrialFAB(onClick = onAddClient)
+            }
         }
     ) { innerPadding ->
         Column(
@@ -120,18 +122,32 @@ fun ClientListScreen(
 
             if (clients.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
                         Text(
                             text = if (searchQuery.text.isBlank()) "No clients yet" else "No matching results",
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.bodyLarge,
                             color = TextMuted
                         )
-                        Text(
-                            text = if (searchQuery.text.isBlank()) "Tap + to add your first client" else "Try a different search term",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = TextSubdued,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
+                        
+                        if (searchQuery.text.isBlank()) {
+                            Spacer(modifier = Modifier.height(24.dp))
+                            PrimaryButton(
+                                text = "Add New Client",
+                                onClick = onAddClient,
+                                modifier = Modifier.width(200.dp),
+                                icon = { Icon(Icons.Default.Add, contentDescription = null) }
+                            )
+                        } else {
+                            Text(
+                                text = "Try a different search term",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = TextSubdued,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+                        }
                     }
                 }
             } else {
@@ -203,8 +219,9 @@ private fun ClientIndustrialCard(
                     }
                 }
                 
+                var showConfirm by remember { mutableStateOf(false) }
                 IconButton(
-                    onClick = onDelete,
+                    onClick = { showConfirm = true },
                     modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
@@ -212,6 +229,17 @@ private fun ClientIndustrialCard(
                         contentDescription = "Delete",
                         tint = ErrorRed.copy(alpha = 0.7f),
                         modifier = Modifier.size(20.dp)
+                    )
+                }
+                if (showConfirm) {
+                    com.example.propaintersplastererspayment.ui.components.ConfirmDeleteDialog(
+                        title = "Delete Client",
+                        message = "Are you sure you want to delete ${client.name}?",
+                        onConfirm = {
+                            showConfirm = false
+                            onDelete()
+                        },
+                        onDismiss = { showConfirm = false }
                     )
                 }
             }

@@ -97,13 +97,15 @@ fun JobListScreen(
     Scaffold(
         containerColor = CharcoalBackground,
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNavigateToCreateJob,
-                containerColor = IndustrialGold,
-                contentColor = CharcoalBackground,
-                shape = MaterialTheme.shapes.large
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Job")
+            if (uiState.jobs.isNotEmpty()) {
+                FloatingActionButton(
+                    onClick = onNavigateToCreateJob,
+                    containerColor = IndustrialGold,
+                    contentColor = CharcoalBackground,
+                    shape = MaterialTheme.shapes.large
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Job")
+                }
             }
         }
     ) { padding ->
@@ -145,14 +147,39 @@ fun JobListScreen(
 
                 uiState.jobs.isEmpty() -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = if (uiState.searchQuery.text.isBlank()) 
-                                stringResource(R.string.home_empty_jobs) 
-                            else 
-                                "No matching jobs found",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = TextMuted
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = if (uiState.searchQuery.text.isBlank()) 
+                                    stringResource(R.string.home_empty_jobs) 
+                                else 
+                                    "No matching jobs found",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = TextMuted
+                            )
+                            
+                            if (uiState.searchQuery.text.isBlank()) {
+                                Spacer(modifier = Modifier.height(24.dp))
+                                Button(
+                                    onClick = onNavigateToCreateJob,
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = IndustrialGold,
+                                        contentColor = CharcoalBackground
+                                    ),
+                                    shape = MaterialTheme.shapes.large,
+                                    modifier = Modifier.width(200.dp).height(56.dp)
+                                ) {
+                                    Icon(Icons.Default.Add, contentDescription = null)
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(
+                                        "Add New Job",
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
 

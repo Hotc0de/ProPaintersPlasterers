@@ -14,6 +14,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.background
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
 import com.example.propaintersplastererspayment.data.local.entity.JobPaintEntity
@@ -24,6 +28,8 @@ import com.example.propaintersplastererspayment.ui.components.IndustrialFAB
 import com.example.propaintersplastererspayment.ui.theme.IndustrialGold
 import com.example.propaintersplastererspayment.ui.theme.TextMuted
 import kotlinx.coroutines.launch
+
+import com.example.propaintersplastererspayment.ui.components.PrimaryButton
 
 @Composable
 fun JobPaintRoute(jobId: Long) {
@@ -41,8 +47,23 @@ fun JobPaintRoute(jobId: Long) {
 
     Box(modifier = Modifier.fillMaxSize()) {
         if (jobPaints.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No paints selected for this job", color = TextMuted)
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "No paints selected for this job",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = TextMuted
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                PrimaryButton(
+                    text = "Add Job Paint",
+                    onClick = { showSelectDialog = true },
+                    modifier = Modifier.width(200.dp),
+                    icon = { Icon(Icons.Default.Add, contentDescription = null) }
+                )
             }
         } else {
             LazyColumn(
@@ -52,27 +73,81 @@ fun JobPaintRoute(jobId: Long) {
             ) {
                 items(jobPaints) { jp ->
                     IndustrialCard {
-                        Row(
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                .padding(16.dp)
                         ) {
-                            ColorSwatch(hexCode = jp.hexCode, size = 40.dp)
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(jp.brandName, style = MaterialTheme.typography.labelSmall, color = IndustrialGold)
-                                Text(jp.paintName, style = MaterialTheme.typography.titleMedium, color = Color.White)
-                                if (jp.paintCode.isNotBlank()) {
-                                    Text("Code: ${jp.paintCode}", style = MaterialTheme.typography.bodySmall, color = TextMuted)
+                            Text(
+                                text = jp.brandName,
+                                style = MaterialTheme.typography.titleLarge,
+                                color = IndustrialGold,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 24.sp
+                            )
+                            
+                            Spacer(modifier = Modifier.height(12.dp))
+                            
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    val scopeText = jp.paintScope.ifBlank { "Interior" }
+                                    val scopeColor = if (scopeText.equals("Exterior", ignoreCase = true)) Color(0xFF4FC3F7) else IndustrialGold
+                                    Box(
+                                        modifier = Modifier
+                                            .background(scopeColor, shape = RoundedCornerShape(10.dp))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = scopeText,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = Color.Black,
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 12.sp
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    ColorSwatch(hexCode = jp.hexCode, size = 40.dp)
                                 }
-                            }
-                            IconButton(onClick = { 
-                                scope.launch {
-                                    viewModel.paintRepository.removePaintFromJob(jp.jobPaintId)
+
+                                Spacer(modifier = Modifier.width(16.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    if (jp.paintName.isNotBlank()) {
+                                        Text(jp.paintName, style = MaterialTheme.typography.titleMedium, color = Color.White)
+                                    }
+                                    if (jp.paintCode.isNotBlank()) {
+                                        Text("Code: ${jp.paintCode}", style = MaterialTheme.typography.bodySmall, color = TextMuted)
+                                    }
+                                    if (jp.finishType.isNotBlank()) {
+                                        Text(jp.finishType, style = MaterialTheme.typography.bodySmall, color = TextMuted)
+                                    }
+                                    Text(
+                                        text = jp.hexCode.uppercase(),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = IndustrialGold.copy(alpha = 0.7f)
+                                    )
                                 }
-                            }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Remove", tint = Color.Red.copy(alpha = 0.6f))
+                                var showRemoveConfirm by remember { mutableStateOf(false) }
+                                IconButton(onClick = { showRemoveConfirm = true }) {
+                                    Icon(Icons.Default.Delete, contentDescription = "Remove", tint = Color.Red.copy(alpha = 0.6f))
+                                }
+                                if (showRemoveConfirm) {
+                                    com.example.propaintersplastererspayment.ui.components.ConfirmDeleteDialog(
+                                        title = "Remove Paint",
+                                        message = "Remove ${jp.paintName} from this job?",
+                                        onConfirm = {
+                                            showRemoveConfirm = false
+                                            scope.launch { viewModel.paintRepository.removePaintFromJob(jp.jobPaintId) }
+                                        },
+                                        onDismiss = { showRemoveConfirm = false }
+                                    )
+                                }
                             }
                         }
                     }
@@ -80,11 +155,13 @@ fun JobPaintRoute(jobId: Long) {
             }
         }
 
-        IndustrialFAB(
-            icon = Icons.Default.Add,
-            onClick = { showSelectDialog = true },
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
-        )
+        if (jobPaints.isNotEmpty()) {
+            IndustrialFAB(
+                icon = Icons.Default.Add,
+                onClick = { showSelectDialog = true },
+                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
+            )
+        }
     }
 
     if (showSelectDialog) {

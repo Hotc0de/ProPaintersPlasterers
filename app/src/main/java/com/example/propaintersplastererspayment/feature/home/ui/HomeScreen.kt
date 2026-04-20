@@ -115,10 +115,12 @@ fun HomeScreen(
         modifier = modifier.fillMaxSize(),
         containerColor = CharcoalBackground,
         floatingActionButton = {
-            IndustrialFAB(
-                onClick = onAddJob,
-                icon = Icons.Default.Add
-            )
+            if (uiState.jobs.isNotEmpty()) {
+                IndustrialFAB(
+                    onClick = onAddJob,
+                    icon = Icons.Default.Add
+                )
+            }
         }
     ) { padding ->
         Column(
@@ -214,14 +216,29 @@ fun HomeScreen(
 
                 uiState.jobs.isEmpty() -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = if (uiState.searchQuery.text.isBlank()) 
-                                stringResource(R.string.home_empty_jobs) 
-                            else 
-                                "No matching jobs found",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = TextMuted
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = if (uiState.searchQuery.text.isBlank()) 
+                                    stringResource(R.string.home_empty_jobs) 
+                                else 
+                                    "No matching jobs found",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = TextMuted
+                            )
+                            
+                            if (uiState.searchQuery.text.isBlank()) {
+                                Spacer(modifier = Modifier.height(24.dp))
+                                PrimaryButton(
+                                    text = "Add New Job",
+                                    onClick = onAddJob,
+                                    modifier = Modifier.width(200.dp),
+                                    icon = { Icon(Icons.Default.Add, contentDescription = null) }
+                                )
+                            }
+                        }
                     }
                 }
 

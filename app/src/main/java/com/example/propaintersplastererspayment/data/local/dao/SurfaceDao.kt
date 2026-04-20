@@ -30,17 +30,21 @@ interface SurfaceDao {
     @Query("""
         SELECT 
             s.*,
-            jp.jobPaintId, 
-            p.paintId, 
-            b.brandName, 
-            p.paintName, 
-            p.paintCode, 
-            p.hexCode, 
-            jp.notes
+            uc_p.paintId as undercoatPaintId, 
+            uc_b.brandName as undercoatBrandName, 
+            uc_p.paintName as undercoatPaintName, 
+            uc_p.hexCode as undercoatHexCode,
+            mc_p.paintId as maincoatPaintId, 
+            mc_b.brandName as maincoatBrandName, 
+            mc_p.paintName as maincoatPaintName, 
+            mc_p.hexCode as maincoatHexCode
         FROM surfaces s
-        LEFT JOIN job_paints jp ON s.selectedJobPaintId = jp.jobPaintId
-        LEFT JOIN paint_items p ON jp.paintId = p.paintId
-        LEFT JOIN paint_brands b ON p.brandId = b.brandId
+        LEFT JOIN job_paints uc_jp ON s.undercoatJobPaintId = uc_jp.jobPaintId
+        LEFT JOIN paint_items uc_p ON uc_jp.paintId = uc_p.paintId
+        LEFT JOIN paint_brands uc_b ON uc_p.brandId = uc_b.brandId
+        LEFT JOIN job_paints mc_jp ON s.maincoatJobPaintId = mc_jp.jobPaintId
+        LEFT JOIN paint_items mc_p ON mc_jp.paintId = mc_p.paintId
+        LEFT JOIN paint_brands mc_b ON mc_p.brandId = mc_b.brandId
         WHERE s.surfaceId = :surfaceId LIMIT 1
     """)
     fun observeSurfaceWithJobPaint(surfaceId: Long): Flow<SurfaceWithJobPaint?>
@@ -49,17 +53,21 @@ interface SurfaceDao {
     @Query("""
         SELECT 
             s.*,
-            jp.jobPaintId, 
-            p.paintId, 
-            b.brandName, 
-            p.paintName, 
-            p.paintCode, 
-            p.hexCode, 
-            jp.notes
+            uc_p.paintId as undercoatPaintId, 
+            uc_b.brandName as undercoatBrandName, 
+            uc_p.paintName as undercoatPaintName, 
+            uc_p.hexCode as undercoatHexCode,
+            mc_p.paintId as maincoatPaintId, 
+            mc_b.brandName as maincoatBrandName, 
+            mc_p.paintName as maincoatPaintName, 
+            mc_p.hexCode as maincoatHexCode
         FROM surfaces s
-        LEFT JOIN job_paints jp ON s.selectedJobPaintId = jp.jobPaintId
-        LEFT JOIN paint_items p ON jp.paintId = p.paintId
-        LEFT JOIN paint_brands b ON p.brandId = b.brandId
+        LEFT JOIN job_paints uc_jp ON s.undercoatJobPaintId = uc_jp.jobPaintId
+        LEFT JOIN paint_items uc_p ON uc_jp.paintId = uc_p.paintId
+        LEFT JOIN paint_brands uc_b ON uc_p.brandId = uc_b.brandId
+        LEFT JOIN job_paints mc_jp ON s.maincoatJobPaintId = mc_jp.jobPaintId
+        LEFT JOIN paint_items mc_p ON mc_jp.paintId = mc_p.paintId
+        LEFT JOIN paint_brands mc_b ON mc_p.brandId = mc_b.brandId
         WHERE s.roomId = :roomId ORDER BY s.sortOrder ASC, s.surfaceId ASC
     """)
     fun observeSurfacesForRoom(roomId: Long): Flow<List<SurfaceWithJobPaint>>
@@ -67,6 +75,6 @@ interface SurfaceDao {
     @Query("UPDATE surfaces SET sortOrder = :sortOrder WHERE surfaceId = :surfaceId")
     suspend fun updateSurfaceSortOrder(surfaceId: Long, sortOrder: Int)
 
-    @Query("UPDATE surfaces SET selectedJobPaintId = :jobPaintId WHERE surfaceId = :surfaceId")
+    @Query("UPDATE surfaces SET maincoatJobPaintId = :jobPaintId WHERE surfaceId = :surfaceId")
     suspend fun updateSurfacePaint(surfaceId: Long, jobPaintId: Long?)
 }
