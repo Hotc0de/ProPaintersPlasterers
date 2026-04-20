@@ -14,6 +14,8 @@ import com.example.propaintersplastererspayment.data.local.dao.MaterialDao
 import com.example.propaintersplastererspayment.data.local.dao.WorkEntryDao
 import com.example.propaintersplastererspayment.data.local.dao.JobPaintDao
 import com.example.propaintersplastererspayment.data.local.dao.PaintDao
+import com.example.propaintersplastererspayment.data.local.dao.RoomDao
+import com.example.propaintersplastererspayment.data.local.dao.SurfaceDao
 import com.example.propaintersplastererspayment.data.local.entity.JobPaintEntity
 import com.example.propaintersplastererspayment.data.local.entity.PaintBrandEntity
 import com.example.propaintersplastererspayment.data.local.entity.PaintItemEntity
@@ -24,6 +26,8 @@ import com.example.propaintersplastererspayment.data.local.entity.InvoiceEntity
 import com.example.propaintersplastererspayment.data.local.entity.InvoiceLineEntity
 import com.example.propaintersplastererspayment.data.local.entity.JobEntity
 import com.example.propaintersplastererspayment.data.local.entity.MaterialItemEntity
+import com.example.propaintersplastererspayment.data.local.entity.RoomEntity
+import com.example.propaintersplastererspayment.data.local.entity.SurfaceEntity
 import com.example.propaintersplastererspayment.data.local.entity.WorkEntryEntity
 import com.example.propaintersplastererspayment.data.local.util.Converters
 
@@ -39,9 +43,11 @@ import com.example.propaintersplastererspayment.data.local.util.Converters
         AccessItemEntity::class,
         PaintBrandEntity::class,
         PaintItemEntity::class,
-        JobPaintEntity::class
+        JobPaintEntity::class,
+        RoomEntity::class,
+        SurfaceEntity::class
     ],
-    version = 17,
+    version = 19,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -55,8 +61,54 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun accessDao(): AccessDao
     abstract fun paintDao(): PaintDao
     abstract fun jobPaintDao(): JobPaintDao
+    abstract fun roomDao(): RoomDao
+    abstract fun surfaceDao(): SurfaceDao
 
     companion object {
+        val MIGRATION_17_18 = object : Migration(17, 18) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Create rooms table
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `rooms` (
+                        `roomId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `jobId` INTEGER NOT NULL, 
+                        `roomType` TEXT NOT NULL, 
+                        `roomName` TEXT NOT NULL, 
+                        `level` TEXT, 
+                        `notes` TEXT, 
+                        `sortOrder` INTEGER NOT NULL, 
+                        `createdAt` INTEGER NOT NULL, 
+                        `updatedAt` INTEGER NOT NULL, 
+                        FOREIGN KEY(`jobId`) REFERENCES `jobs`(`jobId`) ON UPDATE NO ACTION ON DELETE CASCADE 
+                    )
+                """.trimIndent())
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_rooms_jobId` ON `rooms` (`jobId`)")
+
+                // Create surfaces table
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `surfaces` (
+                        `surfaceId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `roomId` INTEGER NOT NULL, 
+                        `surfaceType` TEXT NOT NULL, 
+                        `surfaceLabel` TEXT NOT NULL, 
+                        `selectedJobPaintId` INTEGER, 
+                        `finishTypeOverride` TEXT, 
+                        `coatCount` INTEGER NOT NULL, 
+                        `isFeatureSurface` INTEGER NOT NULL, 
+                        `notes` TEXT, 
+                        `sortOrder` INTEGER NOT NULL, 
+                        `surfaceCount` INTEGER NOT NULL, 
+                        `areaSize` REAL, 
+                        `areaUnit` TEXT, 
+                        FOREIGN KEY(`roomId`) REFERENCES `rooms`(`roomId`) ON UPDATE NO ACTION ON DELETE CASCADE, 
+                        FOREIGN KEY(`selectedJobPaintId`) REFERENCES `job_paints`(`jobPaintId`) ON UPDATE NO ACTION ON DELETE SET NULL 
+                    )
+                """.trimIndent())
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_surfaces_roomId` ON `surfaces` (`roomId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_surfaces_selectedJobPaintId` ON `surfaces` (`selectedJobPaintId`)")
+            }
+        }
+
         val MIGRATION_16_17 = object : Migration(16, 17) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // Create paint_brands table
@@ -162,6 +214,36 @@ abstract class AppDatabase : RoomDatabase() {
                 } catch (e: Exception) {
                     // Column likely already exists, ignore.
                 }
+            }
+        }
+
+        val MIGRATION_18_19 = object : Migration(18, 19) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Rename roomName to customName and add displayName
+                db.execSQL("ALTER TABLE rooms RENAME COLUMN roomName TO customName")
+                db.execSQL("ALTER TABLE rooms ADD COLUMN displayName TEXT NOT NULL DEFAULT ''")
+                // Remove level column (not needed for Room step)
+                db.execSQL("""
+                    CREATE TABLE rooms_new (
+                        roomId INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        jobId INTEGER NOT NULL, 
+                        roomType TEXT NOT NULL, 
+                        customName TEXT NOT NULL, 
+                        displayName TEXT NOT NULL, 
+                        notes TEXT, 
+                        sortOrder INTEGER NOT NULL, 
+                        createdAt INTEGER NOT NULL, 
+                        updatedAt INTEGER NOT NULL, 
+                        FOREIGN KEY(`jobId`) REFERENCES `jobs`(`jobId`) ON UPDATE NO ACTION ON DELETE CASCADE 
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    INSERT INTO rooms_new (roomId, jobId, roomType, customName, displayName, notes, sortOrder, createdAt, updatedAt)
+                    SELECT roomId, jobId, roomType, customName, customName, notes, sortOrder, createdAt, updatedAt FROM rooms
+                """.trimIndent())
+                db.execSQL("DROP TABLE rooms")
+                db.execSQL("ALTER TABLE rooms_new RENAME TO rooms")
+                db.execSQL("CREATE INDEX `index_rooms_jobId` ON `rooms` (`jobId`)")
             }
         }
     }

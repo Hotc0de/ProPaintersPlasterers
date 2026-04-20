@@ -21,15 +21,17 @@ fun RoomFormDialog(
     onDismiss: () -> Unit,
     onSave: (RoomEntity) -> Unit
 ) {
-    var name by remember { mutableStateOf(room.roomName) }
-    var type by remember { mutableStateOf(room.roomType) }
-    var level by remember { mutableStateOf(room.level ?: "") }
+    var customName by remember { mutableStateOf(room.customName) }
+    var roomType by remember { mutableStateOf(room.roomType) }
     var notes by remember { mutableStateOf(room.notes ?: "") }
     
     var typeDropdownExpanded by remember { mutableStateOf(false) }
     
     val isNew = room.roomId == 0L
-    val canSave = name.isNotBlank()
+    val canSave = roomType != null
+
+    // Calculate display name based on rules
+    val calculatedDisplayName = if (customName.isNotBlank()) customName else roomType.name.lowercase().replaceFirstChar { it.uppercase() }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -54,14 +56,14 @@ fun RoomFormDialog(
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
 
-                // Room Type
+                // Room Type Dropdown (REQUIRED)
                 ExposedDropdownMenuBox(
                     expanded = typeDropdownExpanded,
                     onExpandedChange = { typeDropdownExpanded = it },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     OutlinedTextField(
-                        value = type.name.lowercase().replaceFirstChar { it.uppercase() },
+                        value = roomType.name.lowercase().replaceFirstChar { it.uppercase() },
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Room Type") },
@@ -71,7 +73,7 @@ fun RoomFormDialog(
                             focusedBorderColor = IndustrialGold
                         ),
                         modifier = Modifier
-                            .menuAnchor()
+                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                             .fillMaxWidth()
                     )
 
@@ -79,16 +81,13 @@ fun RoomFormDialog(
                         expanded = typeDropdownExpanded,
                         onDismissRequest = { typeDropdownExpanded = false }
                     ) {
-                        RoomType.entries.forEach { roomType ->
+                        RoomType.entries.forEach { type ->
                             DropdownMenuItem(
                                 text = { 
-                                    Text(roomType.name.lowercase().replaceFirstChar { it.uppercase() }) 
+                                    Text(type.name.lowercase().replaceFirstChar { it.uppercase() })
                                 },
                                 onClick = {
-                                    type = roomType
-                                    if (name.isBlank()) {
-                                        name = roomType.name.lowercase().replaceFirstChar { it.uppercase() }
-                                    }
+                                    roomType = type
                                     typeDropdownExpanded = false
                                 }
                             )
@@ -98,12 +97,12 @@ fun RoomFormDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Room Name
+                // Custom Room Name (OPTIONAL)
                 OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Room Name") },
-                    placeholder = { Text("e.g. Master Bedroom") },
+                    value = customName,
+                    onValueChange = { customName = it },
+                    label = { Text("Custom Room Name (Optional)") },
+                    placeholder = { Text("e.g. Master Bedroom, Bedroom 1") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedLabelColor = IndustrialGold,
@@ -112,30 +111,26 @@ fun RoomFormDialog(
                     singleLine = true
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-                // Level / Floor
-                OutlinedTextField(
-                    value = level,
-                    onValueChange = { level = it },
-                    label = { Text("Level / Floor (Optional)") },
-                    placeholder = { Text("e.g. Ground Floor, Level 1") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedLabelColor = IndustrialGold,
-                        focusedBorderColor = IndustrialGold
-                    ),
-                    singleLine = true
-                )
+                // Display Name Preview
+                if (customName.isNotBlank()) {
+                    Text(
+                        text = "Display name: $calculatedDisplayName",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = IndustrialGold,
+                        modifier = Modifier.padding(start = 16.dp)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Notes
+                // Notes (OPTIONAL)
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
                     label = { Text("Notes (Optional)") },
-                    placeholder = { Text("Specific instructions for this room...") },
+                    placeholder = { Text("Special instructions for this room...") },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,
                     colors = OutlinedTextFieldDefaults.colors(
@@ -146,7 +141,7 @@ fun RoomFormDialog(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Buttons
+                // Buttons: Cancel and Save
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
@@ -161,9 +156,9 @@ fun RoomFormDialog(
                     Button(
                         onClick = { 
                             onSave(room.copy(
-                                roomName = name,
-                                roomType = type,
-                                level = level.ifBlank { null },
+                                roomType = roomType,
+                                customName = customName,
+                                displayName = calculatedDisplayName,
                                 notes = notes.ifBlank { null },
                                 updatedAt = System.currentTimeMillis()
                             ))
@@ -174,7 +169,7 @@ fun RoomFormDialog(
                             disabledContainerColor = IndustrialGold.copy(alpha = 0.5f)
                         )
                     ) {
-                        Text("Save Room")
+                        Text("Save")
                     }
                 }
             }

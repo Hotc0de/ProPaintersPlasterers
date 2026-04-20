@@ -9,6 +9,7 @@ import com.example.propaintersplastererspayment.data.repository.OfflineInvoiceRe
 import com.example.propaintersplastererspayment.data.repository.OfflineJobRepository
 import com.example.propaintersplastererspayment.data.repository.OfflineMaterialRepository
 import com.example.propaintersplastererspayment.data.repository.OfflinePaintRepository
+import com.example.propaintersplastererspayment.data.repository.OfflineRoomRepository
 import com.example.propaintersplastererspayment.data.repository.OfflineSettingsRepository
 import com.example.propaintersplastererspayment.data.repository.OfflineWorkEntryRepository
 import com.example.propaintersplastererspayment.domain.repository.AccessRepository
@@ -17,6 +18,7 @@ import com.example.propaintersplastererspayment.domain.repository.InvoiceReposit
 import com.example.propaintersplastererspayment.domain.repository.JobRepository
 import com.example.propaintersplastererspayment.domain.repository.MaterialRepository
 import com.example.propaintersplastererspayment.domain.repository.PaintRepository
+import com.example.propaintersplastererspayment.domain.repository.RoomRepository
 import com.example.propaintersplastererspayment.domain.repository.SettingsRepository
 import com.example.propaintersplastererspayment.domain.repository.WorkEntryRepository
 
@@ -35,7 +37,9 @@ class AppDataContainer(
                 AppDatabase.MIGRATION_13_14,
                 AppDatabase.MIGRATION_14_15,
                 AppDatabase.MIGRATION_15_16,
-                AppDatabase.MIGRATION_16_17
+                AppDatabase.MIGRATION_16_17,
+                AppDatabase.MIGRATION_17_18,
+                AppDatabase.MIGRATION_18_19
             )
             .fallbackToDestructiveMigration()
             .build()
@@ -71,6 +75,10 @@ class AppDataContainer(
 
     override val paintRepository: PaintRepository by lazy {
         OfflinePaintRepository(database.paintDao(), database.jobPaintDao())
+    }
+
+    override val roomRepository: RoomRepository by lazy {
+        OfflineRoomRepository(database.roomDao(), database.surfaceDao())
     }
 }
 

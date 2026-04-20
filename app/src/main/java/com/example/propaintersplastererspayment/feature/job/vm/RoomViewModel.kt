@@ -70,10 +70,10 @@ class RoomViewModel(
         }
     }
 
-    fun saveRoom(room: RoomEntity) {
+    fun saveRoom(room: RoomEntity, useTemplate: Boolean = false) {
         viewModelScope.launch {
             try {
-                roomRepository.saveRoom(room)
+                roomRepository.saveRoomWithTemplate(room, useTemplate)
                 onDismissRoomForm()
             } catch (e: Exception) {
                 _uiState.update { it.copy(errorMessage = "Failed to save room: ${e.message}") }

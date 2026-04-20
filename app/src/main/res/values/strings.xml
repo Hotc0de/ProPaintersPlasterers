@@ -27,7 +27,8 @@
     <string name="job_notes_label">Job Notes</string>
     <string name="job_notes_hint">Add any additional notes about the job here...</string>
     <string name="job_detail_title">Job #%1$d</string>
-    <string name="job_tab_paint">Paint</string>
+    <string name="job_tab_paint">Paints</string>
+    <string name="job_tab_rooms">Rooms</string>
     <string name="job_tab_timesheet">Timesheet</string>
     <string name="job_tab_materials">Materials</string>
     <string name="job_tab_access">Access</string>

@@ -110,7 +110,6 @@ private fun SurfaceRow(
     modifier: Modifier = Modifier
 ) {
     val surface = surfaceWithPaint.surface
-    val paint = surfaceWithPaint.jobPaint
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -136,7 +135,7 @@ private fun SurfaceRow(
                     color = TextMuted
                 )
                 
-                if (paint != null) {
+                if (surfaceWithPaint.hexCode != null) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         // Colour Swatch
@@ -144,11 +143,11 @@ private fun SurfaceRow(
                             modifier = Modifier
                                 .size(16.dp)
                                 .clip(CircleShape)
-                                .background(parseColor(paint.hexCode))
+                                .background(parseColor(surfaceWithPaint.hexCode!!))
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "${paint.brandName} ${paint.paintName}",
+                            text = "${surfaceWithPaint.brandName} ${surfaceWithPaint.paintName}",
                             style = MaterialTheme.typography.labelMedium,
                             color = IndustrialGold
                         )

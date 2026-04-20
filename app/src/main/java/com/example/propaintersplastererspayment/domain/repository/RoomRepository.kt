@@ -26,4 +26,5 @@ interface RoomRepository {
     
     // Composite operations
     suspend fun duplicateSurface(surfaceId: Long): Long?
+    suspend fun saveRoomWithTemplate(room: RoomEntity, useTemplate: Boolean): Long
 }

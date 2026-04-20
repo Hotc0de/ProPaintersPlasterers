@@ -27,11 +27,41 @@ interface SurfaceDao {
     suspend fun getSurfaceById(surfaceId: Long): SurfaceEntity?
 
     @Transaction
-    @Query("SELECT * FROM surfaces WHERE surfaceId = :surfaceId LIMIT 1")
+    @Query("""
+        SELECT 
+            s.*,
+            jp.jobPaintId, 
+            p.paintId, 
+            b.brandName, 
+            p.paintName, 
+            p.paintCode, 
+            p.hexCode, 
+            jp.notes
+        FROM surfaces s
+        LEFT JOIN job_paints jp ON s.selectedJobPaintId = jp.jobPaintId
+        LEFT JOIN paint_items p ON jp.paintId = p.paintId
+        LEFT JOIN paint_brands b ON p.brandId = b.brandId
+        WHERE s.surfaceId = :surfaceId LIMIT 1
+    """)
     fun observeSurfaceWithJobPaint(surfaceId: Long): Flow<SurfaceWithJobPaint?>
 
     @Transaction
-    @Query("SELECT * FROM surfaces WHERE roomId = :roomId ORDER BY sortOrder ASC, surfaceId ASC")
+    @Query("""
+        SELECT 
+            s.*,
+            jp.jobPaintId, 
+            p.paintId, 
+            b.brandName, 
+            p.paintName, 
+            p.paintCode, 
+            p.hexCode, 
+            jp.notes
+        FROM surfaces s
+        LEFT JOIN job_paints jp ON s.selectedJobPaintId = jp.jobPaintId
+        LEFT JOIN paint_items p ON jp.paintId = p.paintId
+        LEFT JOIN paint_brands b ON p.brandId = b.brandId
+        WHERE s.roomId = :roomId ORDER BY s.sortOrder ASC, s.surfaceId ASC
+    """)
     fun observeSurfacesForRoom(roomId: Long): Flow<List<SurfaceWithJobPaint>>
 
     @Query("UPDATE surfaces SET sortOrder = :sortOrder WHERE surfaceId = :surfaceId")

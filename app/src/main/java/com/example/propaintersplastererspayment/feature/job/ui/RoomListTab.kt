@@ -123,7 +123,7 @@ private fun RoomCard(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = room.roomName,
+                    text = room.displayName,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = IndustrialGold
