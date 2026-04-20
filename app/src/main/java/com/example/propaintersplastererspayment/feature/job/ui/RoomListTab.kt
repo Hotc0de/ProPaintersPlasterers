@@ -93,6 +93,17 @@ fun RoomListTab(
                 Icon(Icons.Default.Add, contentDescription = "Add Room")
             }
         }
+
+        // Show Room Form Dialog when adding or editing
+        uiState.selectedRoom?.let { room ->
+            if (uiState.isShowingRoomForm) {
+                RoomFormDialog(
+                    room = room,
+                    onDismiss = { viewModel.onDismissRoomForm() },
+                    onSave = { newRoom -> viewModel.saveRoom(newRoom) }
+                )
+            }
+        }
     }
 }
 
