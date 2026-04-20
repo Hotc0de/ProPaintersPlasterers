@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -15,10 +16,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
 import com.example.propaintersplastererspayment.data.local.model.SurfaceWithJobPaint
@@ -131,123 +136,211 @@ private fun SurfaceRow(
     modifier: Modifier = Modifier
 ) {
     val surface = surfaceWithPaint.surface
+    var showConfirm by remember { mutableStateOf(false) }
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF000000)),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+    ) {
+        Column {
+            // 1. Top accent: Thin horizontal gradient stripe
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(4.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(Color.Black, IndustrialGold, Color.Black)
+                        )
+                    )
+            )
+
+            Column(modifier = Modifier.padding(16.dp)) {
+                // 2. Header section
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = com.example.propaintersplastererspayment.feature.job.util.SurfaceIconUtils.getIconForSurfaceType(surface.surfaceType),
+                        contentDescription = null,
+                        tint = IndustrialGold,
+                        modifier = Modifier.size(28.dp)
+                    )
+                    
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = surface.displayName,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        Text(
+                            text = surface.surfaceType.name.lowercase().replaceFirstChar { it.uppercase() },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = IndustrialGold.copy(alpha = 0.7f),
+                            fontSize = 14.sp
+                        )
+                    }
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // Edit button with gold border
+                        Surface(
+                            onClick = onEdit,
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color.Transparent,
+                            border = BorderStroke(1.dp, IndustrialGold.copy(alpha = 0.5f)),
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Default.Edit,
+                                    contentDescription = "Edit",
+                                    tint = IndustrialGold,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+
+                        // Delete button with red border
+                        Surface(
+                            onClick = { showConfirm = true },
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color.Transparent,
+                            border = BorderStroke(1.dp, Color.Red.copy(alpha = 0.5f)),
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = "Delete",
+                                    tint = Color.Red,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 3. Finish section
+                val finish = surface.finishTypeOverride?.takeIf { it.isNotBlank() } ?: "Flat"
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF121212))
+                        .drawBehind {
+                            val strokeWidth = 4.dp.toPx()
+                            drawLine(
+                                color = IndustrialGold,
+                                start = Offset(strokeWidth / 2, 0f),
+                                end = Offset(strokeWidth / 2, size.height),
+                                strokeWidth = strokeWidth
+                            )
+                        }
+                        .padding(start = 16.dp, top = 10.dp, bottom = 10.dp, end = 12.dp)
+                ) {
+                    Column {
+                        Text(
+                            text = "FINISH TYPE",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.Gray,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = finish,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = IndustrialGold,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // 4. Paint coats section
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Undercoat (UC)
+                    if (surfaceWithPaint.undercoatPaintId != null) {
+                        PaintCoatRow(
+                            label = "UC",
+                            paintName = "${surfaceWithPaint.undercoatBrandName} ${surfaceWithPaint.undercoatPaintName}",
+                            hexCode = surfaceWithPaint.undercoatHexCode,
+                            isMainCoat = false
+                        )
+                    }
+
+                    // Maincoat (MC)
+                    if (surfaceWithPaint.maincoatPaintId != null) {
+                        PaintCoatRow(
+                            label = "MC",
+                            paintName = "${surfaceWithPaint.maincoatBrandName} ${surfaceWithPaint.maincoatPaintName} (${surface.maincoatCoatCount} coats)",
+                            hexCode = surfaceWithPaint.maincoatHexCode,
+                            isMainCoat = true
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    if (showConfirm) {
+        com.example.propaintersplastererspayment.ui.components.ConfirmDeleteDialog(
+            title = "Delete Surface",
+            message = "Are you sure you want to delete '${surface.displayName}'?",
+            onConfirm = {
+                showConfirm = false
+                onDelete()
+            },
+            onDismiss = { showConfirm = false }
+        )
+    }
+}
+
+@Composable
+private fun PaintCoatRow(
+    label: String,
+    paintName: String,
+    hexCode: String?,
+    isMainCoat: Boolean
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = Color(0xFF0A0A0A),
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (isMainCoat) IndustrialGold.copy(alpha = 0.3f) else Color.White.copy(alpha = 0.05f)
         )
     ) {
         Row(
-            modifier = Modifier
-                .padding(12.dp)
-                .fillMaxWidth(),
+            modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Surface icon
-            Icon(
-                imageVector = com.example.propaintersplastererspayment.feature.job.util.SurfaceIconUtils.getIconForSurfaceType(surface.surfaceType),
-                contentDescription = surface.surfaceType.name,
-                tint = IndustrialGold,
+            Box(
                 modifier = Modifier
-                    .size(32.dp)
-                    .padding(end = 12.dp)
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(parseColor(hexCode ?: "#FFFFFF"))
+                    .then(
+                        if (hexCode?.lowercase() == "#ffffff") {
+                            Modifier.background(Color.White, shape = RoundedCornerShape(16.dp))
+                        } else Modifier
+                    )
             )
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = surface.displayName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = surface.surfaceType.name.lowercase().replaceFirstChar { it.uppercase() },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = IndustrialGold
-                )
-                // Show finish type if set
-                surface.finishTypeOverride?.takeIf { it.isNotBlank() }?.let { finish ->
-                    Spacer(modifier = Modifier.height(6.dp))
-                    // Highlight non-Flat finishes (e.g., Low Sheen, Semi-Gloss, Gloss, Other)
-                    val isHighlighted = !finish.equals("Flat", ignoreCase = true)
-                    val finishColor = if (isHighlighted) IndustrialGold else TextMuted
-                    val finishWeight = if (isHighlighted) FontWeight.SemiBold else FontWeight.Normal
-                    val pillBg = if (isHighlighted) IndustrialGold.copy(alpha = 0.10f) else Color.Transparent
-                    Text(
-                        text = "Finish: ${finish}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = finishColor,
-                        fontWeight = finishWeight,
-                        modifier = Modifier
-                            .background(pillBg, shape = RoundedCornerShape(12.dp))
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
-                
-                // Undercoat
-                if (surfaceWithPaint.undercoatPaintId != null) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (surfaceWithPaint.undercoatHexCode != null) {
-                            Box(
-                                modifier = Modifier
-                                    .size(12.dp)
-                                    .clip(CircleShape)
-                                    .background(parseColor(surfaceWithPaint.undercoatHexCode))
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                        }
-                        Text(
-                            text = "UC: ${surfaceWithPaint.undercoatBrandName} ${surfaceWithPaint.undercoatPaintName}",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = TextMuted
-                        )
-                    }
-                }
-
-                // Maincoat
-                if (surfaceWithPaint.maincoatPaintId != null) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (surfaceWithPaint.maincoatHexCode != null) {
-                            Box(
-                                modifier = Modifier
-                                    .size(16.dp)
-                                    .clip(CircleShape)
-                                    .background(parseColor(surfaceWithPaint.maincoatHexCode))
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                        }
-                        Text(
-                            text = "MC: ${surfaceWithPaint.maincoatBrandName} ${surfaceWithPaint.maincoatPaintName} (${surface.maincoatCoatCount} coats)",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = IndustrialGold
-                        )
-                    }
-                }
-            }
-
-            Row {
-                IconButton(onClick = onEdit) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = IndustrialGold, modifier = Modifier.size(20.dp))
-                }
-                var showConfirm by remember { mutableStateOf(false) }
-                IconButton(onClick = { showConfirm = true }) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
-                }
-                if (showConfirm) {
-                    com.example.propaintersplastererspayment.ui.components.ConfirmDeleteDialog(
-                        title = "Delete Surface",
-                        message = "Are you sure you want to delete '${surface.displayName}'?",
-                        onConfirm = {
-                            showConfirm = false
-                            onDelete()
-                        },
-                        onDismiss = { showConfirm = false }
-                    )
-                }
-            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = "$label: $paintName",
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (isMainCoat) IndustrialGold else Color.Gray,
+                fontWeight = if (isMainCoat) FontWeight.SemiBold else FontWeight.Normal
+            )
         }
     }
 }
