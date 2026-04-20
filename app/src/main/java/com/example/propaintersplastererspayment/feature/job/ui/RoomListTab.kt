@@ -22,6 +22,7 @@ import com.example.propaintersplastererspayment.ProPaintersApplication
 import com.example.propaintersplastererspayment.R
 import com.example.propaintersplastererspayment.data.local.model.RoomWithSurfaces
 import com.example.propaintersplastererspayment.feature.job.vm.RoomViewModel
+import com.example.propaintersplastererspayment.ui.components.IndustrialFAB
 import com.example.propaintersplastererspayment.ui.theme.IndustrialGold
 import com.example.propaintersplastererspayment.ui.theme.TextMuted
 
@@ -82,16 +83,13 @@ fun RoomListTab(
             }
 
             // FAB only shows when rooms.isNotEmpty()
-            FloatingActionButton(
+            IndustrialFAB(
                 onClick = { viewModel.onAddRoomClick() },
+                icon = Icons.Default.Add,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(16.dp),
-                containerColor = IndustrialGold,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Room")
-            }
+                    .padding(16.dp)
+            )
         }
 
         // Show Room Form Dialog when adding or editing
