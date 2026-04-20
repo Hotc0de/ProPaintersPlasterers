@@ -68,7 +68,7 @@ fun JobPaintRoute(jobId: Long) {
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
+                contentPadding = PaddingValues(16.dp, 16.dp, 16.dp, 100.dp), // Added bottom padding
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(jobPaints) { jp ->
@@ -78,65 +78,31 @@ fun JobPaintRoute(jobId: Long) {
                                 .fillMaxWidth()
                                 .padding(16.dp)
                         ) {
-                            Text(
-                                text = jp.brandName,
-                                style = MaterialTheme.typography.titleLarge,
-                                color = IndustrialGold,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 24.sp
-                            )
-                            
-                            Spacer(modifier = Modifier.height(12.dp))
-                            
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
+                                Text(
+                                    text = jp.brandName,
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    color = IndustrialGold,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 32.sp
+                                )
+                                
+                                var showRemoveConfirm by remember { mutableStateOf(false) }
+                                IconButton(
+                                    onClick = { showRemoveConfirm = true },
+                                    modifier = Modifier.size(32.dp)
                                 ) {
-                                    val scopeText = jp.paintScope.ifBlank { "Interior" }
-                                    val scopeColor = if (scopeText.equals("Exterior", ignoreCase = true)) Color(0xFF4FC3F7) else IndustrialGold
-                                    Box(
-                                        modifier = Modifier
-                                            .background(scopeColor, shape = RoundedCornerShape(10.dp))
-                                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                                    ) {
-                                        Text(
-                                            text = scopeText,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = Color.Black,
-                                            fontWeight = FontWeight.SemiBold,
-                                            fontSize = 12.sp
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    ColorSwatch(hexCode = jp.hexCode, size = 40.dp)
-                                }
-
-                                Spacer(modifier = Modifier.width(16.dp))
-
-                                Column(modifier = Modifier.weight(1f)) {
-                                    if (jp.paintName.isNotBlank()) {
-                                        Text(jp.paintName, style = MaterialTheme.typography.titleMedium, color = Color.White)
-                                    }
-                                    if (jp.paintCode.isNotBlank()) {
-                                        Text("Code: ${jp.paintCode}", style = MaterialTheme.typography.bodySmall, color = TextMuted)
-                                    }
-                                    if (jp.finishType.isNotBlank()) {
-                                        Text(jp.finishType, style = MaterialTheme.typography.bodySmall, color = TextMuted)
-                                    }
-                                    Text(
-                                        text = jp.hexCode.uppercase(),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = IndustrialGold.copy(alpha = 0.7f)
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Remove",
+                                        tint = Color.Red.copy(alpha = 0.8f)
                                     )
                                 }
-                                var showRemoveConfirm by remember { mutableStateOf(false) }
-                                IconButton(onClick = { showRemoveConfirm = true }) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Remove", tint = Color.Red.copy(alpha = 0.6f))
-                                }
+                                
                                 if (showRemoveConfirm) {
                                     com.example.propaintersplastererspayment.ui.components.ConfirmDeleteDialog(
                                         title = "Remove Paint",
@@ -146,6 +112,71 @@ fun JobPaintRoute(jobId: Long) {
                                             scope.launch { viewModel.paintRepository.removePaintFromJob(jp.jobPaintId) }
                                         },
                                         onDismiss = { showRemoveConfirm = false }
+                                    )
+                                }
+                            }
+                            
+                            Spacer(modifier = Modifier.height(12.dp))
+                            
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                ColorSwatch(hexCode = jp.hexCode, size = 80.dp)
+
+                                Spacer(modifier = Modifier.width(20.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    val scopeText = jp.paintScope.ifBlank { "Interior" }
+                                    val scopeColor = if (scopeText.equals("Exterior", ignoreCase = true)) Color(0xFF4FC3F7) else IndustrialGold
+                                    Box(
+                                        modifier = Modifier
+                                            .background(scopeColor, shape = RoundedCornerShape(12.dp))
+                                            .padding(horizontal = 12.dp, vertical = 4.dp)
+                                    ) {
+                                        Text(
+                                            text = scopeText,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = Color.Black,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp
+                                        )
+                                    }
+                                    
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    if (jp.paintName.isNotBlank()) {
+                                        Text(
+                                            text = jp.paintName,
+                                            style = MaterialTheme.typography.headlineSmall,
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 20.sp
+                                        )
+                                    }
+                                    if (jp.paintCode.isNotBlank()) {
+                                        Text(
+                                            text = "Code: ${jp.paintCode}",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = TextMuted,
+                                            fontSize = 12.sp
+                                        )
+                                    }
+                                    if (jp.finishType.isNotBlank()) {
+                                        Text(
+                                            text = jp.finishType,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = TextMuted,
+                                            fontSize = 12.sp
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = jp.hexCode.uppercase(),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = IndustrialGold,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp
                                     )
                                 }
                             }

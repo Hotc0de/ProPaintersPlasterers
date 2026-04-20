@@ -124,72 +124,96 @@ fun BrandDetailScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
+                    contentPadding = PaddingValues(16.dp, 16.dp, 16.dp, 100.dp), // Added bottom padding
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(filteredPaints) { paint ->
                         IndustrialCard(
                             modifier = Modifier.clickable { onEditPaint(paint.paintId) }
                         ) {
-                            Row(
+                            Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                    .padding(16.dp)
                             ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    val scope = paint.paintScope.ifBlank { "Interior" }
-                                    val scopeColor = if (scope.equals("Exterior", ignoreCase = true)) Color(0xFF4FC3F7) else IndustrialGold
-                                    Box(
-                                        modifier = Modifier
-                                            .background(scopeColor, shape = RoundedCornerShape(10.dp))
-                                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                                    ) {
+                                    Text(
+                                        text = brand?.brandName ?: "",
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        color = IndustrialGold,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 32.sp
+                                    )
+                                }
+                                
+                                Spacer(modifier = Modifier.height(12.dp))
+                                
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.Top
+                                ) {
+                                    ColorSwatch(hexCode = paint.hexCode, size = 80.dp)
+
+                                    Spacer(modifier = Modifier.width(20.dp))
+
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        val scope = paint.paintScope.ifBlank { "Interior" }
+                                        val scopeColor = if (scope.equals("Exterior", ignoreCase = true)) Color(0xFF4FC3F7) else IndustrialGold
+                                        Box(
+                                            modifier = Modifier
+                                                .background(scopeColor, shape = RoundedCornerShape(12.dp))
+                                                .padding(horizontal = 12.dp, vertical = 4.dp)
+                                        ) {
+                                            Text(
+                                                text = scope,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = Color.Black,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 12.sp
+                                            )
+                                        }
+                                        
+                                        Spacer(modifier = Modifier.height(8.dp))
+
+                                        if (paint.paintName.isNotBlank()) {
+                                            Text(
+                                                text = paint.paintName,
+                                                style = MaterialTheme.typography.headlineSmall,
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 20.sp
+                                            )
+                                        }
+                                        if (paint.paintCode.isNotBlank()) {
+                                            Text(
+                                                text = "Code: ${paint.paintCode}",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = TextMuted,
+                                                fontSize = 12.sp
+                                            )
+                                        }
+                                        if (paint.finishType.isNotBlank()) {
+                                            Text(
+                                                text = paint.finishType,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = TextMuted,
+                                                fontSize = 12.sp
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.height(4.dp))
                                         Text(
-                                            text = scope,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = Color.Black,
-                                            fontWeight = FontWeight.SemiBold,
+                                            text = paint.hexCode.uppercase(),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = IndustrialGold,
+                                            fontWeight = FontWeight.Bold,
                                             fontSize = 12.sp
                                         )
                                     }
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    ColorSwatch(hexCode = paint.hexCode, size = 48.dp)
                                 }
-
-                                Spacer(modifier = Modifier.width(16.dp))
-
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = paint.paintName,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = Color.White
-                                    )
-                                    if (paint.paintCode.isNotBlank()) {
-                                        Text(
-                                            text = "Code: ${paint.paintCode}",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = TextMuted
-                                        )
-                                    }
-                                    if (paint.finishType.isNotBlank()) {
-                                        Text(
-                                            text = paint.finishType,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = TextMuted
-                                        )
-                                    }
-                                    Text(
-                                        text = paint.hexCode.uppercase(),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = IndustrialGold.copy(alpha = 0.7f)
-                                    )
-                                }
-
-                                // delete action removed
                             }
                         }
                     }
