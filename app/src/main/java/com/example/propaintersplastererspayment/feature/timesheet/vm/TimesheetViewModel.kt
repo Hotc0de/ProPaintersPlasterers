@@ -13,6 +13,7 @@ import com.example.propaintersplastererspayment.core.util.WorkEntryTimeUtils
 import com.example.propaintersplastererspayment.data.local.entity.AppSettingsEntity
 import com.example.propaintersplastererspayment.data.local.entity.JobEntity
 import com.example.propaintersplastererspayment.data.local.entity.WorkEntryEntity
+import com.example.propaintersplastererspayment.data.local.entity.MaterialItemEntity
 import com.example.propaintersplastererspayment.domain.repository.JobRepository
 import com.example.propaintersplastererspayment.domain.repository.MaterialRepository
 import com.example.propaintersplastererspayment.domain.repository.SettingsRepository
@@ -45,7 +46,10 @@ data class WorkEntryFormState(
 data class TimesheetUiState(
     val job: JobEntity? = null,
     val entries: List<WorkEntryEntity> = emptyList(),
+    val materials: List<MaterialItemEntity> = emptyList(),
     val totalHours: Double = 0.0,
+    val totalMaterialCost: Double = 0.0,
+    val isLuxuryPreviewMode: Boolean = false,
     val isFormVisible: Boolean = false,
     val formState: WorkEntryFormState = WorkEntryFormState(),
     val userMessage: String? = null,
@@ -61,6 +65,7 @@ class TimesheetViewModel(
 ) : ViewModel() {
 
     private val isFormVisible = MutableStateFlow(false)
+    private val isLuxuryPreviewMode = MutableStateFlow(false)
     private val formState = MutableStateFlow(WorkEntryFormState())
     private val userMessage = MutableStateFlow<String?>(null)
     private val pdfExportRequests = MutableSharedFlow<TimesheetPdfData>()
@@ -70,22 +75,35 @@ class TimesheetViewModel(
     private val timesheetData = combine(
         jobRepository.observeJob(jobId),
         workEntryRepository.observeEntriesForJob(jobId),
-        workEntryRepository.observeTotalHoursForJob(jobId)
-    ) { job, entries, totalHours ->
-        Triple(job, entries, totalHours)
+        workEntryRepository.observeTotalHoursForJob(jobId),
+        materialRepository.observeMaterialsForJob(jobId)
+    ) { job, entries, totalHours, materials ->
+        val totalMaterialCost = materials.sumOf { it.price }
+        DataSnapshot(job, entries, totalHours, materials, totalMaterialCost)
     }
+
+    private data class DataSnapshot(
+        val job: JobEntity?,
+        val entries: List<WorkEntryEntity>,
+        val totalHours: Double,
+        val materials: List<MaterialItemEntity>,
+        val totalMaterialCost: Double
+    )
 
     val uiState: StateFlow<TimesheetUiState> = combine(
         timesheetData,
         isFormVisible,
+        isLuxuryPreviewMode,
         formState,
         userMessage
-    ) { timesheetData, formVisible, form, message ->
-        val (job, entries, totalHours) = timesheetData
+    ) { snapshot, formVisible, luxuryPreview, form, message ->
         TimesheetUiState(
-            job = job,
-            entries = entries,
-            totalHours = totalHours,
+            job = snapshot.job,
+            entries = snapshot.entries,
+            materials = snapshot.materials,
+            totalHours = snapshot.totalHours,
+            totalMaterialCost = snapshot.totalMaterialCost,
+            isLuxuryPreviewMode = luxuryPreview,
             isFormVisible = formVisible,
             formState = form,
             userMessage = message,
@@ -96,6 +114,10 @@ class TimesheetViewModel(
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = TimesheetUiState()
     )
+
+    fun toggleLuxuryPreview() {
+        isLuxuryPreviewMode.update { !it }
+    }
 
     fun openAddEntry() {
         formState.value = WorkEntryFormState()

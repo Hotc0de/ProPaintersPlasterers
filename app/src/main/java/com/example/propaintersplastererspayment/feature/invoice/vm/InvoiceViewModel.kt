@@ -918,6 +918,3 @@ private fun AppSettingsEntity.toBusinessDetails(): PdfBusinessDetails = PdfBusin
     gstNumber = gstNumber,
     bankAccountNumber = bankAccountNumber
 )
-
-
-

@@ -156,9 +156,9 @@ fun InvoiceHeader(invoiceData: InvoiceData) {
                                         InvoiceColors.DarkSlate2
                                     )
                                 ),
-                                shape = RoundedCornerShape(2.dp)
+                                shape = RoundedCornerShape(8.dp)
                             )
-                            .shadow(4.dp, RoundedCornerShape(2.dp)),
+                            .shadow(4.dp, RoundedCornerShape(8.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(

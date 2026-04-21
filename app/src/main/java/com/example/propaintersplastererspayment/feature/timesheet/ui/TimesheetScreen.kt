@@ -28,6 +28,7 @@ import com.example.propaintersplastererspayment.core.pdf.PdfFileHelper
 import com.example.propaintersplastererspayment.core.util.DateFormatUtils
 import com.example.propaintersplastererspayment.core.util.WorkEntryTimeUtils
 import com.example.propaintersplastererspayment.data.local.entity.WorkEntryEntity
+import com.example.propaintersplastererspayment.feature.timesheet.ui.luxury.LuxuryTimesheet
 import com.example.propaintersplastererspayment.feature.timesheet.vm.TimesheetUiState
 import com.example.propaintersplastererspayment.feature.timesheet.vm.TimesheetViewModel
 import com.example.propaintersplastererspayment.feature.timesheet.vm.WorkEntryFormState
@@ -85,6 +86,7 @@ fun TimesheetRoute(
         onFinishTimeChange = viewModel::onFinishTimeChange,
         onSaveEntry = viewModel::saveEntry,
         onDeleteEntry = viewModel::deleteEntry,
+        onToggleLuxuryPreview = viewModel::toggleLuxuryPreview,
         onMessageShown = viewModel::clearUserMessage
     )
 }
@@ -102,6 +104,7 @@ fun TimesheetScreen(
     onFinishTimeChange: (TextFieldValue) -> Unit,
     onSaveEntry: () -> Unit,
     onDeleteEntry: (Long) -> Unit,
+    onToggleLuxuryPreview: () -> Unit,
     onMessageShown: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -148,51 +151,102 @@ fun TimesheetScreen(
                 }
 
                 else -> {
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        contentPadding = PaddingValues(top = 16.dp, bottom = 90.dp),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        item {
-                            TotalHoursHeroCard(totalHours = uiState.totalHours)
-                        }
-
-                        item {
-                            SecondaryButton(
-                                text = stringResource(R.string.pdf_export_timesheet),
-                                onClick = onExportPdf,
-                                icon = {
-                                    Icon(
-                                        Icons.Default.PictureAsPdf,
-                                        contentDescription = null,
-                                        tint = IndustrialGold,
-                                        modifier = Modifier.size(20.dp)
-                                    )
+                    if (uiState.isLuxuryPreviewMode) {
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Luxury Preview",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = IndustrialGold
+                                )
+                                TextButton(onClick = onToggleLuxuryPreview) {
+                                    Text("Switch to Industrial", color = IndustrialGold)
                                 }
-                            )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .verticalScroll(rememberScrollState())
+                            ) {
+                                LuxuryTimesheet(
+                                    uiState = uiState,
+                                    materials = uiState.materials,
+                                    totalMaterialCost = uiState.totalMaterialCost
+                                )
+                            }
                         }
-
-                        if (uiState.entries.isEmpty()) {
+                    } else {
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            contentPadding = PaddingValues(top = 16.dp, bottom = 90.dp),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
                             item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 32.dp),
-                                    contentAlignment = Alignment.Center
+                                TotalHoursHeroCard(totalHours = uiState.totalHours)
+                            }
+
+                            item {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    Text(
-                                        text = stringResource(R.string.timesheet_no_entries),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = TextSubdued
+                                    SecondaryButton(
+                                        text = stringResource(R.string.pdf_export_timesheet),
+                                        onClick = onExportPdf,
+                                        modifier = Modifier.weight(1f),
+                                        icon = {
+                                            Icon(
+                                                Icons.Default.PictureAsPdf,
+                                                contentDescription = null,
+                                                tint = IndustrialGold,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    )
+                                    SecondaryButton(
+                                        text = "Luxury View",
+                                        onClick = onToggleLuxuryPreview,
+                                        modifier = Modifier.weight(1f),
+                                        icon = {
+                                            Icon(
+                                                Icons.Default.AutoAwesome,
+                                                contentDescription = null,
+                                                tint = IndustrialGold,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
                                     )
                                 }
                             }
-                        } else {
-                            items(uiState.entries, key = { it.entryId }) { entry ->
-                                WorkEntryCard(
-                                    entry = entry,
-                                    onClick = { onEditEntry(entry) }
-                                )
+
+                            if (uiState.entries.isEmpty()) {
+                                item {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 32.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.timesheet_no_entries),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = TextSubdued
+                                        )
+                                    }
+                                }
+                            } else {
+                                items(uiState.entries, key = { it.entryId }) { entry ->
+                                    WorkEntryCard(
+                                        entry = entry,
+                                        onClick = { onEditEntry(entry) }
+                                    )
+                                }
                             }
                         }
                     }

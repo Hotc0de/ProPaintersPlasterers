@@ -770,7 +770,7 @@ fun InvoiceLineDialog(
                                     contentColor = OffWhite
                                 ) {
                                     Text(
-                                        text = "Allows you to enter a total amount directly instead of calculating it from Quantity and Rate.\n\nExample: Use this for fixed-price tasks like 'Full Room Painting - $500' without specifying hours or hourly rates.",
+                                        text = "Allows you to enter a total amount directly instead of calculating it from Quantity and Rate.\\n\\nExample: Use this for fixed-price tasks like 'Full Room Painting - $500' without specifying hours or hourly rates.",
                                         style = MaterialTheme.typography.bodySmall,
                                         modifier = Modifier.padding(8.dp)
                                     )
