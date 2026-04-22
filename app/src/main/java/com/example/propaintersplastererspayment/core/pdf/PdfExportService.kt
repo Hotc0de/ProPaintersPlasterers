@@ -70,6 +70,7 @@ class PdfExportService {
         drawWorkEntriesTable(cursor, data)
 
         if (data.materials.isNotEmpty()) {
+            cursor.y += 40f // Add space to push MATERIALS down
             drawSectionTitleLuxury(cursor, "Materials")
             cursor.y += 10f
             drawMaterialsTable(cursor, data)
@@ -271,6 +272,7 @@ class PdfExportService {
             textSize = 10f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
+        // Timesheet PDF export
         drawTextRight(cursor.page.canvas, "TOTAL HOURS:", colHours - 60f, totalY, totalLabelPaint)
         drawTextRight(cursor.page.canvas, WorkEntryTimeUtils.formatHours(data.totalHours), colHours, totalY, totalLabelPaint)
 

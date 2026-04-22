@@ -257,19 +257,22 @@ class TimesheetPdfRenderer(
         canvas.drawText(WorkEntryTimeUtils.formatHours(entry.hoursWorked), pageWidth - margin - 10f, currY, paint)
     }
 
+    // Timesheet PREVIEW
     fun drawTotalHours(canvas: Canvas, y: Float, totalHours: Double) {
-        val height = TABLE_TOTAL_HEIGHT
-        canvas.drawRect(margin, y, pageWidth - margin, y + height, Paint().apply { color = colorStripe; style = Paint.Style.FILL })
+        val totalY = y + 20f
         
-        val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = colorGold
+        val linePaint = Paint().apply { color = colorGold; strokeWidth = 1.5f }
+        canvas.drawLine(pageWidth - margin - 150f, y, pageWidth - margin, y, linePaint)
+
+        val totalLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = colorNavy
             textSize = 10f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             textAlign = Paint.Align.RIGHT
-            letterSpacing = 0.05f
         }
-        canvas.drawText("TOTAL HOURS:", pageWidth - margin - 70f, y + 22f, labelPaint)
-        canvas.drawText(WorkEntryTimeUtils.formatHours(totalHours), pageWidth - margin - 15f, y + 22f, labelPaint.apply { textSize = 13f })
+        
+        canvas.drawText("TOTAL HOURS:", pageWidth - margin - 60f, totalY, totalLabelPaint)
+        canvas.drawText(WorkEntryTimeUtils.formatHours(totalHours), pageWidth - margin - 10f, totalY, totalLabelPaint)
     }
 
     fun drawMaterialsTableHeader(canvas: Canvas, y: Float) {
@@ -294,11 +297,18 @@ class TimesheetPdfRenderer(
     }
 
     fun drawTotalMaterialCost(canvas: Canvas, y: Float, totalCost: Double) {
-        val height = TABLE_TOTAL_HEIGHT
-        canvas.drawRect(margin, y, pageWidth - margin, y + height, Paint().apply { color = colorStripe; style = Paint.Style.FILL })
-        val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colorGold; textSize = 10f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD); textAlign = Paint.Align.RIGHT; letterSpacing = 0.05f }
-        canvas.drawText("TOTAL MATERIAL COST:", pageWidth - margin - 70f, y + 22f, labelPaint)
-        canvas.drawText(CurrencyFormatUtils.formatCurrency(totalCost), pageWidth - margin - 15f, y + 22f, labelPaint.apply { textSize = 13f })
+        val totalY = y + 20f
+        val linePaint = Paint().apply { color = colorGold; strokeWidth = 1.5f }
+        canvas.drawLine(pageWidth - margin - 150f, y, pageWidth - margin, y, linePaint)
+
+        val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = colorNavy
+            textSize = 10f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            textAlign = Paint.Align.RIGHT
+        }
+        canvas.drawText("TOTAL MATERIAL COST:", pageWidth - margin - 70f, totalY, labelPaint)
+        canvas.drawText(CurrencyFormatUtils.formatCurrency(totalCost), pageWidth - margin - 10f, totalY, labelPaint)
     }
 
     fun drawFooter(canvas: Canvas, pageNumber: Int, totalPages: Int) {

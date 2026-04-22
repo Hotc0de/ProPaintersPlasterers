@@ -28,8 +28,7 @@ import com.example.propaintersplastererspayment.core.pdf.PdfFileHelper
 import com.example.propaintersplastererspayment.core.util.DateFormatUtils
 import com.example.propaintersplastererspayment.core.util.WorkEntryTimeUtils
 import com.example.propaintersplastererspayment.data.local.entity.WorkEntryEntity
-import com.example.propaintersplastererspayment.feature.timesheet.ui.luxury.LuxuryTimesheet
-import com.example.propaintersplastererspayment.feature.timesheet.ui.luxury.TimesheetLuxuryPreview
+import com.example.propaintersplastererspayment.feature.timesheet.ui.luxury.TimesheetLuxuryPreviewPaging
 import com.example.propaintersplastererspayment.feature.timesheet.vm.TimesheetUiState
 import com.example.propaintersplastererspayment.feature.timesheet.vm.TimesheetViewModel
 import com.example.propaintersplastererspayment.feature.timesheet.vm.WorkEntryFormState
@@ -167,9 +166,13 @@ fun TimesheetScreen(
                                     color = IndustrialGold
                                 )
                                 TextButton(onClick = onToggleLuxuryPreview) {
-                                    Text("Switch to Industrial", color = IndustrialGold)
+                                    Text("Go Back", color = IndustrialGold)
                                 }
                             }
+                            TimesheetLuxuryPreviewPaging(
+                                uiState = uiState
+                            )
+                            /*
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
@@ -179,6 +182,7 @@ fun TimesheetScreen(
                                     uiState = uiState
                                 )
                             }
+                            */
                         }
                     } else {
                         LazyColumn(
@@ -209,7 +213,7 @@ fun TimesheetScreen(
                                         }
                                     )
                                     SecondaryButton(
-                                        text = "Luxury View",
+                                        text = "Preview",
                                         onClick = onToggleLuxuryPreview,
                                         modifier = Modifier.weight(1f),
                                         icon = {
@@ -485,7 +489,7 @@ fun WorkEntryFormDialog(
                             Text("Delete", fontWeight = FontWeight.Bold)
                         }
                         if (showConfirm) {
-                            com.example.propaintersplastererspayment.ui.components.ConfirmDeleteDialog(
+                            ConfirmDeleteDialog(
                                 title = "Delete Entry",
                                 message = "Are you sure you want to delete this work entry?",
                                 onConfirm = {
