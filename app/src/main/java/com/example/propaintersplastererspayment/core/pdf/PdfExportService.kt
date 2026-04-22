@@ -4,14 +4,12 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
-import android.graphics.Typeface
 import android.graphics.RectF
+import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import androidx.core.graphics.toColorInt
 import androidx.core.graphics.withRotation
 import com.example.propaintersplastererspayment.core.util.CurrencyFormatUtils
-import com.example.propaintersplastererspayment.core.util.DateFormatUtils
-import com.example.propaintersplastererspayment.core.util.WorkEntryTimeUtils
 import com.example.propaintersplastererspayment.feature.invoice.mapper.InvoiceDataMapper
 import com.example.propaintersplastererspayment.feature.invoice.ui.luxury.InvoiceData
 import java.io.File
@@ -40,6 +38,11 @@ class PdfExportService {
     private val pageHeight = 842
     private val margin = 40f
 
+    // Timesheet layout tuning - keep these in sync with preview flow
+    private val timesheetSectionGapBelowTitle = 10f
+    private val timesheetGapBeforeMaterials = 32f
+    private val timesheetGapAfterWorkTotal = 10f
+
     // Invoice layout tuning
     private val invoiceFirstPageItemsStartY = 306f
     private val invoiceContinuationItemsStartY = margin + 84f
@@ -53,7 +56,6 @@ class PdfExportService {
     // Colors
     private val colorOffWhite = "#FDFCFB".toColorInt()
     private val colorGoldAccent = "#9D8560".toColorInt()
-    private val colorLightGray = "#F1F5F9".toColorInt()
     private val colorMediumGray = "#94A3B8".toColorInt()
     private val colorTextGray = "#64748B".toColorInt()
     private val colorBorderGray = "#CBD5E1".toColorInt()
@@ -67,14 +69,26 @@ class PdfExportService {
 
         drawTimesheetHeader(cursor, data, isFirstPage = true)
 
+        // Work Entries section
         renderer.drawSectionTitle(cursor.page.canvas, cursor.y, "Work Entries")
-        cursor.y += 10f
+        cursor.y += timesheetSectionGapBelowTitle
         drawWorkEntriesTable(cursor, data, renderer)
 
+        // Materials section
         if (data.materials.isNotEmpty()) {
-            cursor.y += 40f // Add space to push MATERIALS down
+            ensureSpaceLuxury(
+                cursor = cursor,
+                requiredHeight = timesheetGapBeforeMaterials +
+                        TimesheetPdfRenderer.SECTION_TITLE_HEIGHT +
+                        TimesheetPdfRenderer.TABLE_HEADER_HEIGHT +
+                        TimesheetPdfRenderer.TABLE_ROW_HEIGHT,
+                data = data,
+                renderer = renderer
+            )
+
+            cursor.y += timesheetGapBeforeMaterials
             renderer.drawSectionTitle(cursor.page.canvas, cursor.y, "Materials")
-            cursor.y += 10f
+            cursor.y += timesheetSectionGapBelowTitle
             drawMaterialsTable(cursor, data, renderer)
         }
 
@@ -84,17 +98,17 @@ class PdfExportService {
         return outputFile
     }
 
-
     private fun calculateTotalPages(data: TimesheetPdfData): Int {
-        var pages = 1
-        var currentY = margin + TimesheetPdfRenderer.HEADER_HEIGHT_FIRST
-        currentY += TimesheetPdfRenderer.SECTION_TITLE_HEIGHT
-
+        val bottomLimit = pageHeight - margin - TimesheetPdfRenderer.FOOTER_SPACE
         val rowHeight = TimesheetPdfRenderer.TABLE_ROW_HEIGHT
         val headerHeight = TimesheetPdfRenderer.TABLE_HEADER_HEIGHT
         val totalRowHeight = TimesheetPdfRenderer.TABLE_TOTAL_HEIGHT
-        val bottomLimit = pageHeight - margin - 40f
 
+        var pages = 1
+        var currentY = margin + TimesheetPdfRenderer.HEADER_HEIGHT_FIRST
+
+        // Work Entries section title + gap + table header
+        currentY += timesheetSectionGapBelowTitle
         currentY += headerHeight
 
         data.workEntries.forEach {
@@ -109,14 +123,24 @@ class PdfExportService {
             pages++
             currentY = margin + TimesheetPdfRenderer.HEADER_HEIGHT_CONT
         }
-        currentY += totalRowHeight + 20f
+
+        currentY += totalRowHeight + timesheetGapAfterWorkTotal
 
         if (data.materials.isNotEmpty()) {
-            if (currentY + TimesheetPdfRenderer.SECTION_TITLE_HEIGHT + headerHeight + rowHeight > bottomLimit) {
+            val materialSectionStartNeed =
+                timesheetGapBeforeMaterials +
+                        timesheetSectionGapBelowTitle +
+                        headerHeight +
+                        rowHeight
+
+            if (currentY + materialSectionStartNeed > bottomLimit) {
                 pages++
                 currentY = margin + TimesheetPdfRenderer.HEADER_HEIGHT_CONT
             }
-            currentY += TimesheetPdfRenderer.SECTION_TITLE_HEIGHT + headerHeight
+
+            currentY += timesheetGapBeforeMaterials
+            currentY += timesheetSectionGapBelowTitle
+            currentY += headerHeight
 
             data.materials.forEach {
                 if (currentY + rowHeight > bottomLimit) {
@@ -128,7 +152,6 @@ class PdfExportService {
 
             if (currentY + totalRowHeight > bottomLimit) {
                 pages++
-                currentY = margin + TimesheetPdfRenderer.HEADER_HEIGHT_CONT
             }
         }
 
@@ -139,7 +162,13 @@ class PdfExportService {
         val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
         val page = document.startPage(pageInfo)
         page.canvas.drawColor(colorOffWhite)
-        return PageCursor(document = document, page = page, pageNumber = 1, totalPages = totalPages, y = margin)
+        return PageCursor(
+            document = document,
+            page = page,
+            pageNumber = 1,
+            totalPages = totalPages,
+            y = margin
+        )
     }
 
     private fun finishDocument(cursor: PageCursor) {
@@ -152,11 +181,12 @@ class PdfExportService {
         data: TimesheetPdfData,
         renderer: TimesheetPdfRenderer
     ) {
-        val bottomLimit = pageHeight - margin - 40f
+        val bottomLimit = pageHeight - margin - TimesheetPdfRenderer.FOOTER_SPACE
         if (cursor.y + requiredHeight <= bottomLimit) return
 
         drawFooterLuxury(cursor, renderer)
         cursor.document.finishPage(cursor.page)
+
         cursor.pageNumber += 1
         val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, cursor.pageNumber).create()
         cursor.page = cursor.document.startPage(pageInfo)
@@ -169,47 +199,20 @@ class PdfExportService {
 
     private fun drawTimesheetHeader(cursor: PageCursor, data: TimesheetPdfData, isFirstPage: Boolean) {
         val canvas = cursor.page.canvas
-        val yStart = cursor.y
-
         val renderer = TimesheetPdfRenderer(data, pageWidth, pageHeight, margin)
-        if (isFirstPage) {
-            cursor.y = renderer.drawHeader(canvas, yStart, isFirstPage = true)
+
+        cursor.y = if (isFirstPage) {
+            renderer.drawHeader(canvas, cursor.y, isFirstPage = true)
         } else {
-            cursor.y = renderer.drawContinuationHeader(canvas, yStart, cursor.pageNumber)
+            renderer.drawContinuationHeader(canvas, cursor.y, cursor.pageNumber)
         }
     }
 
-    private fun drawSectionTitleLuxury(cursor: PageCursor, title: String) {
-        val canvas = cursor.page.canvas
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = "#1E293B".toColorInt()
-            textSize = 12f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            letterSpacing = 0.1f
-        }
-
-        // Draw diamond icon
-        val diamondSize = 3f
-        val diamondPaint = Paint().apply { color = colorGoldAccent; style = Paint.Style.FILL; isAntiAlias = true }
-        val cx = margin + 4f
-        val cy = cursor.y - 4f
-        val path = Path().apply {
-            moveTo(cx, cy - diamondSize)
-            lineTo(cx + diamondSize, cy)
-            lineTo(cx, cy + diamondSize)
-            lineTo(cx - diamondSize, cy)
-            close()
-        }
-        canvas.drawPath(path, diamondPaint)
-
-        canvas.drawText(title.uppercase(), margin + 14f, cursor.y, paint)
-
-        val linePaint = Paint().apply { color = colorGoldAccent; strokeWidth = 0.5f }
-        val textWidth = paint.measureText(title.uppercase())
-        canvas.drawLine(margin + 14f + textWidth + 10f, cursor.y - 4f, pageWidth - margin, cursor.y - 4f, linePaint)
-    }
-
-    private fun drawWorkEntriesTable(cursor: PageCursor, data: TimesheetPdfData, renderer: TimesheetPdfRenderer) {
+    private fun drawWorkEntriesTable(
+        cursor: PageCursor,
+        data: TimesheetPdfData,
+        renderer: TimesheetPdfRenderer
+    ) {
         renderer.drawWorkEntriesTableHeader(cursor.page.canvas, cursor.y)
         cursor.y += TimesheetPdfRenderer.TABLE_HEADER_HEIGHT
 
@@ -225,58 +228,54 @@ class PdfExportService {
 
         ensureSpaceLuxury(cursor, TimesheetPdfRenderer.TABLE_TOTAL_HEIGHT, data, renderer)
         renderer.drawTotalHours(cursor.page.canvas, cursor.y, data.totalHours)
-        cursor.y += TimesheetPdfRenderer.TABLE_TOTAL_HEIGHT + 10f
+        cursor.y += TimesheetPdfRenderer.TABLE_TOTAL_HEIGHT + timesheetGapAfterWorkTotal
     }
 
-    private fun drawWorkEntriesTableHeader(cursor: PageCursor, colDate: Float, colWorker: Float, colStart: Float, colFinish: Float, colHours: Float) {
-        val canvas = cursor.page.canvas
-        val headerHeight = 25f
-        val headerRect = RectF(margin, cursor.y, pageWidth - margin, cursor.y + headerHeight)
-        val headerPaint = Paint().apply { color = "#2C3E50".toColorInt(); style = Paint.Style.FILL }
-        canvas.drawRect(headerRect, headerPaint)
-
-        val headerTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = colorWhite
-            textSize = 9f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        }
-
-        val headerY = cursor.y + 16f
-        canvas.drawText("DATE", colDate, headerY, headerTextPaint)
-        canvas.drawText("WORKER", colWorker, headerY, headerTextPaint)
-        canvas.drawText("START", colStart, headerY, headerTextPaint)
-        canvas.drawText("FINISH", colFinish, headerY, headerTextPaint)
-        drawTextRight(canvas, "HOURS", colHours, headerY, headerTextPaint)
-
-        cursor.y += headerHeight
-    }
-
-    private fun goToNextPage(cursor: PageCursor, data: TimesheetPdfData, renderer: TimesheetPdfRenderer) {
+    private fun goToNextPage(
+        cursor: PageCursor,
+        data: TimesheetPdfData,
+        renderer: TimesheetPdfRenderer
+    ) {
         drawFooterLuxury(cursor, renderer)
         cursor.document.finishPage(cursor.page)
+
         cursor.pageNumber += 1
         val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, cursor.pageNumber).create()
         cursor.page = cursor.document.startPage(pageInfo)
         cursor.page.canvas.drawColor(colorOffWhite)
         cursor.y = margin
+
         drawTimesheetHeader(cursor, data, isFirstPage = false)
         cursor.y += 10f
     }
 
-    private fun ensureSpaceWithHeader(cursor: PageCursor, data: TimesheetPdfData, renderer: TimesheetPdfRenderer, onNewPage: () -> Unit) {
-        val bottomLimit = pageHeight - margin - 40f
-        if (cursor.y + 22f <= bottomLimit) return
+    private fun ensureSpaceWithHeader(
+        cursor: PageCursor,
+        data: TimesheetPdfData,
+        renderer: TimesheetPdfRenderer,
+        onNewPage: () -> Unit
+    ) {
+        val bottomLimit = pageHeight - margin - TimesheetPdfRenderer.FOOTER_SPACE
+        if (cursor.y + TimesheetPdfRenderer.TABLE_ROW_HEIGHT <= bottomLimit) return
 
         goToNextPage(cursor, data, renderer)
         onNewPage()
     }
 
-    private fun drawMaterialsTable(cursor: PageCursor, data: TimesheetPdfData, renderer: TimesheetPdfRenderer) {
+    private fun drawMaterialsTable(
+        cursor: PageCursor,
+        data: TimesheetPdfData,
+        renderer: TimesheetPdfRenderer
+    ) {
         renderer.drawMaterialsTableHeader(cursor.page.canvas, cursor.y)
         cursor.y += TimesheetPdfRenderer.TABLE_HEADER_HEIGHT
 
         data.materials.forEachIndexed { index, material ->
-            ensureSpaceLuxury(cursor, TimesheetPdfRenderer.TABLE_ROW_HEIGHT, data, renderer)
+            ensureSpaceWithMaterialsHeader(cursor, data, renderer) {
+                renderer.drawMaterialsTableHeader(cursor.page.canvas, cursor.y)
+                cursor.y += TimesheetPdfRenderer.TABLE_HEADER_HEIGHT
+            }
+
             renderer.drawMaterialRow(cursor.page.canvas, cursor.y, material, index % 2 != 0)
             cursor.y += TimesheetPdfRenderer.TABLE_ROW_HEIGHT
         }
@@ -284,6 +283,19 @@ class PdfExportService {
         ensureSpaceLuxury(cursor, TimesheetPdfRenderer.TABLE_TOTAL_HEIGHT, data, renderer)
         renderer.drawTotalMaterialCost(cursor.page.canvas, cursor.y, data.totalMaterialCost)
         cursor.y += TimesheetPdfRenderer.TABLE_TOTAL_HEIGHT
+    }
+
+    private fun ensureSpaceWithMaterialsHeader(
+        cursor: PageCursor,
+        data: TimesheetPdfData,
+        renderer: TimesheetPdfRenderer,
+        onNewPage: () -> Unit
+    ) {
+        val bottomLimit = pageHeight - margin - TimesheetPdfRenderer.FOOTER_SPACE
+        if (cursor.y + TimesheetPdfRenderer.TABLE_ROW_HEIGHT <= bottomLimit) return
+
+        goToNextPage(cursor, data, renderer)
+        onNewPage()
     }
 
     private fun drawFooterLuxury(cursor: PageCursor, renderer: TimesheetPdfRenderer) {
@@ -394,8 +406,7 @@ class PdfExportService {
         }
 
         drawInvoiceTotals(cursor.page.canvas, cursor.y, invoiceData)
-        
-        // Push Payment Information to the bottom of the page
+
         val footerSpace = 50f
         val paymentStartY = pageHeight - margin - footerSpace - invoicePaymentHeight
         cursor.y = max(cursor.y + 14f, paymentStartY)
@@ -877,14 +888,17 @@ class PdfExportService {
     ): List<String> {
         if (text.isBlank()) return emptyList()
         val result = mutableListOf<String>()
+
         text.split("\n").forEach { paragraph ->
             val words = paragraph.split(" ").filter { it.isNotBlank() }
             var line = ""
+
             for (word in words) {
                 val candidate = if (line.isBlank()) word else "$line $word"
                 if (paint.measureText(candidate) > maxWidth && line.isNotBlank()) {
                     result += line
                     line = word
+
                     if (result.size == maxLines) {
                         return result.dropLast(1) + ellipsizeToWidth(result.last(), paint, maxWidth)
                     }
@@ -892,11 +906,13 @@ class PdfExportService {
                     line = candidate
                 }
             }
+
             if (line.isNotBlank()) {
                 result += line
                 if (result.size == maxLines) return result
             }
         }
+
         return if (result.size <= maxLines) result else result.take(maxLines)
     }
 
@@ -907,10 +923,16 @@ class PdfExportService {
         while (trimmed.isNotEmpty() && paint.measureText(trimmed + ellipsis) > maxWidth) {
             trimmed = trimmed.dropLast(1)
         }
-        return if (trimmed.isEmpty()) ellipsis else trimmed + ellipsis
+        return if (trimmed.isEmpty()) ellipsis else "$trimmed$ellipsis"
     }
 
-    private fun drawTextRight(canvas: Canvas, text: String, rightX: Float, baselineY: Float, paint: Paint) {
+    private fun drawTextRight(
+        canvas: Canvas,
+        text: String,
+        rightX: Float,
+        baselineY: Float,
+        paint: Paint
+    ) {
         canvas.drawText(text, rightX - paint.measureText(text), baselineY, paint)
     }
 
