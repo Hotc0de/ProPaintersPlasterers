@@ -6,10 +6,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -38,6 +42,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -48,6 +54,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
 import com.example.propaintersplastererspayment.R
 import com.example.propaintersplastererspayment.data.local.entity.ClientEntity
+import com.example.propaintersplastererspayment.data.local.entity.JobType
 import com.example.propaintersplastererspayment.feature.job.vm.JobFormUiState
 import com.example.propaintersplastererspayment.feature.job.vm.JobFormViewModel
 import com.example.propaintersplastererspayment.ui.components.IndustrialCard
@@ -101,6 +108,7 @@ fun JobFormRoute(
         onAddNewClient = onAddNewClient,
         onBack = onBack,
         onNotesChange = viewModel::onNotesChange,
+        onJobTypeChange = viewModel::onJobTypeChange,
         onSave = viewModel::saveJob,
         modifier = modifier
     )
@@ -116,6 +124,7 @@ fun JobFormScreen(
     onAddNewClient: () -> Unit,
     onBack: () -> Unit,
     onNotesChange: (TextFieldValue) -> Unit,
+    onJobTypeChange: (JobType) -> Unit,
     onSave: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -176,6 +185,44 @@ fun JobFormScreen(
                     Column(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
+                        // Job Type Toggle
+                        Column {
+                            Text(
+                                text = "Job Type",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextMuted,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp)
+                                    .background(CharcoalBackground, AppShapes.large)
+                                    .padding(4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                JobType.entries.forEach { type ->
+                                    val isSelected = uiState.jobType == type
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxHeight()
+                                            .clip(AppShapes.large)
+                                            .background(if (isSelected) IndustrialGold else Color.Transparent)
+                                            .clickable { onJobTypeChange(type) },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = type.name.lowercase().replaceFirstChar { it.uppercase() },
+                                            color = if (isSelected) CharcoalBackground else TextMuted,
+                                            style = MaterialTheme.typography.labelLarge,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
                         IndustrialTextField(
                             value = uiState.address,
                             onValueChange = onAddressChange,

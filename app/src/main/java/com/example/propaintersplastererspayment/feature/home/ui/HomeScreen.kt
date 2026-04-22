@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
@@ -31,6 +32,7 @@ import com.example.propaintersplastererspayment.R
 import com.example.propaintersplastererspayment.core.util.DateFormatUtils
 import com.example.propaintersplastererspayment.data.local.entity.JobEntity
 import com.example.propaintersplastererspayment.data.local.entity.JobStatus
+import com.example.propaintersplastererspayment.data.local.entity.JobType
 import com.example.propaintersplastererspayment.data.local.model.JobWithInvoices
 import com.example.propaintersplastererspayment.feature.home.vm.HomeUiState
 import com.example.propaintersplastererspayment.feature.home.vm.HomeViewModel
@@ -56,6 +58,7 @@ fun HomeRoute(
     HomeScreen(
         uiState = uiState,
         onSearchQueryChange = viewModel::onSearchQueryChange,
+        onJobTypeChange = viewModel::onJobTypeChange,
         onUpdateJobDates = viewModel::updateJobDates,
         onDeleteJob = viewModel::deleteJob,
         onOpenSettings = onOpenSettings,
@@ -71,6 +74,7 @@ fun HomeRoute(
 fun HomeScreen(
     uiState: HomeUiState,
     onSearchQueryChange: (TextFieldValue) -> Unit,
+    onJobTypeChange: (JobType) -> Unit,
     onUpdateJobDates: (Long, Long?, Long?) -> Unit,
     onDeleteJob: (JobEntity) -> Unit,
     onOpenSettings: () -> Unit,
@@ -207,6 +211,38 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
             )
 
+            // Job Type Toggle
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .background(CharcoalSecondary, AppShapes.large)
+                    .padding(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                JobType.entries.forEach { type ->
+                    val isSelected = uiState.selectedJobType == type
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clip(AppShapes.large)
+                            .background(if (isSelected) IndustrialGold else Color.Transparent)
+                            .clickable { onJobTypeChange(type) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = type.name.lowercase().replaceFirstChar { it.uppercase() },
+                            color = if (isSelected) CharcoalBackground else TextMuted,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             when {
                 uiState.isLoading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -333,13 +369,6 @@ private fun JobCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = IndustrialGold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = job.clientName.ifBlank { "No Client" },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = OffWhite,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )

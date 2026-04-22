@@ -5,19 +5,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.propaintersplastererspayment.data.local.entity.JobEntity
+import com.example.propaintersplastererspayment.data.local.entity.JobType
 import com.example.propaintersplastererspayment.data.local.model.JobWithInvoices
 import com.example.propaintersplastererspayment.domain.repository.JobRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 data class HomeUiState(
     val jobs: List<JobWithInvoices> = emptyList(),
     val searchQuery: TextFieldValue = TextFieldValue(""),
+    val selectedJobType: JobType = JobType.COMMERCIAL,
     val isLoading: Boolean = true,
     val userMessage: String? = null
 )
@@ -34,16 +35,20 @@ class HomeViewModel(
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow(TextFieldValue(""))
+    private val _selectedJobType = MutableStateFlow(JobType.COMMERCIAL)
 
     val uiState: StateFlow<HomeUiState> = combine(
         jobRepository.observeJobsWithInvoices(),
-        _searchQuery
-    ) { jobs, query ->
+        _searchQuery,
+        _selectedJobType
+    ) { jobs, query, jobType ->
+        val typeFilteredJobs = jobs.filter { it.job.jobType == jobType }
+        
         val filteredJobs = if (query.text.isBlank()) {
-            jobs
+            typeFilteredJobs
         } else {
             val searchText = query.text.lowercase()
-            jobs.filter { jobWithInvoices ->
+            typeFilteredJobs.filter { jobWithInvoices ->
                 val job = jobWithInvoices.job
                 val invoiceNumber = jobWithInvoices.invoices.firstOrNull()?.invoiceNumber?.lowercase() ?: ""
                 
@@ -56,6 +61,7 @@ class HomeViewModel(
         HomeUiState(
             jobs = filteredJobs,
             searchQuery = query,
+            selectedJobType = jobType,
             isLoading = false
         )
     }.stateIn(
@@ -66,6 +72,10 @@ class HomeViewModel(
 
     fun onSearchQueryChange(newQuery: TextFieldValue) {
         _searchQuery.value = newQuery
+    }
+
+    fun onJobTypeChange(newType: JobType) {
+        _selectedJobType.value = newType
     }
 
     fun updateJobDates(jobId: Long, startDate: Long?, finishDate: Long?) {

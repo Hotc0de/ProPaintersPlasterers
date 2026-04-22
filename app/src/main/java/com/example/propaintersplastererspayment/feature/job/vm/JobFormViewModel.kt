@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.propaintersplastererspayment.data.local.entity.ClientEntity
 import com.example.propaintersplastererspayment.data.local.entity.JobEntity
+import com.example.propaintersplastererspayment.data.local.entity.JobType
 import com.example.propaintersplastererspayment.domain.repository.ClientRepository
 import com.example.propaintersplastererspayment.domain.repository.JobRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +26,7 @@ data class JobFormUiState(
     val notes: TextFieldValue = TextFieldValue(""),
     val status: com.example.propaintersplastererspayment.data.local.entity.JobStatus = com.example.propaintersplastererspayment.data.local.entity.JobStatus.WORKING,
     val isQuickInvoice: Boolean = false,
+    val jobType: JobType = JobType.PRIVATE,
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
     val errorMessage: String? = null,
@@ -92,6 +94,7 @@ class JobFormViewModel(
                         clientQuery = TextFieldValue(selectedName, selection = androidx.compose.ui.text.TextRange(selectedName.length)),
                         notes = TextFieldValue(job.notes, selection = androidx.compose.ui.text.TextRange(job.notes.length)),
                         status = job.status,
+                        jobType = job.jobType,
                         isQuickInvoice = job.isQuickInvoice,
                         isLoading = false
                     )
@@ -150,6 +153,10 @@ class JobFormViewModel(
         mutableUiState.update { it.copy(notes = value, errorMessage = null) }
     }
 
+    fun onJobTypeChange(type: JobType) {
+        mutableUiState.update { it.copy(jobType = type) }
+    }
+
     fun saveJob() {
         val current = mutableUiState.value
         if (current.address.text.isBlank()) {
@@ -173,6 +180,7 @@ class JobFormViewModel(
                     jobName = current.selectedClientName,
                     notes = current.notes.text.trim(),
                     status = current.status,
+                    jobType = current.jobType,
                     isQuickInvoice = current.isQuickInvoice,
                     createdAt = current.jobId?.let { existing ->
                         jobRepository.observeJob(existing).first()?.createdAt

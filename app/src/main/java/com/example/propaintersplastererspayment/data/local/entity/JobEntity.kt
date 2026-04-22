@@ -30,7 +30,8 @@ data class JobEntity(
     val startDateOverride: Long? = null,
     val finishDateOverride: Long? = null,
     val isQuickInvoice: Boolean = false,
-    val accessInfo: String = ""
+    val accessInfo: String = "",
+    val jobType: JobType = JobType.PRIVATE
 ) {
     // Backward-compatible alias used by existing UI code.
     val clientName: String get() = clientNameSnapshot
