@@ -78,7 +78,7 @@ fun InvoiceRoute(
                 val outputFile = PdfFileHelper.createExportFile(context, exportData.fileName)
                 // Use a fresh PdfExportService instance here to avoid any compose-captured type inference
                 // issues during compilation in this debug-only path.
-                PdfExportService().exportInvoicePdf(context, exportData, outputFile)
+                PdfExportService().exportInvoicePdf(exportData, outputFile)
                 PdfFileHelper.sharePdf(
                     context = context,
                     file = outputFile,

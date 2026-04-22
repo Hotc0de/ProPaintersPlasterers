@@ -1,13 +1,13 @@
 package com.example.propaintersplastererspayment.core.pdf
 
-import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
-import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.pdf.PdfDocument
+import androidx.core.graphics.toColorInt
+import androidx.core.graphics.withRotation
 import com.example.propaintersplastererspayment.core.util.CurrencyFormatUtils
 import com.example.propaintersplastererspayment.core.util.DateFormatUtils
 import com.example.propaintersplastererspayment.core.util.WorkEntryTimeUtils
@@ -39,15 +39,6 @@ class PdfExportService {
     private val pageHeight = 842
     private val margin = 40f
 
-    // Luxury Layout Constants
-    private val luxColDesc = margin + 12f
-    private val luxColQty = margin + 310f
-    private val luxColRate = margin + 410f
-    private val luxColAmount = pageWidth - margin - 12f
-    private val luxTitleSize = 38f
-    private val luxTitleLS = 0.4f
-    private val luxTitleGap = 24f
-
     // Invoice layout tuning
     private val invoiceFirstPageItemsStartY = 306f
     private val invoiceContinuationItemsStartY = margin + 84f
@@ -59,76 +50,37 @@ class PdfExportService {
     private val invoicePaymentHeight = 92f
 
     // Colors
-    private val colorDarkNavy = Color.parseColor("#2C3E50")
-    private val colorOffWhite = Color.parseColor("#FDFCFB")
-    private val colorGoldAccent = Color.parseColor("#9D8560")
-    private val colorIndustrialGold = Color.parseColor("#C06014")
-    private val colorLightGray = Color.parseColor("#F1F5F9")
-    private val colorMediumGray = Color.parseColor("#94A3B8")
-    private val colorTextGray = Color.parseColor("#64748B")
-    private val colorBorderGray = Color.parseColor("#CBD5E1")
+    private val colorOffWhite = "#FDFCFB".toColorInt()
+    private val colorGoldAccent = "#9D8560".toColorInt()
+    private val colorLightGray = "#F1F5F9".toColorInt()
+    private val colorMediumGray = "#94A3B8".toColorInt()
+    private val colorTextGray = "#64748B".toColorInt()
+    private val colorBorderGray = "#CBD5E1".toColorInt()
     private val colorWhite = Color.WHITE
 
-    fun exportTimesheetPdf(context: Context, data: TimesheetPdfData, outputFile: File): File {
+    fun exportTimesheetPdf(data: TimesheetPdfData, outputFile: File): File {
         val document = PdfDocument()
-        val renderer = TimesheetPdfRenderer(data, pageWidth, pageHeight, margin)
-
         val totalPages = calculateTotalPages(data)
-        var cursor = startDocument(document, 1, totalPages)
+        val cursor = startDocument(document, totalPages)
 
-        cursor.y = renderer.drawHeader(cursor.page.canvas, cursor.y, isFirstPage = true)
+        drawTimesheetHeader(cursor, data, isFirstPage = true)
 
-        renderer.drawSectionTitle(cursor.page.canvas, cursor.y, "Work Entries")
-        cursor.y += TimesheetPdfRenderer.SECTION_TITLE_HEIGHT - 10f
-
-        renderer.drawWorkEntriesTableHeader(cursor.page.canvas, cursor.y)
-        cursor.y += TimesheetPdfRenderer.TABLE_HEADER_HEIGHT
-
-        data.workEntries.forEachIndexed { index, entry ->
-            ensureSpaceNew(cursor, TimesheetPdfRenderer.TABLE_ROW_HEIGHT, data, renderer) {
-                renderer.drawWorkEntriesTableHeader(cursor.page.canvas, cursor.y)
-                cursor.y += TimesheetPdfRenderer.TABLE_HEADER_HEIGHT
-            }
-            renderer.drawWorkEntryRow(cursor.page.canvas, cursor.y, entry, index % 2 != 0)
-            cursor.y += TimesheetPdfRenderer.TABLE_ROW_HEIGHT
-        }
-
-        ensureSpaceNew(cursor, TimesheetPdfRenderer.TABLE_TOTAL_HEIGHT, data, renderer)
-        renderer.drawTotalHours(cursor.page.canvas, cursor.y, data.totalHours)
-        cursor.y += TimesheetPdfRenderer.TABLE_TOTAL_HEIGHT + 20f
+        drawSectionTitleLuxury(cursor, "Work Entries")
+        cursor.y += 10f
+        drawWorkEntriesTable(cursor, data)
 
         if (data.materials.isNotEmpty()) {
-            ensureSpaceNew(
-                cursor,
-                TimesheetPdfRenderer.SECTION_TITLE_HEIGHT + TimesheetPdfRenderer.TABLE_HEADER_HEIGHT + TimesheetPdfRenderer.TABLE_ROW_HEIGHT,
-                data,
-                renderer
-            )
-
-            renderer.drawSectionTitle(cursor.page.canvas, cursor.y, "Materials")
-            cursor.y += TimesheetPdfRenderer.SECTION_TITLE_HEIGHT - 10f
-
-            renderer.drawMaterialsTableHeader(cursor.page.canvas, cursor.y)
-            cursor.y += TimesheetPdfRenderer.TABLE_HEADER_HEIGHT
-
-            data.materials.forEachIndexed { index, material ->
-                ensureSpaceNew(cursor, TimesheetPdfRenderer.TABLE_ROW_HEIGHT, data, renderer) {
-                    renderer.drawMaterialsTableHeader(cursor.page.canvas, cursor.y)
-                    cursor.y += TimesheetPdfRenderer.TABLE_HEADER_HEIGHT
-                }
-                renderer.drawMaterialRow(cursor.page.canvas, cursor.y, material, index % 2 != 0)
-                cursor.y += TimesheetPdfRenderer.TABLE_ROW_HEIGHT
-            }
-
-            ensureSpaceNew(cursor, TimesheetPdfRenderer.TABLE_TOTAL_HEIGHT, data, renderer)
-            renderer.drawTotalMaterialCost(cursor.page.canvas, cursor.y, data.totalMaterialCost)
+            drawSectionTitleLuxury(cursor, "Materials")
+            cursor.y += 10f
+            drawMaterialsTable(cursor, data)
         }
 
-        renderer.drawFooter(cursor.page.canvas, cursor.pageNumber, cursor.totalPages)
+        drawFooterLuxury(cursor)
         finishDocument(cursor)
         writeDocument(document, outputFile)
         return outputFile
     }
+
 
     private fun calculateTotalPages(data: TimesheetPdfData): Int {
         var pages = 1
@@ -175,39 +127,16 @@ class PdfExportService {
                 pages++
                 currentY = margin + TimesheetPdfRenderer.HEADER_HEIGHT_CONT
             }
-            currentY += totalRowHeight
         }
 
         return pages
     }
 
-    private fun ensureSpaceNew(
-        cursor: PageCursor,
-        requiredHeight: Float,
-        data: TimesheetPdfData,
-        renderer: TimesheetPdfRenderer,
-        onNewPage: (() -> Unit)? = null
-    ) {
-        val bottomLimit = pageHeight - margin - 40f
-        if (cursor.y + requiredHeight <= bottomLimit) return
-
-        renderer.drawFooter(cursor.page.canvas, cursor.pageNumber, cursor.totalPages)
-        cursor.document.finishPage(cursor.page)
-        cursor.pageNumber += 1
-        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, cursor.pageNumber).create()
-        cursor.page = cursor.document.startPage(pageInfo)
-        cursor.page.canvas.drawColor(colorWhite)
-        cursor.y = margin
-
-        cursor.y = renderer.drawHeader(cursor.page.canvas, cursor.y, isFirstPage = false)
-        onNewPage?.invoke()
-    }
-
-    private fun startDocument(document: PdfDocument, pageNumber: Int, totalPages: Int): PageCursor {
-        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create()
+    private fun startDocument(document: PdfDocument, totalPages: Int): PageCursor {
+        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
         val page = document.startPage(pageInfo)
         page.canvas.drawColor(colorOffWhite)
-        return PageCursor(document = document, page = page, pageNumber = pageNumber, totalPages = totalPages, y = margin)
+        return PageCursor(document = document, page = page, pageNumber = 1, totalPages = totalPages, y = margin)
     }
 
     private fun finishDocument(cursor: PageCursor) {
@@ -238,104 +167,14 @@ class PdfExportService {
         val canvas = cursor.page.canvas
         val yStart = cursor.y
 
-        val darkBarPaint = Paint().apply { color = Color.parseColor("#1E293B"); style = Paint.Style.FILL }
-        canvas.drawRect(0f, 0f, pageWidth.toFloat(), 12f, darkBarPaint)
-        val accentPaint = Paint().apply { color = colorGoldAccent; style = Paint.Style.FILL }
-        canvas.drawRect(0f, 12f, pageWidth.toFloat(), 14f, accentPaint)
-
         if (isFirstPage) {
-            val leftWidth = 220f
-            val rightWidth = 160f
-
-            val badgeSize = 56f
-            val badgeTop = yStart + 6f
-            val badgeRect = RectF(margin, badgeTop, margin + badgeSize, badgeTop + badgeSize)
-            val darkFillPaint = Paint().apply { color = Color.parseColor("#2C3E50"); style = Paint.Style.FILL }
-            canvas.drawRoundRect(badgeRect, 8f, 8f, darkFillPaint)
-
-            val logoTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = colorGoldAccent
-                textSize = 18f
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                textAlign = Paint.Align.CENTER
-            }
-            canvas.drawText("PPP", badgeRect.centerX(), badgeRect.centerY() + 7f, logoTextPaint)
-
-            val companyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.parseColor("#1E293B")
-                textSize = 20f
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            }
-            val companySubPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = colorGoldAccent
-                textSize = 13f
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-            }
-
-            val leftTextX = badgeRect.right + 12f
-            var leftY = badgeTop + 18f
-            canvas.drawText("Pro Painters", leftTextX, leftY, companyPaint)
-            leftY += 20f
-            canvas.drawText("& PLASTERERS", leftTextX, leftY, companySubPaint)
-
-            val detailPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = colorTextGray
-                textSize = 9f
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-            }
-
-            leftY += 18f
-            val addrMaxWidth = leftWidth - (badgeSize + 24f)
-            drawWrappedPlainText(canvas, data.business.address, leftTextX, leftY, addrMaxWidth, detailPaint, 11f, maxLines = 2)
-            leftY += 26f
-
-            canvas.drawText("P: ${data.business.phoneNumber}", leftTextX, leftY, detailPaint)
-            leftY += 14f
-
-            canvas.drawText("E: ${data.business.email}", leftTextX, leftY, detailPaint)
-
-            val centerX = pageWidth / 2f
-            val headerCenterY = yStart + (badgeSize / 2f) + 12f
-            drawTimesheetTitleWithOrnaments(canvas, centerX, headerCenterY)
-
-            val boxLeft = pageWidth - margin - rightWidth
-            val labelX = boxLeft + 8f
-            val valueX = labelX
-            var by = yStart + 12f
-
-            val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = colorMediumGray
-                textSize = 8f
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-            }
-
-            val valuePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.parseColor("#1E293B")
-                textSize = 12f
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            }
-
-            val dateValuePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = colorGoldAccent
-                textSize = 12f
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            }
-
-            canvas.drawText("NAME", labelX, by, labelPaint)
-            canvas.drawText(ellipsizeToWidth(data.jobName.ifBlank { "N/A" }, valuePaint, rightWidth - 20f), valueX, by + 16f, valuePaint)
-
-            by += 44f
-            canvas.drawText("ADDRESS", labelX, by, labelPaint)
-            drawWrappedPlainText(canvas, data.jobAddress.ifBlank { "N/A" }, valueX, by + 16f, rightWidth - 20f, valuePaint, 14f, maxLines = 2)
-
-            by += 52f
-            canvas.drawText("ISSUE DATE", labelX, by, labelPaint)
-            canvas.drawText(DateFormatUtils.formatDisplayDate(data.exportedAt), valueX, by + 16f, dateValuePaint)
-
-            cursor.y = yStart + maxOf(badgeSize + 24f, 140f)
+            // Draw header for the first page
+            val renderer = TimesheetPdfRenderer(data, pageWidth, pageHeight, margin)
+            cursor.y = renderer.drawHeader(canvas, yStart, isFirstPage = true)
         } else {
+            // Draw header for continuation pages
             val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.parseColor("#1E293B")
+                color = "#1E293B".toColorInt()
                 textSize = 14f
                 typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             }
@@ -354,74 +193,10 @@ class PdfExportService {
         }
     }
 
-    private fun drawTimesheetTitleWithOrnaments(canvas: Canvas, cx: Float, cy: Float) {
-        val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#1E293B")
-            textSize = 28f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-            textAlign = Paint.Align.CENTER
-            letterSpacing = 0.35f
-        }
-
-        val text = "TIMESHEET"
-
-        val linePaint = Paint().apply { color = colorGoldAccent; strokeWidth = 0.8f }
-        val ornamentWidth = 200f
-
-        val topY = cy - 28f
-        canvas.drawLine(cx - ornamentWidth / 2f, topY, cx + ornamentWidth / 2f, topY, linePaint)
-
-        val diamondSize = 5f
-        val leftDiamondPath = Path().apply {
-            val dx = cx - ornamentWidth / 2f
-            moveTo(dx, topY)
-            lineTo(dx + diamondSize, topY + diamondSize)
-            lineTo(dx, topY + (diamondSize * 2f))
-            lineTo(dx - diamondSize, topY + diamondSize)
-            close()
-        }
-        canvas.drawPath(leftDiamondPath, Paint().apply { color = colorGoldAccent; style = Paint.Style.FILL })
-
-        val rightDx = cx + ornamentWidth / 2f
-        val rightDiamondPath = Path().apply {
-            moveTo(rightDx, topY)
-            lineTo(rightDx + diamondSize, topY + diamondSize)
-            lineTo(rightDx, topY + (diamondSize * 2f))
-            lineTo(rightDx - diamondSize, topY + diamondSize)
-            close()
-        }
-        canvas.drawPath(rightDiamondPath, Paint().apply { color = colorGoldAccent; style = Paint.Style.FILL })
-
-        val bottomY = cy + 30f
-        canvas.drawLine(cx - ornamentWidth / 2f, bottomY, cx + ornamentWidth / 2f, bottomY, linePaint)
-
-        val leftDiamondBottom = Path().apply {
-            val dx = cx - ornamentWidth / 2f
-            moveTo(dx, bottomY)
-            lineTo(dx + diamondSize, bottomY - diamondSize)
-            lineTo(dx, bottomY - (diamondSize * 2f))
-            lineTo(dx - diamondSize, bottomY - diamondSize)
-            close()
-        }
-        canvas.drawPath(leftDiamondBottom, Paint().apply { color = colorGoldAccent; style = Paint.Style.FILL })
-
-        val rightDiamondBottom = Path().apply {
-            val dx = cx + ornamentWidth / 2f
-            moveTo(dx, bottomY)
-            lineTo(dx + diamondSize, bottomY - diamondSize)
-            lineTo(dx, bottomY - (diamondSize * 2f))
-            lineTo(dx - diamondSize, bottomY - diamondSize)
-            close()
-        }
-        canvas.drawPath(rightDiamondBottom, Paint().apply { color = colorGoldAccent; style = Paint.Style.FILL })
-
-        canvas.drawText(text, cx, cy + 6f, titlePaint)
-    }
-
     private fun drawSectionTitleLuxury(cursor: PageCursor, title: String) {
         val canvas = cursor.page.canvas
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#1E293B")
+            color = "#1E293B".toColorInt()
             textSize = 12f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             letterSpacing = 0.1f
@@ -447,9 +222,9 @@ class PdfExportService {
         drawWorkEntriesTableHeader(cursor, colDate, colWorker, colStart, colFinish, colHours)
 
         val rowHeight = 22f
-        val normalPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#475569"); textSize = 10f }
+        val normalPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = "#475569".toColorInt(); textSize = 10f }
         val boldPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#1E293B")
+            color = "#1E293B".toColorInt()
             textSize = 10f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
@@ -463,7 +238,7 @@ class PdfExportService {
                 drawWorkEntriesTableHeader(cursor, colDate, colWorker, colStart, colFinish, colHours)
                 entriesOnPage = 0
             } else {
-                ensureSpaceWithHeader(cursor, rowHeight, data) {
+                ensureSpaceWithHeader(cursor, data) {
                     drawWorkEntriesTableHeader(cursor, colDate, colWorker, colStart, colFinish, colHours)
                     entriesOnPage = 0
                 }
@@ -492,7 +267,7 @@ class PdfExportService {
         cursor.page.canvas.drawLine(pageWidth - margin - 150f, cursor.y, pageWidth - margin, cursor.y, linePaint)
 
         val totalLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#1E293B")
+            color = "#1E293B".toColorInt()
             textSize = 10f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
@@ -506,7 +281,7 @@ class PdfExportService {
         val canvas = cursor.page.canvas
         val headerHeight = 25f
         val headerRect = RectF(margin, cursor.y, pageWidth - margin, cursor.y + headerHeight)
-        val headerPaint = Paint().apply { color = colorDarkNavy; style = Paint.Style.FILL }
+        val headerPaint = Paint().apply { color = "#2C3E50".toColorInt(); style = Paint.Style.FILL }
         canvas.drawRect(headerRect, headerPaint)
 
         val headerTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -537,9 +312,9 @@ class PdfExportService {
         cursor.y += 10f
     }
 
-    private fun ensureSpaceWithHeader(cursor: PageCursor, requiredHeight: Float, data: TimesheetPdfData, onNewPage: () -> Unit) {
+    private fun ensureSpaceWithHeader(cursor: PageCursor, data: TimesheetPdfData, onNewPage: () -> Unit) {
         val bottomLimit = pageHeight - margin - 40f
-        if (cursor.y + requiredHeight <= bottomLimit) return
+        if (cursor.y + 22f <= bottomLimit) return
 
         goToNextPage(cursor, data)
         onNewPage()
@@ -550,7 +325,7 @@ class PdfExportService {
 
         val headerHeight = 25f
         val headerRect = RectF(margin, cursor.y, pageWidth - margin, cursor.y + headerHeight)
-        val headerPaint = Paint().apply { color = colorDarkNavy; style = Paint.Style.FILL }
+        val headerPaint = Paint().apply { color = "#2C3E50".toColorInt(); style = Paint.Style.FILL }
         canvas.drawRect(headerRect, headerPaint)
 
         val headerTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -569,9 +344,9 @@ class PdfExportService {
         cursor.y += headerHeight
 
         val rowHeight = 22f
-        val normalPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#475569"); textSize = 10f }
+        val normalPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = "#475569".toColorInt(); textSize = 10f }
         val boldPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#1E293B")
+            color = "#1E293B".toColorInt()
             textSize = 10f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
@@ -598,7 +373,7 @@ class PdfExportService {
         cursor.page.canvas.drawLine(pageWidth - margin - 200f, cursor.y, pageWidth - margin, cursor.y, linePaint)
 
         val totalLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#1E293B")
+            color = "#1E293B".toColorInt()
             textSize = 10f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
@@ -612,7 +387,7 @@ class PdfExportService {
         val canvas = cursor.page.canvas
         val footerY = pageHeight - margin
 
-        val accentPaint = Paint().apply { color = Color.parseColor("#2C3E50"); style = Paint.Style.FILL }
+        val accentPaint = Paint().apply { color = "#2C3E50".toColorInt(); style = Paint.Style.FILL }
         canvas.drawRect(margin, pageHeight.toFloat() - 3f, pageWidth - margin, pageHeight.toFloat(), accentPaint)
 
         val linePaint = Paint().apply { color = colorBorderGray; strokeWidth = 0.5f }
@@ -627,16 +402,12 @@ class PdfExportService {
         canvas.drawText(text, pageWidth / 2f, footerY, paint)
     }
 
-    fun exportInvoicePdf(context: Context, data: InvoicePdfData, outputFile: File): File {
-        return exportInvoicePdfLuxury(data, outputFile)
-    }
-
-    private fun exportInvoicePdfLuxury(data: InvoicePdfData, outputFile: File): File {
+    fun exportInvoicePdf(data: InvoicePdfData, outputFile: File): File {
         val invoiceData = InvoiceDataMapper.map(data)
         val document = PdfDocument()
 
         val totalPages = calculateInvoiceTotalPages(invoiceData)
-        val cursor = startInvoiceDocument(document, 1, totalPages)
+        val cursor = startInvoiceDocument(document, totalPages)
 
         renderInvoiceDocument(cursor, invoiceData)
 
@@ -647,16 +418,15 @@ class PdfExportService {
 
     private fun startInvoiceDocument(
         document: PdfDocument,
-        pageNumber: Int,
         totalPages: Int
     ): InvoicePageCursor {
-        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create()
+        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
         val page = document.startPage(pageInfo)
         page.canvas.drawColor(colorWhite)
         return InvoicePageCursor(
             document = document,
             page = page,
-            pageNumber = pageNumber,
+            pageNumber = 1,
             totalPages = totalPages,
             y = margin
         )
@@ -767,13 +537,13 @@ class PdfExportService {
     }
 
     private fun drawInvoiceFirstPageHeader(canvas: Canvas, invoiceData: InvoiceData): Float {
-        val colorNavy = Color.parseColor("#1E293B")
-        val colorNavyLight = Color.parseColor("#334155")
-        val colorBronze = Color.parseColor("#9D8560")
-        val colorLightGray1 = Color.parseColor("#F7F5F2")
-        val localTextGray = Color.parseColor("#64748B")
-        val localMediumGray = Color.parseColor("#94A3B8")
-        val localBorderGray = Color.parseColor("#CBD5E1")
+        val colorNavy = "#1E293B".toColorInt()
+        val colorNavyLight = "#334155".toColorInt()
+        val colorBronze = "#9D8560".toColorInt()
+        val colorLightGray1 = "#F7F5F2".toColorInt()
+        val localTextGray = "#64748B".toColorInt()
+        val localMediumGray = "#94A3B8".toColorInt()
+        val localBorderGray = "#CBD5E1".toColorInt()
 
         var y = margin
         val contentWidth = pageWidth - 2 * margin
@@ -856,10 +626,9 @@ class PdfExportService {
         val diamondPaint = Paint().apply { color = colorNavy; style = Paint.Style.FILL }
 
         fun drawDiamond(cx: Float, cy: Float) {
-            canvas.save()
-            canvas.rotate(45f, cx, cy)
-            canvas.drawRect(cx - 3.5f, cy - 3.5f, cx + 3.5f, cy + 3.5f, diamondPaint)
-            canvas.restore()
+            canvas.withRotation(45f, cx, cy) {
+                drawRect(cx - 3.5f, cy - 3.5f, cx + 3.5f, cy + 3.5f, diamondPaint)
+            }
         }
 
         val lineYTop = titleY - 34f
@@ -932,8 +701,7 @@ class PdfExportService {
             sectionY + 36f,
             contentWidth - 36f,
             billToAddrPaint,
-            13f,
-            maxLines = 2
+            13f
         )
 
         return y + billSectionHeight + 28f
@@ -945,9 +713,9 @@ class PdfExportService {
         pageNumber: Int,
         totalPages: Int
     ) {
-        val colorNavy = Color.parseColor("#1E293B")
-        val colorBronze = Color.parseColor("#9D8560")
-        val localTextGray = Color.parseColor("#64748B")
+        val colorNavy = "#1E293B".toColorInt()
+        val colorBronze = "#9D8560".toColorInt()
+        val localTextGray = "#64748B".toColorInt()
 
         val topBorderPaint = Paint().apply { color = colorNavy; style = Paint.Style.FILL }
         canvas.drawRect(margin, margin, pageWidth - margin, margin + 4f, topBorderPaint)
@@ -970,8 +738,8 @@ class PdfExportService {
     }
 
     private fun drawInvoiceItemsSectionHeader(canvas: Canvas, y: Float) {
-        val colorNavyLight = Color.parseColor("#334155")
-        val colorBronze = Color.parseColor("#9D8560")
+        val colorNavyLight = "#334155".toColorInt()
+        val colorBronze = "#9D8560".toColorInt()
 
         val sectionHeaderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = colorNavyLight
@@ -986,7 +754,7 @@ class PdfExportService {
     }
 
     private fun drawInvoiceItemsTableHeader(canvas: Canvas, y: Float) {
-        val colorNavyLight = Color.parseColor("#334155")
+        val colorNavyLight = "#334155".toColorInt()
 
         val tableHeadPaint = Paint().apply { color = colorNavyLight; style = Paint.Style.FILL }
         canvas.drawRect(margin, y, pageWidth - margin, y + invoiceTableHeaderHeight, tableHeadPaint)
@@ -1019,7 +787,7 @@ class PdfExportService {
         amount: Double,
         striped: Boolean
     ) {
-        val colorNavy = Color.parseColor("#1E293B")
+        val colorNavy = "#1E293B".toColorInt()
 
         val rowItemPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = colorNavy
@@ -1030,7 +798,7 @@ class PdfExportService {
             strokeWidth = 0.6f
         }
         val stripePaint = Paint().apply {
-            color = Color.parseColor("#FAFAF8")
+            color = "#FAFAF8".toColorInt()
             style = Paint.Style.FILL
         }
 
@@ -1060,9 +828,9 @@ class PdfExportService {
     }
 
     private fun drawInvoiceTotals(canvas: Canvas, yStart: Float, invoiceData: InvoiceData) {
-        val colorBronze = Color.parseColor("#9D8560")
-        val colorNavy = Color.parseColor("#1E293B")
-        val colorLightGray1 = Color.parseColor("#F7F5F2")
+        val colorBronze = "#9D8560".toColorInt()
+        val colorNavy = "#1E293B".toColorInt()
+        val colorLightGray1 = "#F7F5F2".toColorInt()
 
         var y = yStart + 5f
 
@@ -1123,10 +891,10 @@ class PdfExportService {
     }
 
     private fun drawInvoicePaymentInformation(canvas: Canvas, y: Float, invoiceData: InvoiceData) {
-        val colorBronze = Color.parseColor("#9D8560")
-        val colorNavy = Color.parseColor("#1E293B")
-        val colorNavyLight = Color.parseColor("#334155")
-        val colorLightGray1 = Color.parseColor("#F7F5F2")
+        val colorBronze = "#9D8560".toColorInt()
+        val colorNavy = "#1E293B".toColorInt()
+        val colorNavyLight = "#334155".toColorInt()
+        val colorLightGray1 = "#F7F5F2".toColorInt()
 
         val sectionHeaderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = colorNavyLight
@@ -1189,52 +957,6 @@ class PdfExportService {
         )
     }
 
-    private fun drawCardLabelValue(
-        canvas: Canvas,
-        x: Float,
-        y: Float,
-        label: String,
-        value: String,
-        labelPaint: Paint,
-        valuePaint: Paint
-    ) {
-        canvas.drawText(label, x, y, labelPaint)
-        canvas.drawText(value, x, y + 14f, valuePaint)
-    }
-
-    private fun drawTableHeaderText(canvas: Canvas, text: String, x: Float, y: Float, paint: Paint) {
-        canvas.drawText(text, x, y, paint)
-    }
-
-    private fun drawAmountRow(
-        canvas: Canvas,
-        label: String,
-        amount: Double,
-        x: Float,
-        rightX: Float,
-        y: Float,
-        labelPaint: Paint,
-        valuePaint: Paint
-    ) {
-        canvas.drawText(label, x, y, labelPaint)
-        drawTextRight(canvas, CurrencyFormatUtils.formatCurrency(amount), rightX, y, valuePaint)
-    }
-
-    private fun drawWrappedText(
-        canvas: Canvas,
-        label: String,
-        text: String,
-        x: Float,
-        y: Float,
-        maxWidth: Float,
-        labelPaint: Paint,
-        textPaint: Paint,
-        maxLines: Int = Int.MAX_VALUE
-    ) {
-        canvas.drawText(label, x, y, labelPaint)
-        drawWrappedPlainText(canvas, text, x, y + 12f, maxWidth, textPaint, 12f, maxLines)
-    }
-
     private fun drawWrappedPlainText(
         canvas: Canvas,
         text: String,
@@ -1243,7 +965,7 @@ class PdfExportService {
         maxWidth: Float,
         paint: Paint,
         lineHeight: Float,
-        maxLines: Int = Int.MAX_VALUE
+        maxLines: Int = 2
     ) {
         val lines = wrapTextLines(text, paint, maxWidth, maxLines)
         var currentY = y
@@ -1257,7 +979,7 @@ class PdfExportService {
         text: String,
         paint: Paint,
         maxWidth: Float,
-        maxLines: Int = Int.MAX_VALUE
+        maxLines: Int
     ): List<String> {
         if (text.isBlank()) return emptyList()
         val result = mutableListOf<String>()
@@ -1298,12 +1020,6 @@ class PdfExportService {
         canvas.drawText(text, rightX - paint.measureText(text), baselineY, paint)
     }
 
-    private fun drawTextCenter(canvas: Canvas, text: String, leftX: Float, rightX: Float, baselineY: Float, paint: Paint) {
-        val textWidth = paint.measureText(text)
-        val x = leftX + ((rightX - leftX - textWidth) / 2f)
-        canvas.drawText(ellipsizeToWidth(text, paint, rightX - leftX), x.coerceAtLeast(leftX), baselineY, paint)
-    }
-
     private fun writeDocument(document: PdfDocument, outputFile: File) {
         outputFile.parentFile?.mkdirs()
         FileOutputStream(outputFile).use { stream ->
@@ -1311,106 +1027,4 @@ class PdfExportService {
         }
         document.close()
     }
-
-    /**
-     * NEW: Dedicated Luxury Header for Timesheet Preview.
-     * This fixes the vertical text wrapping and overlapping titles seen in the preview.
-     */
-    fun drawTimesheetLuxuryHeader(
-        canvas: Canvas,
-        businessName: String,
-        customerName: String,
-        address: String,
-        date: String,
-        y: Float
-    ) {
-        val colorNavy = Color.parseColor("#1E293B")
-        val colorTextGray = Color.parseColor("#64748B")
-
-        // 1. DIMENSIONS: Widened to prevent vertical wrapping
-        val leftColX = margin
-        val leftColWidth = 220f // FIXED: Increased from narrow value
-
-        val rightColWidth = 160f
-        val rightColX = pageWidth - margin - rightColWidth
-
-        // 2. Business Info (Left Column)
-        val businessPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = colorNavy
-            textSize = 14f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        }
-
-        // drawWrappedPlainText now uses 220f to allow horizontal text
-        drawWrappedPlainText(
-            canvas,
-            businessName.ifBlank { "Pro Painters & Plasterers" },
-            leftColX + 55f, // Offset for the logo badge
-            y + 12f,
-            leftColWidth,
-            businessPaint,
-            15f
-        )
-
-        // 3. TIMESHEET Title (Centered properly to avoid overlap)
-        val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = colorTextGray
-            textSize = 28f
-            letterSpacing = 0.15f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-        }
-
-        val titleText = "TIMESHEET"
-        val titleWidth = titlePaint.measureText(titleText)
-        canvas.drawText(
-            titleText,
-            (pageWidth / 2f) - (titleWidth / 2f),
-            y + 55f,
-            titlePaint
-        )
-
-        // 4. Job Details (Right Column)
-        val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = colorTextGray
-            textSize = 9f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        }
-        val valuePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = colorNavy
-            textSize = 11f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        }
-
-        // Draw Name
-        canvas.drawText("NAME", rightColX, y + 10f, labelPaint)
-        drawWrappedPlainText(canvas, customerName, rightColX, y + 24f, rightColWidth, valuePaint, 12f, 1)
-
-        // Draw Address
-        canvas.drawText("ADDRESS", rightColX, y + 55f, labelPaint)
-        drawWrappedPlainText(canvas, address, rightColX, y + 69f, rightColWidth, valuePaint, 12f, 2)
-
-        // Draw Date
-        canvas.drawText("ISSUE DATE", rightColX, y + 105f, labelPaint)
-        canvas.drawText(date, rightColX, y + 119f, valuePaint)
-    }
-
-    /**
-     * NEW: Dedicated Footer for Luxury View
-     */
-    fun drawTimesheetLuxuryFooter(canvas: Canvas, pageNumber: Int, totalPages: Int) {
-        val footerY = pageHeight - margin
-        val footerTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#94A3B8")
-            textSize = 10f
-            textAlign = Paint.Align.CENTER
-        }
-
-        canvas.drawText(
-            "Generated by Pro Painters — Page $pageNumber of $totalPages",
-            pageWidth / 2f,
-            footerY,
-            footerTextPaint
-        )
-    }
 }
-

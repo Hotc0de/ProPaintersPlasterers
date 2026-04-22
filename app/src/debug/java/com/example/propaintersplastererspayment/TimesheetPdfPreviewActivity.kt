@@ -67,7 +67,7 @@ class TimesheetPdfPreviewActivity : ComponentActivity() {
 
 
                 val outFile = PdfFileHelper.createExportFile(this@TimesheetPdfPreviewActivity, data.fileName)
-                PdfExportService().exportTimesheetPdf(this@TimesheetPdfPreviewActivity, data, outFile)
+                PdfExportService().exportTimesheetPdf(data, outFile)
 
                 runOnUiThread {
                     Toast.makeText(this@TimesheetPdfPreviewActivity, "Timesheet PDF generated: ${outFile.absolutePath}", Toast.LENGTH_LONG).show()

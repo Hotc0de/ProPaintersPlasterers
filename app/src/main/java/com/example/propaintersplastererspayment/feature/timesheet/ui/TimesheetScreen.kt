@@ -60,7 +60,7 @@ fun TimesheetRoute(
         viewModel.pdfExportEvents.collect { exportData ->
             runCatching {
                 val outputFile = PdfFileHelper.createExportFile(context, exportData.fileName)
-                pdfExportService.exportTimesheetPdf(context, exportData, outputFile)
+                pdfExportService.exportTimesheetPdf(exportData, outputFile)
                 PdfFileHelper.sharePdf(
                     context = context,
                     file = outputFile,
