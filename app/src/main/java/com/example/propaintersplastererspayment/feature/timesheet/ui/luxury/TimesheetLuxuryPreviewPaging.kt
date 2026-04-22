@@ -206,7 +206,7 @@ private data class PageContent(
 
         if (workEntries.isNotEmpty()) {
             renderer.drawSectionTitle(canvas, currentY, "Work Entries")
-            currentY += TimesheetPdfRenderer.SECTION_TITLE_HEIGHT - 10f
+            currentY += 10f
             renderer.drawWorkEntriesTableHeader(canvas, currentY)
             currentY += TimesheetPdfRenderer.TABLE_HEADER_HEIGHT
             workEntries.forEachIndexed { index, entry ->
@@ -221,7 +221,7 @@ private data class PageContent(
 
         if (materials.isNotEmpty()) {
             renderer.drawSectionTitle(canvas, currentY, "Materials")
-            currentY += TimesheetPdfRenderer.SECTION_TITLE_HEIGHT - 10f
+            currentY += 10f
             renderer.drawMaterialsTableHeader(canvas, currentY)
             currentY += TimesheetPdfRenderer.TABLE_HEADER_HEIGHT
             materials.forEachIndexed { index, material ->

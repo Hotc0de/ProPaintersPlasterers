@@ -105,7 +105,7 @@ fun TimesheetLuxuryPreview(
                 // 2. Draw Body Content
                 // Draw Work Entries
                 renderer.drawSectionTitle(this, currentY, "Work Entries")
-                currentY += TimesheetPdfRenderer.SECTION_TITLE_HEIGHT - 10f
+                currentY += 10f
 
                 renderer.drawWorkEntriesTableHeader(this, currentY)
                 currentY += TimesheetPdfRenderer.TABLE_HEADER_HEIGHT
@@ -121,7 +121,7 @@ fun TimesheetLuxuryPreview(
                 // Draw Materials if any
                 if (pdfData.materials.isNotEmpty()) {
                     renderer.drawSectionTitle(this, currentY, "Materials")
-                    currentY += TimesheetPdfRenderer.SECTION_TITLE_HEIGHT - 10f
+                    currentY += 10f
 
                     renderer.drawMaterialsTableHeader(this, currentY)
                     currentY += TimesheetPdfRenderer.TABLE_HEADER_HEIGHT
