@@ -572,7 +572,7 @@ class PdfExportService {
         val bulletPaint = Paint().apply { color = colorBronze; style = Paint.Style.FILL }
 
         canvas.drawCircle(margin + 4f, y - 4f, 4f, bulletPaint)
-        canvas.drawText("BILL TO", margin + 18f, y, sectionHeaderPaint)
+        canvas.drawText("BILL-TO INFORMATION", margin + 18f, y, sectionHeaderPaint)
 
         val colorLightGray1 = "#F7F5F2".toColorInt()
         val boxTop = y + 14f
@@ -590,15 +590,16 @@ class PdfExportService {
             textSize = 11f
         }
 
-        val labelX = margin + 16f
-        val valueX = margin + 65f
+        val labelWidth = 110f
+        val labelRightX = margin + 16f + labelWidth
+        val valueX = labelRightX + 8f
         var billY = boxTop + 20f
 
-        canvas.drawText("Name:", labelX, billY, billToLabelPaint)
+        drawTextRight(canvas, "Name:", labelRightX, billY, billToLabelPaint)
         canvas.drawText(invoiceData.billTo.ifBlank { "N/A" }, valueX, billY, billToValuePaint)
 
         billY += 19f
-        canvas.drawText("Address:", labelX, billY, billToLabelPaint)
+        drawTextRight(canvas, "Address:", labelRightX, billY, billToLabelPaint)
         drawWrappedPlainText(
             canvas,
             invoiceData.billToAddress.ifBlank { "N/A" },
@@ -827,17 +828,21 @@ class PdfExportService {
             textSize = 11f
         }
 
+        val labelWidth = 110f
+        val labelRightX = margin + 16f + labelWidth
+        val valueX = labelRightX + 8f
+
         var payY = boxTop + 20f
-        canvas.drawText("Bank:", margin + 16f, payY, paymentLabelPaint)
-        canvas.drawText(invoiceData.accountNumber.ifBlank { "N/A" }, margin + 60f, payY, paymentValuePaint)
+        drawTextRight(canvas, "Bank:", labelRightX, payY, paymentLabelPaint)
+        canvas.drawText(invoiceData.accountNumber.ifBlank { "N/A" }, valueX, payY, paymentValuePaint)
 
         payY += 19f
-        canvas.drawText("Account Name:", margin + 16f, payY, paymentLabelPaint)
-        canvas.drawText(invoiceData.businessName.ifBlank { "N/A" }, margin + 110f, payY, paymentValuePaint)
+        drawTextRight(canvas, "Account Name:", labelRightX, payY, paymentLabelPaint)
+        canvas.drawText(invoiceData.businessName.ifBlank { "N/A" }, valueX, payY, paymentValuePaint)
 
         payY += 19f
-        canvas.drawText("Account Number:", margin + 16f, payY, paymentLabelPaint)
-        canvas.drawText(invoiceData.accountNumber.ifBlank { "N/A" }, margin + 120f, payY, paymentValuePaint)
+        drawTextRight(canvas, "Account Number:", labelRightX, payY, paymentLabelPaint)
+        canvas.drawText(invoiceData.accountNumber.ifBlank { "N/A" }, valueX, payY, paymentValuePaint)
     }
 
     private fun drawInvoiceFooter(canvas: Canvas, pageNumber: Int, totalPages: Int) {

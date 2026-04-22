@@ -161,7 +161,7 @@ fun TimesheetScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Luxury Preview",
+                                    text = "Timesheet Preview",
                                     style = MaterialTheme.typography.titleMedium,
                                     color = IndustrialGold
                                 )

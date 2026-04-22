@@ -131,7 +131,7 @@
     <string name="settings_save">Save Settings</string>
     <string name="settings_last_saved">Last saved at</string>
     <!-- ── PDF export ───────────────────────────────────────────────────── -->
-    <string name="pdf_export_timesheet">Export PDF</string>
+    <string name="pdf_export_timesheet">Export</string>
     <string name="pdf_export_invoice">Export PDF</string>
     <string name="pdf_share_timesheet">Share Timesheet PDF</string>
     <string name="pdf_share_invoice">Share Invoice PDF</string>
