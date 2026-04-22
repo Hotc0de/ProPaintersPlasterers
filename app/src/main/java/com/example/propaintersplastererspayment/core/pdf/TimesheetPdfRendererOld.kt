@@ -5,7 +5,7 @@ import com.example.propaintersplastererspayment.core.util.CurrencyFormatUtils
 import com.example.propaintersplastererspayment.core.util.DateFormatUtils
 import com.example.propaintersplastererspayment.core.util.WorkEntryTimeUtils
 
-class TimesheetPdfRenderer(
+class TimesheetPdfRendererOld(
     private val data: TimesheetPdfData,
     private val pageWidth: Int,
     private val pageHeight: Int,
@@ -22,16 +22,15 @@ class TimesheetPdfRenderer(
         const val FOOTER_SPACE = 40f
     }
 
-    // Colors synced with PdfExportService
+    // Colors
     private val colorNavy = Color.parseColor("#1E293B")
-    private val colorSlate = Color.parseColor("#2C3E50") // Table Header
-    private val colorGold = Color.parseColor("#9D8560") // Gold Accent
+    private val colorSlate = Color.parseColor("#334155")
+    private val colorGold = Color.parseColor("#CA8A04")
     private val colorLabel = Color.parseColor("#94A3B8")
     private val colorBgLight = Color.parseColor("#F8FAFC")
     private val colorStripe = Color.parseColor("#F1F5F9")
     private val colorBorder = Color.parseColor("#CBD5E1")
     private val colorWhite = Color.WHITE
-    private val colorTextNormal = Color.parseColor("#475569")
 
     // Header layout tweak: nudge right by a few points for title and right details
     private val headerRightShift = 10f
@@ -201,33 +200,16 @@ class TimesheetPdfRenderer(
     }
 
     fun drawSectionTitle(canvas: Canvas, y: Float, title: String) {
+        val dotPaint = Paint().apply { color = colorGold; style = Paint.Style.FILL; isAntiAlias = true }
+        canvas.drawCircle(margin + 4f, y - 4f, 3f, dotPaint)
+        
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = colorNavy
             textSize = 12f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            letterSpacing = 0.1f
+            letterSpacing = 0.05f
         }
-
-        // Draw diamond icon
-        val diamondSize = 3f
-        val diamondPaint = Paint().apply { color = colorGold; style = Paint.Style.FILL; isAntiAlias = true }
-        val cx = margin + 4f
-        val cy = y - 4f
-        val path = Path().apply {
-            moveTo(cx, cy - diamondSize)
-            lineTo(cx + diamondSize, cy)
-            lineTo(cx, cy + diamondSize)
-            lineTo(cx - diamondSize, cy)
-            close()
-        }
-        canvas.drawPath(path, diamondPaint)
-
         canvas.drawText(title.uppercase(), margin + 14f, y, titlePaint)
-
-        // Draw trailing line
-        val linePaint = Paint().apply { color = colorGold; strokeWidth = 0.5f }
-        val textWidth = titlePaint.measureText(title.uppercase())
-        canvas.drawLine(margin + 14f + textWidth + 10f, y - 4f, pageWidth - margin, y - 4f, linePaint)
     }
 
     fun drawWorkEntriesTableHeader(canvas: Canvas, y: Float) {
@@ -260,19 +242,17 @@ class TimesheetPdfRenderer(
         }
         
         val currY = y + 15f
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colorTextNormal; textSize = 10f; textAlign = Paint.Align.LEFT }
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colorSlate; textSize = 10f; textAlign = Paint.Align.LEFT }
         
         canvas.drawText(entry.workDate, margin + 10f, currY, paint)
-        canvas.drawText(entry.workerName, margin + 90f, currY, paint.apply { color = colorNavy; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) })
+        canvas.drawText(entry.workerName, margin + 90f, currY, paint.apply { typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) })
         
-        paint.color = colorTextNormal
         paint.typeface = Typeface.DEFAULT
         paint.textAlign = Paint.Align.CENTER
         canvas.drawText(entry.startTime, margin + 230f, currY, paint)
         canvas.drawText(entry.finishTime, margin + 300f, currY, paint)
         
         paint.textAlign = Paint.Align.RIGHT
-        paint.color = colorNavy
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         canvas.drawText(WorkEntryTimeUtils.formatHours(entry.hoursWorked), pageWidth - margin - 10f, currY, paint)
     }
@@ -312,8 +292,8 @@ class TimesheetPdfRenderer(
             canvas.drawRect(margin, y, pageWidth - margin, y + height, Paint().apply { color = colorStripe; style = Paint.Style.FILL })
         }
         val currY = y + 15f
-        canvas.drawText(material.materialName, margin + 10f, currY, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colorNavy; textSize = 10f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) })
-        canvas.drawText(CurrencyFormatUtils.formatCurrency(material.price), pageWidth - margin - 10f, currY, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colorTextNormal; textSize = 10f; textAlign = Paint.Align.RIGHT })
+        canvas.drawText(material.materialName, margin + 10f, currY, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colorSlate; textSize = 10f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) })
+        canvas.drawText(CurrencyFormatUtils.formatCurrency(material.price), pageWidth - margin - 10f, currY, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colorSlate; textSize = 10f; textAlign = Paint.Align.RIGHT })
     }
 
     fun drawTotalMaterialCost(canvas: Canvas, y: Float, totalCost: Double) {

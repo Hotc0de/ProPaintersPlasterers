@@ -3,6 +3,7 @@ package com.example.propaintersplastererspayment.core.pdf
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.Typeface
 import android.graphics.RectF
 import android.graphics.pdf.PdfDocument
@@ -203,14 +204,25 @@ class PdfExportService {
             letterSpacing = 0.1f
         }
 
-        val dotPaint = Paint().apply { color = colorGoldAccent; style = Paint.Style.FILL }
-        canvas.drawCircle(margin + 3f, cursor.y - 4f, 3f, dotPaint)
+        // Draw diamond icon
+        val diamondSize = 3f
+        val diamondPaint = Paint().apply { color = colorGoldAccent; style = Paint.Style.FILL; isAntiAlias = true }
+        val cx = margin + 4f
+        val cy = cursor.y - 4f
+        val path = Path().apply {
+            moveTo(cx, cy - diamondSize)
+            lineTo(cx + diamondSize, cy)
+            lineTo(cx, cy + diamondSize)
+            lineTo(cx - diamondSize, cy)
+            close()
+        }
+        canvas.drawPath(path, diamondPaint)
 
-        canvas.drawText(title.uppercase(), margin + 12f, cursor.y, paint)
+        canvas.drawText(title.uppercase(), margin + 14f, cursor.y, paint)
 
         val linePaint = Paint().apply { color = colorGoldAccent; strokeWidth = 0.5f }
         val textWidth = paint.measureText(title.uppercase())
-        canvas.drawLine(margin + 12f + textWidth + 10f, cursor.y - 4f, pageWidth - margin, cursor.y - 4f, linePaint)
+        canvas.drawLine(margin + 14f + textWidth + 10f, cursor.y - 4f, pageWidth - margin, cursor.y - 4f, linePaint)
     }
 
     private fun drawWorkEntriesTable(cursor: PageCursor, data: TimesheetPdfData) {
