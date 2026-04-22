@@ -394,12 +394,11 @@ class PdfExportService {
         }
 
         drawInvoiceTotals(cursor.page.canvas, cursor.y, invoiceData)
-        cursor.y += totalsRequiredHeight + 14f
-
-        ensureInvoiceSpace(cursor, invoicePaymentHeight) {
-            drawInvoiceContinuationHeader(cursor.page.canvas, invoiceData, cursor.pageNumber, cursor.totalPages)
-            cursor.y = invoiceContinuationItemsStartY
-        }
+        
+        // Push Payment Information to the bottom of the page
+        val footerSpace = 50f
+        val paymentStartY = pageHeight - margin - footerSpace - invoicePaymentHeight
+        cursor.y = max(cursor.y + 14f, paymentStartY)
 
         drawInvoicePaymentInformation(cursor.page.canvas, cursor.y, invoiceData)
         drawInvoiceFooter(cursor.page.canvas, cursor.pageNumber, cursor.totalPages)
@@ -428,13 +427,11 @@ class PdfExportService {
         val colorNavy = "#1E293B".toColorInt()
         val colorNavyLight = "#334155".toColorInt()
         val colorBronze = "#9D8560".toColorInt()
-        val colorLightGray1 = "#F7F5F2".toColorInt()
         val localTextGray = "#64748B".toColorInt()
         val localMediumGray = "#94A3B8".toColorInt()
         val localBorderGray = "#CBD5E1".toColorInt()
 
         var y = margin
-        val contentWidth = pageWidth - 2 * margin
 
         val topBorderPaint = Paint().apply { color = colorNavy; style = Paint.Style.FILL }
         canvas.drawRect(margin, y, pageWidth - margin, y + 4f, topBorderPaint)
@@ -553,11 +550,7 @@ class PdfExportService {
         drawInfoField("Invoice Date", invoiceData.issueDate)
         invoiceData.dueDate?.let { drawInfoField("Due Date", it) }
 
-        y = max(contactY, fieldY) + 4f
-
-        val sectionBgPaint = Paint().apply { color = colorLightGray1; style = Paint.Style.FILL }
-        val billSectionHeight = 66f
-        canvas.drawRect(margin, y, pageWidth - margin, y + billSectionHeight, sectionBgPaint)
+        y = max(contactY, fieldY) + 12f
 
         val sectionHeaderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = colorNavyLight
@@ -567,32 +560,45 @@ class PdfExportService {
         }
         val bulletPaint = Paint().apply { color = colorBronze; style = Paint.Style.FILL }
 
-        val sectionY = y + 22f
-        canvas.drawCircle(margin + 4f, sectionY - 4f, 4f, bulletPaint)
-        canvas.drawText("BILL TO", margin + 18f, sectionY, sectionHeaderPaint)
+        canvas.drawCircle(margin + 4f, y - 4f, 4f, bulletPaint)
+        canvas.drawText("BILL TO", margin + 18f, y, sectionHeaderPaint)
 
-        val billToNamePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        val colorLightGray1 = "#F7F5F2".toColorInt()
+        val boxTop = y + 14f
+        val billSectionHeight = 56f
+        val sectionBgPaint = Paint().apply { color = colorLightGray1; style = Paint.Style.FILL }
+        canvas.drawRect(margin, boxTop, pageWidth - margin, boxTop + billSectionHeight, sectionBgPaint)
+
+        val billToLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = colorNavy
-            textSize = 13f
+            textSize = 11f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
-        val billToAddrPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        val billToValuePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = localTextGray
             textSize = 11f
         }
 
-        canvas.drawText(invoiceData.billTo.ifBlank { "N/A" }, margin + 18f, sectionY + 20f, billToNamePaint)
+        val labelX = margin + 16f
+        val valueX = margin + 65f
+        var billY = boxTop + 20f
+
+        canvas.drawText("Name:", labelX, billY, billToLabelPaint)
+        canvas.drawText(invoiceData.billTo.ifBlank { "N/A" }, valueX, billY, billToValuePaint)
+
+        billY += 19f
+        canvas.drawText("Address:", labelX, billY, billToLabelPaint)
         drawWrappedPlainText(
             canvas,
             invoiceData.billToAddress.ifBlank { "N/A" },
-            margin + 18f,
-            sectionY + 36f,
-            contentWidth - 36f,
-            billToAddrPaint,
+            valueX,
+            billY,
+            (pageWidth - margin) - valueX,
+            billToValuePaint,
             13f
         )
 
-        return y + billSectionHeight + 28f
+        return boxTop + billSectionHeight + 28f
     }
 
     private fun drawInvoiceContinuationHeader(
