@@ -47,7 +47,7 @@ import com.example.propaintersplastererspayment.data.local.util.Converters
         RoomEntity::class,
         SurfaceEntity::class
     ],
-    version = 22,
+    version = 23,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -65,6 +65,12 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun surfaceDao(): SurfaceDao
 
     companion object {
+        val MIGRATION_21_22 = object : Migration(21, 22) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE paint_items ADD COLUMN paintScope TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
         val MIGRATION_17_18 = object : Migration(17, 18) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // Create rooms table
@@ -299,14 +305,57 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
-        val MIGRATION_21_22 = object : Migration(21, 22) {
+        val MIGRATION_22_23 = object : Migration(22, 23) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // Add paintScope column to paint_items to store Interior/Exterior classification
-                try {
-                    db.execSQL("ALTER TABLE paint_items ADD COLUMN paintScope TEXT NOT NULL DEFAULT 'Interior'")
-                } catch (e: Exception) {
-                    // ignore if column already exists
-                }
+                // 1. Create the new table with the correct schema (matching SurfaceEntity)
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `surfaces_new` (
+                        `surfaceId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `roomId` INTEGER NOT NULL, 
+                        `surfaceType` TEXT NOT NULL, 
+                        `customName` TEXT NOT NULL, 
+                        `displayName` TEXT NOT NULL, 
+                        `notes` TEXT, 
+                        `sortOrder` INTEGER NOT NULL, 
+                        `createdAt` INTEGER NOT NULL, 
+                        `undercoatJobPaintId` INTEGER, 
+                        `maincoatJobPaintId` INTEGER, 
+                        `maincoatCoatCount` INTEGER NOT NULL DEFAULT 2, 
+                        `finishTypeOverride` TEXT, 
+                        `isFeatureSurface` INTEGER NOT NULL, 
+                        `surfaceCount` INTEGER NOT NULL, 
+                        `areaSize` REAL, 
+                        `areaUnit` TEXT, 
+                        FOREIGN KEY(`roomId`) REFERENCES `rooms`(`roomId`) ON UPDATE NO ACTION ON DELETE CASCADE, 
+                        FOREIGN KEY(`undercoatJobPaintId`) REFERENCES `job_paints`(`jobPaintId`) ON UPDATE NO ACTION ON DELETE SET NULL, 
+                        FOREIGN KEY(`maincoatJobPaintId`) REFERENCES `job_paints`(`jobPaintId`) ON UPDATE NO ACTION ON DELETE SET NULL 
+                    )
+                """.trimIndent())
+
+                // 2. Copy the data from the old table
+                db.execSQL("""
+                    INSERT INTO surfaces_new (
+                        surfaceId, roomId, surfaceType, customName, displayName, notes, 
+                        sortOrder, createdAt, undercoatJobPaintId, maincoatJobPaintId, 
+                        maincoatCoatCount, finishTypeOverride, isFeatureSurface, 
+                        surfaceCount, areaSize, areaUnit
+                    )
+                    SELECT 
+                        surfaceId, roomId, surfaceType, customName, displayName, notes, 
+                        sortOrder, createdAt, undercoatJobPaintId, maincoatJobPaintId, 
+                        maincoatCoatCount, finishTypeOverride, isFeatureSurface, 
+                        surfaceCount, areaSize, areaUnit 
+                    FROM surfaces
+                """.trimIndent())
+
+                // 3. Drop the old table and rename the new one
+                db.execSQL("DROP TABLE surfaces")
+                db.execSQL("ALTER TABLE surfaces_new RENAME TO surfaces")
+
+                // 4. Re-create indices
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_surfaces_roomId` ON `surfaces` (`roomId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_surfaces_undercoatJobPaintId` ON `surfaces` (`undercoatJobPaintId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_surfaces_maincoatJobPaintId` ON `surfaces` (`maincoatJobPaintId`)")
             }
         }
     }

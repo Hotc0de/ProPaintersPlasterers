@@ -103,6 +103,7 @@ fun SettingsRoute(
         onEmailChange = viewModel::onEmailChange,
         onGstNumberChange = viewModel::onGstNumberChange,
         onBankAccountNumberChange = viewModel::onBankAccountNumberChange,
+        onBankNameChange = viewModel::onBankNameChange,
         onDefaultLabourRateChange = viewModel::onDefaultLabourRateChange,
         onDefaultGstPercentChange = viewModel::onDefaultGstPercentChange,
         onGstEnabledChange = viewModel::onGstEnabledChange,
@@ -136,6 +137,7 @@ fun SettingsScreen(
     onEmailChange: (TextFieldValue) -> Unit,
     onGstNumberChange: (TextFieldValue) -> Unit,
     onBankAccountNumberChange: (TextFieldValue) -> Unit,
+    onBankNameChange: (TextFieldValue) -> Unit,
     onDefaultLabourRateChange: (TextFieldValue) -> Unit,
     onDefaultGstPercentChange: (TextFieldValue) -> Unit,
     onGstEnabledChange: (Boolean) -> Unit,
@@ -355,6 +357,13 @@ fun SettingsScreen(
                     // ── Banking Section ──────────────────────────────────
                     SettingsSection(title = stringResource(R.string.settings_section_banking)) {
                         IndustrialTextField(
+                            value = uiState.formState.bankName,
+                            onValueChange = onBankNameChange,
+                            label = "Bank Name",
+                            placeholder = "e.g. ANZ Bank",
+                            singleLine = true
+                        )
+                        IndustrialTextField(
                             value = uiState.formState.bankAccountNumber,
                             onValueChange = onBankAccountNumberChange,
                             label = stringResource(R.string.settings_bank_account),
@@ -487,6 +496,7 @@ private fun SettingsScreenPreview() {
             onEmailChange = {},
             onGstNumberChange = {},
             onBankAccountNumberChange = {},
+            onBankNameChange = {},
             onDefaultLabourRateChange = {},
             onDefaultGstPercentChange = {},
             onGstEnabledChange = {},

@@ -14,26 +14,30 @@ object InvoiceDataMapper {
             issueDate = DateFormatUtils.formatDisplayDate(pdfData.issueDate),
             dueDate = pdfData.dueDate?.let { DateFormatUtils.formatDisplayDate(it) },
             billTo = pdfData.billToName,
-            jobAddress = pdfData.jobAddress,
+            billToAddress = pdfData.jobAddress,
+            projectName = pdfData.jobName,
+            projectDescription = "Residential Project",
             lineItems = pdfData.lines.map { line ->
                 InvoiceLineItem(
                     description = line.description,
                     quantity = line.qty.toInt().coerceAtLeast(1),
                     rate = line.rate,
-                    amount = line.amount
+                    amount = line.amount,
+                    isLabour = line.description.contains("labour", ignoreCase = true)
                 )
             },
             subtotal = pdfData.subtotalExGst,
             includeGst = pdfData.includeGst,
-            gstRate = pdfData.gstRate,
+            gstRate = 0.15, // As per image
             gstAmount = pdfData.gstAmount,
             total = pdfData.finalTotal,
             businessName = pdfData.business.businessName.ifBlank { "Pro Painters" },
-            businessSubtitle = "& PLASTERERS",
+            businessSubtitle = "Plasterers",
             businessAddress = pdfData.business.address,
             businessPhone = pdfData.business.phoneNumber,
             businessEmail = pdfData.business.email,
-            accountNumber = pdfData.business.bankAccountNumber
+            accountNumber = pdfData.business.bankAccountNumber,
+            bankName = pdfData.business.bankName
         )
     }
 

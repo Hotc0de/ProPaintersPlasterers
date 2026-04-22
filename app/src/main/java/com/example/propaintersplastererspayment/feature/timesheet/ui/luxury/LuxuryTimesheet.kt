@@ -88,84 +88,102 @@ private fun TimesheetHeader(uiState: TimesheetUiState) {
         verticalAlignment = Alignment.Top
     ) {
         // Left Column: Logo & Company Info
-        Column(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.weight(1.2f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(64.dp)
-                        .background(TimesheetColors.DarkSlate, RoundedCornerShape(12.dp)),
+                        .size(48.dp)
+                        .background(TimesheetColors.DarkSlate, RoundedCornerShape(8.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "PPP",
                         color = TimesheetColors.GoldAccent,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
+                        fontSize = 16.sp
                     )
                 }
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
                         text = "Pro Painters",
-                        fontSize = 24.sp,
+                        fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = TimesheetColors.DarkSlate
                     )
                     Text(
                         text = "& PLASTERERS",
-                        fontSize = 18.sp,
-                        color = TimesheetColors.DarkSlate
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Normal,
+                        color = TimesheetColors.DarkSlate,
+                        letterSpacing = 1.sp
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = "170 Tancred Street\nP: 022-10701719 | E: painter@gmail.com\nAccount: ????????-????-??",
-                fontSize = 12.sp,
+                fontSize = 11.sp,
                 color = TimesheetColors.DarkSlate,
-                lineHeight = 18.sp
+                lineHeight = 16.sp
             )
         }
 
         // Center Column: Title
         Column(
             modifier = Modifier
-                .weight(1.2f)
+                .weight(1.8f)
                 .padding(top = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     // Top line with diamond (top right)
+                    // The line starts from near center and goes to the right
                     Box(modifier = Modifier.width(200.dp), contentAlignment = Alignment.TopEnd) {
-                        HorizontalDivider(color = TimesheetColors.DarkSlate, thickness = 1.dp)
                         Box(
                             modifier = Modifier
-                                .offset(y = (-4).dp, x = 4.dp)
+                                .fillMaxWidth(0.55f)
+                                .height(1.dp)
+                                .background(TimesheetColors.DarkSlate)
+                                .align(Alignment.CenterEnd)
+                        )
+                        Box(
+                            modifier = Modifier
                                 .size(8.dp)
                                 .rotate(45f)
                                 .background(TimesheetColors.DarkSlate)
+                                .align(Alignment.CenterEnd)
+                                .offset(x = 4.dp)
                         )
                     }
                     
                     Text(
                         text = "TIMESHEET",
-                        fontSize = 42.sp,
-                        fontWeight = FontWeight.ExtraLight,
-                        letterSpacing = 12.sp,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Light,
+                        letterSpacing = 6.sp,
                         color = TimesheetColors.DarkSlate,
-                        modifier = Modifier.padding(vertical = 16.dp)
+                        modifier = Modifier.padding(vertical = 12.dp)
                     )
 
                     // Bottom line with diamond (bottom left)
+                    // The line starts from the left and goes to near center
                     Box(modifier = Modifier.width(200.dp), contentAlignment = Alignment.BottomStart) {
-                        HorizontalDivider(color = TimesheetColors.DarkSlate, thickness = 1.dp)
                         Box(
                             modifier = Modifier
-                                .offset(y = (-4).dp, x = (-4).dp)
+                                .fillMaxWidth(0.55f)
+                                .height(1.dp)
+                                .background(TimesheetColors.DarkSlate)
+                                .align(Alignment.CenterStart)
+                        )
+                        Box(
+                            modifier = Modifier
                                 .size(8.dp)
                                 .rotate(45f)
                                 .background(TimesheetColors.DarkSlate)
+                                .align(Alignment.CenterStart)
+                                .offset(x = (-4).dp)
                         )
                     }
                 }
@@ -174,12 +192,12 @@ private fun TimesheetHeader(uiState: TimesheetUiState) {
 
         // Right Column: Info
         Column(
-            modifier = Modifier.weight(0.8f),
+            modifier = Modifier.weight(1f),
             horizontalAlignment = Alignment.End
         ) {
-            InfoBlock("NAME", uiState.job?.jobName ?: "Dr.Strange")
+            InfoBlock("NAME", (uiState.job?.jobName ?: "N/A").uppercase())
             Spacer(modifier = Modifier.height(16.dp))
-            InfoBlock("ADDRESS", uiState.job?.propertyAddress ?: "72 Atkinson Ave")
+            InfoBlock("ADDRESS", uiState.job?.propertyAddress ?: "N/A")
             Spacer(modifier = Modifier.height(16.dp))
             InfoBlock("ISSUE DATE", DateFormatUtils.formatTimestampToDisplay(System.currentTimeMillis()))
         }

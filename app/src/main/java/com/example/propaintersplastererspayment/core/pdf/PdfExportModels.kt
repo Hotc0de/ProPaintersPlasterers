@@ -6,7 +6,8 @@ data class PdfBusinessDetails(
     val phoneNumber: String,
     val email: String,
     val gstNumber: String,
-    val bankAccountNumber: String
+    val bankAccountNumber: String,
+    val bankName: String
 )
 
 data class WorkEntryPdfRow(

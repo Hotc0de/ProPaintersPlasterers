@@ -292,7 +292,8 @@ private fun AppSettingsEntity.toBusinessDetails(): PdfBusinessDetails = PdfBusin
     phoneNumber = phoneNumber,
     email = email,
     gstNumber = gstNumber,
-    bankAccountNumber = bankAccountNumber
+    bankAccountNumber = bankAccountNumber,
+    bankName = bankName
 )
 
 

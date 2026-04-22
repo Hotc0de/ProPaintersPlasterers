@@ -32,7 +32,7 @@ class PaintViewModel(val paintRepository: PaintRepository) : ViewModel() {
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
     }
 
-    fun addPaint(brandId: Long, name: String, code: String, hex: String, finishType: String = "", paintScope: String = "Interior", notes: String = "") {
+    fun addPaint(brandId: Long, name: String, code: String, hex: String, finishType: String = "", notes: String = "") {
         viewModelScope.launch {
             paintRepository.insertPaint(
                 PaintItemEntity(
@@ -41,14 +41,13 @@ class PaintViewModel(val paintRepository: PaintRepository) : ViewModel() {
                     paintCode = code,
                     hexCode = hex,
                     finishType = finishType,
-                    paintScope = paintScope,
                     notes = notes
                 )
             )
         }
     }
 
-    fun updatePaint(paintId: Long, brandId: Long, name: String, code: String, hex: String, finishType: String = "", paintScope: String = "Interior", notes: String = "") {
+    fun updatePaint(paintId: Long, brandId: Long, name: String, code: String, hex: String, finishType: String = "", notes: String = "") {
         viewModelScope.launch {
             paintRepository.updatePaint(
                 PaintItemEntity(
@@ -58,7 +57,6 @@ class PaintViewModel(val paintRepository: PaintRepository) : ViewModel() {
                     paintCode = code,
                     hexCode = hex,
                     finishType = finishType,
-                    paintScope = paintScope,
                     notes = notes
                 )
             )

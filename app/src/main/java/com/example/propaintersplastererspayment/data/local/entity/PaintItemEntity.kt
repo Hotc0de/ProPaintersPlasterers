@@ -25,8 +25,7 @@ data class PaintItemEntity(
     val paintCode: String = "",
     val hexCode: String = "",
     val finishType: String = "",
-    // Classification: Interior or Exterior
-    val paintScope: String = "Interior",
+    val paintScope: String = "",
     val notes: String = "",
     val isArchived: Boolean = false
 )

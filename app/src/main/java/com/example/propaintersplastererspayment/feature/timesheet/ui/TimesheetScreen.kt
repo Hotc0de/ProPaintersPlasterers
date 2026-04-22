@@ -29,6 +29,7 @@ import com.example.propaintersplastererspayment.core.util.DateFormatUtils
 import com.example.propaintersplastererspayment.core.util.WorkEntryTimeUtils
 import com.example.propaintersplastererspayment.data.local.entity.WorkEntryEntity
 import com.example.propaintersplastererspayment.feature.timesheet.ui.luxury.LuxuryTimesheet
+import com.example.propaintersplastererspayment.feature.timesheet.ui.luxury.TimesheetLuxuryPreview
 import com.example.propaintersplastererspayment.feature.timesheet.vm.TimesheetUiState
 import com.example.propaintersplastererspayment.feature.timesheet.vm.TimesheetViewModel
 import com.example.propaintersplastererspayment.feature.timesheet.vm.WorkEntryFormState
@@ -174,10 +175,8 @@ fun TimesheetScreen(
                                     .weight(1f)
                                     .verticalScroll(rememberScrollState())
                             ) {
-                                LuxuryTimesheet(
-                                    uiState = uiState,
-                                    materials = uiState.materials,
-                                    totalMaterialCost = uiState.totalMaterialCost
+                                TimesheetLuxuryPreview(
+                                    uiState = uiState
                                 )
                             }
                         }

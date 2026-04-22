@@ -32,6 +32,7 @@ data class SettingsFormState(
     val email: TextFieldValue = TextFieldValue(""),
     val gstNumber: TextFieldValue = TextFieldValue(""),
     val bankAccountNumber: TextFieldValue = TextFieldValue(""),
+    val bankName: TextFieldValue = TextFieldValue(""),
     val defaultLabourRateText: TextFieldValue = TextFieldValue(""),
     val defaultGstPercentText: TextFieldValue = TextFieldValue("15"),
     val gstEnabledByDefault: Boolean = true,
@@ -147,6 +148,7 @@ class SettingsViewModel(
                     email = TextFieldValue(firstSettings.email),
                     gstNumber = TextFieldValue(firstSettings.gstNumber),
                     bankAccountNumber = TextFieldValue(bankAccount, selection = androidx.compose.ui.text.TextRange(bankAccount.length)),
+                    bankName = TextFieldValue(firstSettings.bankName),
                     defaultLabourRateText = TextFieldValue(labourRate, selection = androidx.compose.ui.text.TextRange(labourRate.length)),
                     defaultGstPercentText = TextFieldValue(gstPercent, selection = androidx.compose.ui.text.TextRange(gstPercent.length)),
                     gstEnabledByDefault = firstSettings.gstEnabledByDefault
@@ -203,6 +205,10 @@ class SettingsViewModel(
         ) }
     }
 
+    fun onBankNameChange(value: TextFieldValue) {
+        formState.update { it.copy(bankName = value, errorMessage = null) }
+    }
+
     fun onDefaultLabourRateChange(value: TextFieldValue) {
         formState.update { it.copy(defaultLabourRateText = value, errorMessage = null) }
     }
@@ -240,6 +246,7 @@ class SettingsViewModel(
                         email = current.email.text.trim(),
                         gstNumber = current.gstNumber.text.trim(),
                         bankAccountNumber = current.bankAccountNumber.text.trim(),
+                        bankName = current.bankName.text.trim(),
                         defaultLabourRate = current.parsedLabourRate ?: 0.0,
                         defaultGstRate = (current.parsedGstPercent ?: 0.0) / 100.0,
                         gstEnabledByDefault = current.gstEnabledByDefault

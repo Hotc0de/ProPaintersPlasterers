@@ -32,13 +32,10 @@ fun AddEditPaintScreen(
     var code by remember { mutableStateOf("") }
     // Hex field always starts with '#' and cannot be removed by the user.
     var hex by remember { mutableStateOf("#") }
-    // finish options: include Matt and Satin; if user selects "Specify", they can enter a custom finish
-    val finishOptions = listOf("Flat", "Matt", "Satin", "Gloss", "Low Sheen", "Semi-Gloss", "Specify")
+    // finish options: if user selects "Specify", they can enter a custom finish
+    val finishOptions = listOf("Flat", "Gloss", "Low Sheen", "Semi-Gloss", "Specify")
     var selectedFinish by remember { mutableStateOf(finishOptions[0]) }
     var finishSpec by remember { mutableStateOf("") }
-    // Paint scope (Interior/Exterior)
-    val scopeOptions = listOf("Interior", "Exterior")
-    var selectedScope by remember { mutableStateOf(scopeOptions[0]) }
     var notes by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(paintId != null) }
 
@@ -60,7 +57,7 @@ fun AddEditPaintScreen(
                 } ?: "#"
                 // Pre-fill finish selection: if matches known option, select it; otherwise use Specify + fill spec
                 val existingFinish = paintDetail?.finishType ?: ""
-                			if (existingFinish.isNotBlank()) {
+                if (existingFinish.isNotBlank()) {
                     val matched = finishOptions.find { it.equals(existingFinish, ignoreCase = true) }
                     if (matched != null && matched != "Specify") {
                         selectedFinish = matched
@@ -73,8 +70,6 @@ fun AddEditPaintScreen(
                     selectedFinish = finishOptions[0]
                     finishSpec = ""
                 }
-                    // pre-fill scope
-                    selectedScope = paintDetail?.paintScope ?: selectedScope
                 notes = paintDetail?.notes ?: ""
                 isLoading = false
                 }
@@ -111,7 +106,6 @@ fun AddEditPaintScreen(
                                             code = code,
                                             hex = PaintColorUtils.normalizeHexCode(hex),
                                             finishType = finalFinish,
-                                            paintScope = selectedScope,
                                             notes = notes
                                         )
                                     } else {
@@ -122,7 +116,6 @@ fun AddEditPaintScreen(
                                             code = code,
                                             hex = PaintColorUtils.normalizeHexCode(hex),
                                             finishType = finalFinish,
-                                            paintScope = selectedScope,
                                             notes = notes
                                         )
                                     }
@@ -182,35 +175,6 @@ fun AddEditPaintScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Scope dropdown: Interior / Exterior
-                var scopeExpanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(
-                    expanded = scopeExpanded,
-                    onExpandedChange = { scopeExpanded = it },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    OutlinedTextField(
-                        value = selectedScope,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Scope") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = scopeExpanded) },
-                        modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
-                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
-                    )
-                    ExposedDropdownMenu(expanded = scopeExpanded, onDismissRequest = { scopeExpanded = false }) {
-                        scopeOptions.forEach { opt ->
-                            DropdownMenuItem(
-                                text = { Text(opt) },
-                                onClick = {
-                                    selectedScope = opt
-                                    scopeExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-
                 // Finish dropdown with preset options + 'Specify' for custom input
                 var finishExpanded by remember { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
@@ -248,7 +212,6 @@ fun AddEditPaintScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
-
 
                 IndustrialTextField(
                     value = hex,
