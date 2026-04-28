@@ -1,8 +1,11 @@
 package com.example.propaintersplastererspayment.feature.job.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -11,6 +14,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -158,23 +163,36 @@ private fun RoomCard(
                 SurfaceCountBadge(count = surfaces.size)
             }
 
-            Row {
-                IconButton(onClick = onEdit) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = IndustrialGold)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Row {
+                    IconButton(onClick = onEdit) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = IndustrialGold)
+                    }
+                    var showConfirm by remember { mutableStateOf(false) }
+                    IconButton(onClick = { showConfirm = true }) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                    }
+                    if (showConfirm) {
+                        com.example.propaintersplastererspayment.ui.components.ConfirmDeleteDialog(
+                            title = "Delete Room",
+                            message = "Are you sure you want to delete '${room.displayName}' and all its surfaces?",
+                            onConfirm = {
+                                showConfirm = false
+                                onDelete()
+                            },
+                            onDismiss = { showConfirm = false }
+                        )
+                    }
                 }
-                var showConfirm by remember { mutableStateOf(false) }
-                IconButton(onClick = { showConfirm = true }) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
-                }
-                if (showConfirm) {
-                    com.example.propaintersplastererspayment.ui.components.ConfirmDeleteDialog(
-                        title = "Delete Room",
-                        message = "Are you sure you want to delete '${room.displayName}' and all its surfaces?",
-                        onConfirm = {
-                            showConfirm = false
-                            onDelete()
-                        },
-                        onDismiss = { showConfirm = false }
+
+                // Main Coat Color Icon
+                roomWithSurfaces.maincoatHexCode?.let { hex ->
+                    Box(
+                        modifier = Modifier
+                            .padding(bottom = 8.dp)
+                            .size(24.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(parseColor(hex))
                     )
                 }
             }
@@ -194,5 +212,13 @@ private fun SurfaceCountBadge(count: Int) {
             style = MaterialTheme.typography.labelSmall,
             color = IndustrialGold
         )
+    }
+}
+
+private fun parseColor(hex: String): Color {
+    return try {
+        Color(android.graphics.Color.parseColor(hex))
+    } catch (e: Exception) {
+        Color.Transparent
     }
 }

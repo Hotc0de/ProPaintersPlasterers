@@ -5,13 +5,12 @@ import androidx.room.Relation
 import com.example.propaintersplastererspayment.data.local.entity.RoomEntity
 import com.example.propaintersplastererspayment.data.local.entity.SurfaceEntity
 
-data class RoomWithSurfaces(
+data class RoomWithSurfaceEntities(
     @Embedded val room: RoomEntity,
     @Relation(
         entity = SurfaceEntity::class,
         parentColumn = "roomId",
         entityColumn = "roomId"
     )
-    val surfaces: List<SurfaceEntity>,
-    val maincoatHexCode: String? = null
+    val surfaces: List<SurfaceEntity>
 )

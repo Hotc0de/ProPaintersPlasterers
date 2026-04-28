@@ -28,11 +28,35 @@ interface RoomDao {
     suspend fun getRoomById(roomId: Long): RoomEntity?
 
     @Transaction
-    @Query("SELECT * FROM rooms WHERE roomId = :roomId LIMIT 1")
+    @Query("""
+        SELECT 
+            r.*,
+            (SELECT mc_p.hexCode 
+             FROM surfaces s
+             LEFT JOIN job_paints mc_jp ON s.maincoatJobPaintId = mc_jp.jobPaintId
+             LEFT JOIN paint_items mc_p ON mc_jp.paintId = mc_p.paintId
+             WHERE s.roomId = r.roomId AND s.maincoatJobPaintId IS NOT NULL
+             LIMIT 1) as maincoatHexCode
+        FROM rooms r 
+        WHERE r.roomId = :roomId 
+        LIMIT 1
+    """)
     fun observeRoomWithSurfaces(roomId: Long): Flow<RoomWithSurfaces?>
 
     @Transaction
-    @Query("SELECT * FROM rooms WHERE jobId = :jobId ORDER BY sortOrder ASC, createdAt ASC")
+    @Query("""
+        SELECT 
+            r.*,
+            (SELECT mc_p.hexCode 
+             FROM surfaces s
+             LEFT JOIN job_paints mc_jp ON s.maincoatJobPaintId = mc_jp.jobPaintId
+             LEFT JOIN paint_items mc_p ON mc_jp.paintId = mc_p.paintId
+             WHERE s.roomId = r.roomId AND s.maincoatJobPaintId IS NOT NULL
+             LIMIT 1) as maincoatHexCode
+        FROM rooms r 
+        WHERE r.jobId = :jobId 
+        ORDER BY r.sortOrder ASC, r.createdAt ASC
+    """)
     fun observeRoomsWithSurfacesForJob(jobId: Long): Flow<List<RoomWithSurfaces>>
 
     @Transaction

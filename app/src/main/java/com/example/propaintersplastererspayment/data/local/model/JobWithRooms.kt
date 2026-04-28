@@ -12,5 +12,5 @@ data class JobWithRooms(
         parentColumn = "jobId",
         entityColumn = "jobId"
     )
-    val rooms: List<RoomWithSurfaces>
+    val rooms: List<RoomWithSurfaceEntities>
 )
