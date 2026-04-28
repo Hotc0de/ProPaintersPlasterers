@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -89,6 +90,7 @@ fun TimesheetRoute(
         onSaveEntry = viewModel::saveEntry,
         onDeleteEntry = viewModel::deleteEntry,
         onToggleLuxuryPreview = viewModel::toggleLuxuryPreview,
+        onExitLuxuryPreview = viewModel::exitLuxuryPreview,
         onMessageShown = viewModel::clearUserMessage
     )
 }
@@ -107,6 +109,7 @@ fun TimesheetScreen(
     onSaveEntry: () -> Unit,
     onDeleteEntry: (Long) -> Unit,
     onToggleLuxuryPreview: () -> Unit,
+    onExitLuxuryPreview: () -> Unit,
     onMessageShown: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -114,7 +117,7 @@ fun TimesheetScreen(
 
     if (uiState.isLuxuryPreviewMode) {
         BackHandler {
-            onToggleLuxuryPreview()
+            onExitLuxuryPreview()
         }
     }
 
@@ -175,8 +178,24 @@ fun TimesheetScreen(
                                 )
                             }
                             TimesheetLuxuryPreviewPaging(
-                                uiState = uiState
+                                uiState = uiState,
+                                modifier = Modifier.weight(1f)
                             )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            SecondaryButton(
+                                text = "Back to Timesheet",
+                                onClick = onExitLuxuryPreview,
+                                modifier = Modifier.fillMaxWidth(),
+                                icon = {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = null,
+                                        tint = IndustrialGold,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
                         }
                     } else {
                         LazyColumn(

@@ -7,7 +7,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-// import androidx.compose.material.icons.filled.Delete (removed unused)
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,10 +21,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import com.example.propaintersplastererspayment.feature.paint.vm.PaintViewModel
 import com.example.propaintersplastererspayment.ui.components.ColorSwatch
+import com.example.propaintersplastererspayment.ui.components.ConfirmDeleteDialog
 import com.example.propaintersplastererspayment.ui.components.IndustrialCard
 import com.example.propaintersplastererspayment.ui.components.IndustrialFAB
 import com.example.propaintersplastererspayment.ui.components.IndustrialTextField
 import com.example.propaintersplastererspayment.ui.theme.IndustrialGold
+import com.example.propaintersplastererspayment.ui.theme.OffWhite
 import com.example.propaintersplastererspayment.ui.theme.TextMuted
 
 import com.example.propaintersplastererspayment.ui.components.PrimaryButton
@@ -139,24 +142,63 @@ fun BrandDetailScreen(
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
+                                    verticalAlignment = Alignment.Top
                                 ) {
-                                    Text(
-                                        text = brand?.brandName ?: "",
-                                        style = MaterialTheme.typography.headlineMedium,
-                                        color = IndustrialGold,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 32.sp
-                                    )
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = paint.paintName,
+                                            style = MaterialTheme.typography.headlineSmall,
+                                            color = IndustrialGold,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 24.sp
+                                        )
+                                        if (paint.paintCode.isNotBlank()) {
+                                            Text(
+                                                text = "Code: ${paint.paintCode}",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = TextMuted,
+                                                fontSize = 14.sp
+                                            )
+                                        }
+                                    }
+
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        IconButton(onClick = { onEditPaint(paint.paintId) }) {
+                                            Icon(
+                                                Icons.Default.Edit,
+                                                contentDescription = "Edit",
+                                                tint = IndustrialGold
+                                            )
+                                        }
+                                        var showDeleteDialog by remember { mutableStateOf(false) }
+                                        IconButton(onClick = { showDeleteDialog = true }) {
+                                            Icon(
+                                                Icons.Default.Delete,
+                                                contentDescription = "Delete",
+                                                tint = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                        if (showDeleteDialog) {
+                                            ConfirmDeleteDialog(
+                                                title = "Delete Paint",
+                                                message = "Are you sure you want to delete '${paint.paintName}'? This action cannot be undone.",
+                                                onConfirm = {
+                                                    viewModel.deletePaint(paint)
+                                                    showDeleteDialog = false
+                                                },
+                                                onDismiss = { showDeleteDialog = false }
+                                            )
+                                        }
+                                    }
                                 }
                                 
                                 Spacer(modifier = Modifier.height(12.dp))
                                 
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.Top
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    ColorSwatch(hexCode = paint.hexCode, size = 80.dp)
+                                    ColorSwatch(hexCode = paint.hexCode, size = 64.dp)
 
                                     Spacer(modifier = Modifier.width(20.dp))
 
@@ -179,32 +221,14 @@ fun BrandDetailScreen(
                                         
                                         Spacer(modifier = Modifier.height(8.dp))
 
-                                        if (paint.paintName.isNotBlank()) {
-                                            Text(
-                                                text = paint.paintName,
-                                                style = MaterialTheme.typography.headlineSmall,
-                                                color = Color.White,
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 20.sp
-                                            )
-                                        }
-                                        if (paint.paintCode.isNotBlank()) {
-                                            Text(
-                                                text = "Code: ${paint.paintCode}",
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                color = TextMuted,
-                                                fontSize = 12.sp
-                                            )
-                                        }
                                         if (paint.finishType.isNotBlank()) {
                                             Text(
                                                 text = paint.finishType,
                                                 style = MaterialTheme.typography.bodyMedium,
-                                                color = TextMuted,
-                                                fontSize = 12.sp
+                                                color = OffWhite,
+                                                fontSize = 14.sp
                                             )
                                         }
-                                        Spacer(modifier = Modifier.height(4.dp))
                                         Text(
                                             text = paint.hexCode.uppercase(),
                                             style = MaterialTheme.typography.titleMedium,
