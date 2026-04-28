@@ -36,7 +36,13 @@ interface RoomDao {
              LEFT JOIN job_paints mc_jp ON s.maincoatJobPaintId = mc_jp.jobPaintId
              LEFT JOIN paint_items mc_p ON mc_jp.paintId = mc_p.paintId
              WHERE s.roomId = r.roomId AND s.maincoatJobPaintId IS NOT NULL
-             LIMIT 1) as maincoatHexCode
+             LIMIT 1) as maincoatHexCode,
+            (SELECT mc_p.paintName 
+             FROM surfaces s
+             LEFT JOIN job_paints mc_jp ON s.maincoatJobPaintId = mc_jp.jobPaintId
+             LEFT JOIN paint_items mc_p ON mc_jp.paintId = mc_p.paintId
+             WHERE s.roomId = r.roomId AND s.maincoatJobPaintId IS NOT NULL
+             LIMIT 1) as maincoatPaintName
         FROM rooms r 
         WHERE r.roomId = :roomId 
         LIMIT 1
@@ -52,7 +58,13 @@ interface RoomDao {
              LEFT JOIN job_paints mc_jp ON s.maincoatJobPaintId = mc_jp.jobPaintId
              LEFT JOIN paint_items mc_p ON mc_jp.paintId = mc_p.paintId
              WHERE s.roomId = r.roomId AND s.maincoatJobPaintId IS NOT NULL
-             LIMIT 1) as maincoatHexCode
+             LIMIT 1) as maincoatHexCode,
+            (SELECT mc_p.paintName 
+             FROM surfaces s
+             LEFT JOIN job_paints mc_jp ON s.maincoatJobPaintId = mc_jp.jobPaintId
+             LEFT JOIN paint_items mc_p ON mc_jp.paintId = mc_p.paintId
+             WHERE s.roomId = r.roomId AND s.maincoatJobPaintId IS NOT NULL
+             LIMIT 1) as maincoatPaintName
         FROM rooms r 
         WHERE r.jobId = :jobId 
         ORDER BY r.sortOrder ASC, r.createdAt ASC

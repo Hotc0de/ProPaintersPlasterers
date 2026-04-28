@@ -3,6 +3,23 @@
   <component name="CopilotDiffPersistence">
     <option name="pendingDiffs">
       <map>
+        <entry key="$PROJECT_DIR$/app/src/main/java/com/example/propaintersplastererspayment/data/local/model/JobWithRooms.kt">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/app/src/main/java/com/example/propaintersplastererspayment/data/local/model/JobWithRooms.kt" />
+              <option name="originalContent" value="package com.example.propaintersplastererspayment.data.local.model&#10;&#10;import androidx.room.Embedded&#10;import androidx.room.Relation&#10;import com.example.propaintersplastererspayment.data.local.entity.JobEntity&#10;import com.example.propaintersplastererspayment.data.local.entity.RoomEntity&#10;&#10;data class JobWithRooms(&#10;    @Embedded val job: JobEntity,&#10;    @Relation(&#10;        entity = RoomEntity::class,&#10;        parentColumn = &quot;jobId&quot;,&#10;        entityColumn = &quot;jobId&quot;&#10;    )&#10;    val rooms: List&lt;RoomWithSurfaces&gt;&#10;)&#10;" />
+              <option name="updatedContent" value="package com.example.propaintersplastererspayment.data.local.model&#10;&#10;import androidx.room.Embedded&#10;import androidx.room.Relation&#10;import com.example.propaintersplastererspayment.data.local.entity.JobEntity&#10;import com.example.propaintersplastererspayment.data.local.entity.RoomEntity&#10;&#10;data class JobWithRooms(&#10;    @Embedded val job: JobEntity,&#10;    @Relation(&#10;        entity = RoomEntity::class,&#10;        parentColumn = &quot;jobId&quot;,&#10;        entityColumn = &quot;jobId&quot;&#10;    )&#10;    val rooms: List&lt;RoomWithSurfaceEntities&gt;&#10;)&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/app/src/main/java/com/example/propaintersplastererspayment/data/local/model/RoomWithSurfaceEntities.kt">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/app/src/main/java/com/example/propaintersplastererspayment/data/local/model/RoomWithSurfaceEntities.kt" />
+              <option name="updatedContent" value="package com.example.propaintersplastererspayment.data.local.model&#10;&#10;import androidx.room.Embedded&#10;import androidx.room.Relation&#10;import com.example.propaintersplastererspayment.data.local.entity.RoomEntity&#10;import com.example.propaintersplastererspayment.data.local.entity.SurfaceEntity&#10;&#10;data class RoomWithSurfaceEntities(&#10;    @Embedded val room: RoomEntity,&#10;    @Relation(&#10;        entity = SurfaceEntity::class,&#10;        parentColumn = &quot;roomId&quot;,&#10;        entityColumn = &quot;roomId&quot;&#10;    )&#10;    val surfaces: List&lt;SurfaceEntity&gt;&#10;)" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
         <entry key="$PROJECT_DIR$/app/src/main/java/com/example/propaintersplastererspayment/data/local/model/RoomWithSurfaces.kt">
           <value>
             <PendingDiffInfo>

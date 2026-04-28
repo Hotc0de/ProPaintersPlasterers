@@ -13,5 +13,6 @@ data class RoomWithSurfaces(
         entityColumn = "roomId"
     )
     val surfaces: List<SurfaceEntity>,
-    val maincoatHexCode: String? = null
+    val maincoatHexCode: String? = null,
+    val maincoatPaintName: String? = null
 )

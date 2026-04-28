@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
@@ -163,14 +164,22 @@ private fun RoomCard(
                 SurfaceCountBadge(count = surfaces.size)
             }
 
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Row {
+            // Action block starting at the "yellow line"
+            Column(
+                modifier = Modifier.weight(0.7f),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Row(verticalAlignment = Alignment.Top) {
                     IconButton(onClick = onEdit) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit", tint = IndustrialGold)
                     }
                     var showConfirm by remember { mutableStateOf(false) }
                     IconButton(onClick = { showConfirm = true }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Delete",
+                            tint = MaterialTheme.colorScheme.error
+                        )
                     }
                     if (showConfirm) {
                         com.example.propaintersplastererspayment.ui.components.ConfirmDeleteDialog(
@@ -185,15 +194,29 @@ private fun RoomCard(
                     }
                 }
 
-                // Main Coat Color Icon
+                // Main Coat Color + Paint Name
                 roomWithSurfaces.maincoatHexCode?.let { hex ->
-                    Box(
-                        modifier = Modifier
-                            .padding(bottom = 8.dp)
-                            .size(24.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(parseColor(hex))
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(start = 12.dp, bottom = 8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(parseColor(hex))
+                        )
+                        roomWithSurfaces.maincoatPaintName?.let { name ->
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = name,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = TextMuted,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
                 }
             }
         }
