@@ -76,3 +76,28 @@ app/src/main/java/com/example/propaintersplastererspayment/
 ./gradlew testDebugUnitTest
 ```
 
+## Data safety on updates
+
+- `fallbackToDestructiveMigration()` is disabled to prevent silent data wipes.
+- All Room migrations are registered through `AppDatabase.ALL_MIGRATIONS`.
+- Room schema export is enabled (`app/schemas`) so schema changes are tracked.
+- Android backup/restore is enabled for app database and shared preferences.
+
+### Release checklist for DB changes
+
+1. Increase `version` in `AppDatabase`.
+2. Add a forward migration object (for example `MIGRATION_23_24`).
+3. Add the migration to `AppDatabase.ALL_MIGRATIONS`.
+4. Build and run migration validation:
+
+```bash
+./gradlew :app:kspDebugKotlin
+./gradlew :app:assembleDebug :app:testDebugUnitTest
+```
+
+5. Run instrumentation migration tests on a device/emulator:
+
+```bash
+./gradlew :app:connectedDebugAndroidTest
+```
+
