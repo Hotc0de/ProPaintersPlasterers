@@ -162,7 +162,7 @@ fun BrandDetailScreen(
 
                                     Column(modifier = Modifier.weight(1f)) {
                                         val scope = paint.paintScope.ifBlank { "Interior" }
-                                        val scopeColor = if (scope.equals("Exterior", ignoreCase = true)) Color(0xFF4FC3F7) else IndustrialGold
+                                        val scopeColor = if (scope.equals("Exterior", ignoreCase = true)) Color(0xFF22C55E) else IndustrialGold
                                         Box(
                                             modifier = Modifier
                                                 .background(scopeColor, shape = RoundedCornerShape(12.dp))

@@ -1,5 +1,6 @@
 package com.example.propaintersplastererspayment.feature.timesheet.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -38,6 +39,7 @@ import com.example.propaintersplastererspayment.ui.theme.*
 @Composable
 fun TimesheetRoute(
     jobId: Long,
+    onBackPressed: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -110,6 +112,12 @@ fun TimesheetScreen(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
+    if (uiState.isLuxuryPreviewMode) {
+        BackHandler {
+            onToggleLuxuryPreview()
+        }
+    }
+
     LaunchedEffect(uiState.userMessage) {
         uiState.userMessage?.let { message ->
             snackbarHostState.showSnackbar(message)
@@ -122,7 +130,7 @@ fun TimesheetScreen(
         containerColor = CharcoalBackground,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         floatingActionButton = {
-            if (uiState.job != null) {
+            if (uiState.job != null && !uiState.isLuxuryPreviewMode) {
                 IndustrialFAB(onClick = onAddEntry)
             }
         }
@@ -169,17 +177,6 @@ fun TimesheetScreen(
                             TimesheetLuxuryPreviewPaging(
                                 uiState = uiState
                             )
-                            /*
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .verticalScroll(rememberScrollState())
-                            ) {
-                                TimesheetLuxuryPreview(
-                                    uiState = uiState
-                                )
-                            }
-                            */
                         }
                     } else {
                         LazyColumn(

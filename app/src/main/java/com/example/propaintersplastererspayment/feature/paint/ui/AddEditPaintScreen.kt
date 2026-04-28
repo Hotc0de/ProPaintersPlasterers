@@ -34,6 +34,8 @@ fun AddEditPaintScreen(
     var hex by remember { mutableStateOf("#") }
     // finish options: if user selects "Specify", they can enter a custom finish
     val finishOptions = listOf("Flat", "Gloss", "Low Sheen", "Semi-Gloss", "Specify")
+    val scopeOptions = listOf("Interior", "Exterior")
+    var selectedScope by remember { mutableStateOf(scopeOptions[0]) }
     var selectedFinish by remember { mutableStateOf(finishOptions[0]) }
     var finishSpec by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
@@ -70,6 +72,7 @@ fun AddEditPaintScreen(
                     selectedFinish = finishOptions[0]
                     finishSpec = ""
                 }
+                selectedScope = paintDetail?.paintScope?.takeIf { it.isNotBlank() } ?: scopeOptions[0]
                 notes = paintDetail?.notes ?: ""
                 isLoading = false
                 }
@@ -105,6 +108,7 @@ fun AddEditPaintScreen(
                                             name = name,
                                             code = code,
                                             hex = PaintColorUtils.normalizeHexCode(hex),
+                                            paintScope = selectedScope,
                                             finishType = finalFinish,
                                             notes = notes
                                         )
@@ -115,6 +119,7 @@ fun AddEditPaintScreen(
                                             name = name,
                                             code = code,
                                             hex = PaintColorUtils.normalizeHexCode(hex),
+                                            paintScope = selectedScope,
                                             finishType = finalFinish,
                                             notes = notes
                                         )
@@ -176,6 +181,34 @@ fun AddEditPaintScreen(
                 )
 
                 // Finish dropdown with preset options + 'Specify' for custom input
+                var scopeExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = scopeExpanded,
+                    onExpandedChange = { scopeExpanded = it },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = selectedScope,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Scope") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = scopeExpanded) },
+                        modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                    )
+                    ExposedDropdownMenu(expanded = scopeExpanded, onDismissRequest = { scopeExpanded = false }) {
+                        scopeOptions.forEach { opt ->
+                            DropdownMenuItem(
+                                text = { Text(opt) },
+                                onClick = {
+                                    selectedScope = opt
+                                    scopeExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
                 var finishExpanded by remember { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
                     expanded = finishExpanded,

@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -36,6 +37,9 @@ fun PaintBrandListScreen(
     val brands by viewModel.brands.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var newBrandName by remember { mutableStateOf("") }
+    var showRenameDialog by remember { mutableStateOf(false) }
+    var brandToRenameId by remember { mutableStateOf<Long?>(null) }
+    var renameBrandName by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -109,11 +113,26 @@ fun PaintBrandListScreen(
                                     style = MaterialTheme.typography.titleLarge,
                                     color = Color.White
                                 )
-                                Icon(
-                                    Icons.Default.ChevronRight,
-                                    contentDescription = null,
-                                    tint = IndustrialGold.copy(alpha = 0.7f)
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    IconButton(
+                                        onClick = {
+                                            brandToRenameId = brand.brandId
+                                            renameBrandName = brand.brandName
+                                            showRenameDialog = true
+                                        }
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Edit,
+                                            contentDescription = "Rename ${brand.brandName}",
+                                            tint = IndustrialGold
+                                        )
+                                    }
+                                    Icon(
+                                        Icons.Default.ChevronRight,
+                                        contentDescription = null,
+                                        tint = IndustrialGold.copy(alpha = 0.7f)
+                                    )
+                                }
                             }
                         }
                     }
@@ -148,6 +167,50 @@ fun PaintBrandListScreen(
                 },
                 dismissButton = {
                     TextButton(onClick = { showAddDialog = false }) {
+                        Text("CANCEL", color = Color.Gray)
+                    }
+                },
+                containerColor = Color(0xFF1A1A1A)
+            )
+        }
+
+        if (showRenameDialog) {
+            AlertDialog(
+                onDismissRequest = {
+                    showRenameDialog = false
+                    brandToRenameId = null
+                },
+                title = { Text("Rename Paint Brand", color = Color.White) },
+                text = {
+                    IndustrialTextField(
+                        value = renameBrandName,
+                        onValueChange = { renameBrandName = it },
+                        label = "Brand Name",
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            val brandId = brandToRenameId
+                            if (brandId != null && renameBrandName.trim().isNotBlank()) {
+                                viewModel.renameBrand(brandId, renameBrandName)
+                                showRenameDialog = false
+                                brandToRenameId = null
+                                renameBrandName = ""
+                            }
+                        }
+                    ) {
+                        Text("SAVE", color = IndustrialGold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            showRenameDialog = false
+                            brandToRenameId = null
+                        }
+                    ) {
                         Text("CANCEL", color = Color.Gray)
                     }
                 },

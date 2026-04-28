@@ -10,6 +10,7 @@ interface PaintRepository {
     // Brands
     fun getAllBrandsStream(): Flow<List<PaintBrandEntity>>
     suspend fun insertBrand(brand: PaintBrandEntity): Long
+    suspend fun renameBrand(brandId: Long, newName: String)
     suspend fun deleteBrand(brand: PaintBrandEntity)
 
     // Paint Items

@@ -14,6 +14,9 @@ interface PaintDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBrand(brand: PaintBrandEntity): Long
 
+    @Query("UPDATE paint_brands SET brandName = :newName WHERE brandId = :brandId")
+    suspend fun renameBrand(brandId: Long, newName: String)
+
     @Delete
     suspend fun deleteBrand(brand: PaintBrandEntity)
 

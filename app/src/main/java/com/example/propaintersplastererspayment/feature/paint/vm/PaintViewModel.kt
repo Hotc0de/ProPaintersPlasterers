@@ -22,6 +22,15 @@ class PaintViewModel(val paintRepository: PaintRepository) : ViewModel() {
         }
     }
 
+    fun renameBrand(brandId: Long, newName: String) {
+        val trimmedName = newName.trim()
+        if (trimmedName.isBlank()) return
+
+        viewModelScope.launch {
+            paintRepository.renameBrand(brandId, trimmedName)
+        }
+    }
+
     fun getPaintsForBrand(brandId: Long): StateFlow<List<PaintItemEntity>> {
         return paintRepository.getPaintsForBrandStream(brandId)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -32,7 +41,15 @@ class PaintViewModel(val paintRepository: PaintRepository) : ViewModel() {
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
     }
 
-    fun addPaint(brandId: Long, name: String, code: String, hex: String, finishType: String = "", notes: String = "") {
+    fun addPaint(
+        brandId: Long,
+        name: String,
+        code: String,
+        hex: String,
+        paintScope: String = "Interior",
+        finishType: String = "",
+        notes: String = ""
+    ) {
         viewModelScope.launch {
             paintRepository.insertPaint(
                 PaintItemEntity(
@@ -40,6 +57,7 @@ class PaintViewModel(val paintRepository: PaintRepository) : ViewModel() {
                     paintName = name,
                     paintCode = code,
                     hexCode = hex,
+                    paintScope = paintScope,
                     finishType = finishType,
                     notes = notes
                 )
@@ -47,7 +65,16 @@ class PaintViewModel(val paintRepository: PaintRepository) : ViewModel() {
         }
     }
 
-    fun updatePaint(paintId: Long, brandId: Long, name: String, code: String, hex: String, finishType: String = "", notes: String = "") {
+    fun updatePaint(
+        paintId: Long,
+        brandId: Long,
+        name: String,
+        code: String,
+        hex: String,
+        paintScope: String = "Interior",
+        finishType: String = "",
+        notes: String = ""
+    ) {
         viewModelScope.launch {
             paintRepository.updatePaint(
                 PaintItemEntity(
@@ -56,6 +83,7 @@ class PaintViewModel(val paintRepository: PaintRepository) : ViewModel() {
                     paintName = name,
                     paintCode = code,
                     hexCode = hex,
+                    paintScope = paintScope,
                     finishType = finishType,
                     notes = notes
                 )

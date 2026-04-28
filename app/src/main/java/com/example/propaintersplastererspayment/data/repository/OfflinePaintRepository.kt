@@ -16,7 +16,10 @@ class OfflinePaintRepository(
     override fun getAllBrandsStream(): Flow<List<PaintBrandEntity>> = paintDao.getAllBrands()
     
     override suspend fun insertBrand(brand: PaintBrandEntity): Long = paintDao.insertBrand(brand)
-    
+
+    override suspend fun renameBrand(brandId: Long, newName: String) =
+        paintDao.renameBrand(brandId, newName)
+
     override suspend fun deleteBrand(brand: PaintBrandEntity) = paintDao.deleteBrand(brand)
 
     override fun getPaintsForBrandStream(brandId: Long): Flow<List<PaintItemEntity>> = 

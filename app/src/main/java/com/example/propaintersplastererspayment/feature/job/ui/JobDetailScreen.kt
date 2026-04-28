@@ -156,7 +156,12 @@ fun JobDetailScreen(
                             )
                         }
                     }
-                    JobDetailTab.TIMESHEET -> TimesheetRoute(jobId = jobId)
+                    JobDetailTab.TIMESHEET -> TimesheetRoute(
+                        jobId = jobId,
+                        onBackPressed = {
+                            // This ensures that when in preview mode, we can go back
+                        }
+                    )
                     JobDetailTab.MATERIALS -> MaterialsRoute(jobId = jobId)
                     JobDetailTab.ACCESS -> JobAccessRoute(jobId = jobId)
                     JobDetailTab.NOTES -> JobNotesRoute(jobId = jobId)

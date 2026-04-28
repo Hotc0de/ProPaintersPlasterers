@@ -5,6 +5,9 @@ import com.example.propaintersplastererspayment.core.util.CurrencyFormatUtils
 import com.example.propaintersplastererspayment.core.util.DateFormatUtils
 import com.example.propaintersplastererspayment.core.util.WorkEntryTimeUtils
 
+/*
+Unused class (no references found across app/src/main, app/src/debug, app/src/test, app/src/androidTest).
+Kept commented for safe rollback.
 class TimesheetPdfRendererOld(
     private val data: TimesheetPdfData,
     private val pageWidth: Int,
@@ -338,3 +341,4 @@ class TimesheetPdfRendererOld(
         canvas.drawPath(path, Paint().apply { this.color = color; style = Paint.Style.FILL; isAntiAlias = true })
     }
 }
+*/

@@ -119,6 +119,10 @@ class TimesheetViewModel(
         isLuxuryPreviewMode.update { !it }
     }
 
+    fun exitLuxuryPreview() {
+        isLuxuryPreviewMode.value = false
+    }
+
     fun openAddEntry() {
         formState.value = WorkEntryFormState()
         isFormVisible.value = true
