@@ -157,7 +157,7 @@ fun TimesheetScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
+                                horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
@@ -165,9 +165,6 @@ fun TimesheetScreen(
                                     style = MaterialTheme.typography.titleMedium,
                                     color = IndustrialGold
                                 )
-                                TextButton(onClick = onToggleLuxuryPreview) {
-                                    Text("Go Back", color = IndustrialGold)
-                                }
                             }
                             TimesheetLuxuryPreviewPaging(
                                 uiState = uiState
