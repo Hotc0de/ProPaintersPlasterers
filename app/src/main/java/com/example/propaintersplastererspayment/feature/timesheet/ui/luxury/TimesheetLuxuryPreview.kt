@@ -7,7 +7,10 @@ import android.graphics.Typeface
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.nativeCanvas
@@ -37,7 +40,7 @@ fun TimesheetLuxuryPreview(
         business = PdfBusinessDetails(
             businessName = "Pro Painters & Plasterers",
             address = "170 Tancred Street",
-            phoneNumber = "022-10701719",
+            phoneNumber = "022-1070-1719",
             email = "painter@gmail.com",
             gstNumber = "???",
             bankAccountNumber = "???",
@@ -71,71 +74,78 @@ fun TimesheetLuxuryPreview(
         margin = 40f
     )
 
-    // Using a Box to provide a white background and some elevation/shadow-like effect if needed
+    // FIXED: Wrap in a scrollable Box aligned to TopCenter to prevent header clipping on Fold/Wide devices
     Box(
         modifier = modifier
-            .fillMaxWidth()
-            .aspectRatio(0.707f) // A4 Aspect Ratio
-            .background(Color.White)
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+        contentAlignment = Alignment.TopCenter
     ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            drawContext.canvas.nativeCanvas.withSave {
-                // Scale the canvas to fit the A4 document dimensions used in PdfExportService
-                val scale = size.width / 595f
-                scale(scale, scale)
-                
-                // Draw white background
-                val bgPaint = Paint().apply {
-                    color = android.graphics.Color.WHITE
-                    style = Paint.Style.FILL
-                }
-                drawRect(0f, 0f, 595f, 842f, bgPaint)
-                
-                // Draw top bar
-                val darkBarPaint = Paint().apply {
-                    color = "#1E293B".toColorInt()
-                    style = Paint.Style.FILL
-                }
-                drawRect(0f, 0f, 595f, 4f, darkBarPaint)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(0.707f) // A4 Aspect Ratio
+                .background(Color.White)
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                drawContext.canvas.nativeCanvas.withSave {
+                    // Scale the canvas to fit the A4 document dimensions used in PdfExportService
+                    val scale = size.width / 595f
+                    scale(scale, scale)
+                    
+                    // Draw white background
+                    val bgPaint = Paint().apply {
+                        color = android.graphics.Color.WHITE
+                        style = Paint.Style.FILL
+                    }
+                    drawRect(0f, 0f, 595f, 842f, bgPaint)
+                    
+                    // Draw top bar
+                    val darkBarPaint = Paint().apply {
+                        color = "#1A1A1B".toColorInt() // Charcoal
+                        style = Paint.Style.FILL
+                    }
+                    drawRect(0f, 0f, 595f, 4f, darkBarPaint)
 
-                // 1. Draw Header
-                var currentY = 20f
-                currentY = renderer.drawHeader(this, currentY, isFirstPage = true)
+                    // 1. Draw Header
+                    var currentY = 20f
+                    currentY = renderer.drawHeader(this, currentY, isFirstPage = true)
 
-                // 2. Draw Body Content
-                // Draw Work Entries
-                renderer.drawSectionTitle(this, currentY, "Work Entries")
-                currentY += 10f
-
-                renderer.drawWorkEntriesTableHeader(this, currentY)
-                currentY += TimesheetPdfRenderer.TABLE_HEADER_HEIGHT
-
-                pdfData.workEntries.forEachIndexed { index, entry ->
-                    renderer.drawWorkEntryRow(this, currentY, entry, index % 2 != 0)
-                    currentY += TimesheetPdfRenderer.TABLE_ROW_HEIGHT
-                }
-
-                renderer.drawTotalHours(this, currentY, pdfData.totalHours)
-                currentY += TimesheetPdfRenderer.TABLE_TOTAL_HEIGHT + 20f
-
-                // Draw Materials if any
-                if (pdfData.materials.isNotEmpty()) {
-                    renderer.drawSectionTitle(this, currentY, "Materials")
+                    // 2. Draw Body Content
+                    // Draw Work Entries
+                    renderer.drawSectionTitle(this, currentY, "Work Entries")
                     currentY += 10f
 
-                    renderer.drawMaterialsTableHeader(this, currentY)
+                    renderer.drawWorkEntriesTableHeader(this, currentY)
                     currentY += TimesheetPdfRenderer.TABLE_HEADER_HEIGHT
 
-                    pdfData.materials.forEachIndexed { index, material ->
-                        renderer.drawMaterialRow(this, currentY, material, index % 2 != 0)
+                    pdfData.workEntries.forEachIndexed { index, entry ->
+                        renderer.drawWorkEntryRow(this, currentY, entry, index % 2 != 0)
                         currentY += TimesheetPdfRenderer.TABLE_ROW_HEIGHT
                     }
 
-                    renderer.drawTotalMaterialCost(this, currentY, pdfData.totalMaterialCost)
+                    renderer.drawTotalHours(this, currentY, pdfData.totalHours)
+                    currentY += TimesheetPdfRenderer.TABLE_TOTAL_HEIGHT + 20f
+
+                    // Draw Materials if any
+                    if (pdfData.materials.isNotEmpty()) {
+                        renderer.drawSectionTitle(this, currentY, "Materials")
+                        currentY += 10f
+
+                        renderer.drawMaterialsTableHeader(this, currentY)
+                        currentY += TimesheetPdfRenderer.TABLE_HEADER_HEIGHT
+
+                        pdfData.materials.forEachIndexed { index, material ->
+                            renderer.drawMaterialRow(this, currentY, material, index % 2 != 0)
+                            currentY += TimesheetPdfRenderer.TABLE_ROW_HEIGHT
+                        }
+
+                        renderer.drawTotalMaterialCost(this, currentY, pdfData.totalMaterialCost)
+                    }
+                    
+                    // 3. Draw Footer
+                    renderer.drawFooter(this, 1, 1)
                 }
-                
-                // 3. Draw Footer
-                renderer.drawFooter(this, 1, 1)
             }
         }
     }

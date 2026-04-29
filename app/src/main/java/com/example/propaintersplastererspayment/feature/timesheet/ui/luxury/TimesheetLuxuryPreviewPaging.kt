@@ -13,6 +13,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.core.graphics.withSave
 import com.example.propaintersplastererspayment.core.pdf.MaterialPdfRow
@@ -82,19 +85,27 @@ fun TimesheetLuxuryPreviewPaging(
         state = pagerState,
         modifier = modifier
     ) { pageIndex ->
+        // FIXED: Wrap in a scrollable Box aligned to TopCenter to prevent header clipping on Fold/Wide devices
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(0.707f) // A4 Aspect Ratio
-                .background(Color.White)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+            contentAlignment = Alignment.TopCenter
         ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                drawContext.canvas.nativeCanvas.withSave {
-                    val scale = size.width / 595f
-                    scale(scale, scale)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(0.707f) // A4 Aspect Ratio
+                    .background(Color.White)
+            ) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    drawContext.canvas.nativeCanvas.withSave {
+                        val scale = size.width / 595f
+                        scale(scale, scale)
 
-                    val pageContent = pageContentLayouts[pageIndex]
-                    pageContent.draw(this, renderer, pageIndex + 1, pageContentLayouts.size)
+                        val pageContent = pageContentLayouts[pageIndex]
+                        pageContent.draw(this, renderer, pageIndex + 1, pageContentLayouts.size)
+                    }
                 }
             }
         }

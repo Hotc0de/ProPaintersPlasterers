@@ -28,6 +28,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
 import com.example.propaintersplastererspayment.data.local.model.SurfaceWithJobPaint
 import com.example.propaintersplastererspayment.feature.job.vm.SurfaceViewModel
+import com.example.propaintersplastererspayment.ui.theme.*
 import com.example.propaintersplastererspayment.ui.components.IndustrialFAB
 import com.example.propaintersplastererspayment.ui.theme.IndustrialGold
 import com.example.propaintersplastererspayment.ui.theme.TextMuted
@@ -142,8 +143,8 @@ private fun SurfaceRow(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF000000)),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+        colors = CardDefaults.cardColors(containerColor = CharcoalCard),
+        border = BorderStroke(1.dp, BorderColor)
     ) {
         Column {
             // 1. Top accent: Thin horizontal gradient stripe
@@ -178,12 +179,12 @@ private fun SurfaceRow(
                             text = surface.displayName,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = OffWhite
                         )
                         Text(
                             text = surface.surfaceType.name.lowercase().replaceFirstChar { it.uppercase() },
                             style = MaterialTheme.typography.bodySmall,
-                            color = IndustrialGold.copy(alpha = 0.7f),
+                            color = TextMuted,
                             fontSize = 11.sp
                         )
                     }
@@ -235,7 +236,7 @@ private fun SurfaceRow(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(6.dp))
-                        .background(Color(0xFF121212))
+                        .background(CharcoalSecondary)
                         .drawBehind {
                             val strokeWidth = 3.dp.toPx()
                             drawLine(
@@ -251,7 +252,7 @@ private fun SurfaceRow(
                         Text(
                             text = "FINISH TYPE",
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color.Gray,
+                            color = TextMuted,
                             fontWeight = FontWeight.Bold,
                             fontSize = 9.sp
                         )
@@ -315,10 +316,10 @@ private fun PaintCoatRow(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
-        color = Color(0xFF0A0A0A),
+        color = CharcoalSecondary,
         border = BorderStroke(
             width = 1.dp,
-            color = if (isMainCoat) IndustrialGold.copy(alpha = 0.3f) else Color.White.copy(alpha = 0.05f)
+            color = if (isMainCoat) IndustrialGold.copy(alpha = 0.3f) else BorderColor.copy(alpha = 0.5f)
         )
     ) {
         Row(
@@ -329,18 +330,13 @@ private fun PaintCoatRow(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(parseColor(hexCode ?: "#FFFFFF"))
-                    .then(
-                        if (hexCode?.lowercase() == "#ffffff") {
-                            Modifier.background(Color.White, shape = RoundedCornerShape(10.dp))
-                        } else Modifier
-                    )
+                    .background(parseColor(hexCode ?: "#F5F5F0"))
             )
             Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = "$label: $paintName",
                 style = MaterialTheme.typography.bodySmall,
-                color = if (isMainCoat) IndustrialGold else Color.Gray,
+                color = if (isMainCoat) IndustrialGold else TextMuted,
                 fontWeight = if (isMainCoat) FontWeight.SemiBold else FontWeight.Normal,
                 fontSize = 11.sp
             )

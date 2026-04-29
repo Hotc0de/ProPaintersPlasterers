@@ -243,7 +243,7 @@ fun SettingsScreen(
                             value = uiState.formState.phoneNumber,
                             onValueChange = onPhoneNumberChange,
                             label = stringResource(R.string.settings_phone),
-                            placeholder = "000-0000000",
+                            placeholder = "000-000-000 or 000-000-0000",
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                         )
@@ -468,7 +468,9 @@ private fun SettingsScreenPreview() {
                 settings = AppSettingsEntity(
                     businessName = "Pro Painters & Plasterers",
                     address = "123 Main St, Sydney NSW 2000",
-                    phoneNumber = "02 9123 4567",
+                    phoneCountryIso = "NZ",
+                    phoneCountryDialCode = "+64",
+                    phoneNumber = "022-107-1719",
                     email = "info@propainters.com.au",
                     gstNumber = "12 345 678 901",
                     bankAccountNumber = "12-1234-1234567-12",
@@ -479,7 +481,9 @@ private fun SettingsScreenPreview() {
                 formState = SettingsFormState(
                     businessName = TextFieldValue("Pro Painters & Plasterers"),
                     address = TextFieldValue("123 Main St, Sydney NSW 2000"),
-                    phoneNumber = TextFieldValue("02 9123 4567"),
+                    phoneCountryIso = "NZ",
+                    phoneCountryDialCode = "+64",
+                    phoneNumber = TextFieldValue("022-107-1719"),
                     email = TextFieldValue("info@propainters.com.au"),
                     gstNumber = TextFieldValue("12 345 678 901"),
                     bankAccountNumber = TextFieldValue("12-1234-1234567-12"),

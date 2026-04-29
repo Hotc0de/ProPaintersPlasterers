@@ -180,7 +180,7 @@ fun InitialSetupScreen(
                         value = form.phoneNumber,
                         onValueChange = onPhoneNumberChange,
                         label = "Phone Number *",
-                        placeholder = "000-0000000",
+                        placeholder = "000-000-000 or 000-000-0000",
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                     )

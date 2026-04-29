@@ -1,6 +1,8 @@
 package com.example.propaintersplastererspayment.feature.job.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -19,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -27,8 +30,13 @@ import com.example.propaintersplastererspayment.R
 import com.example.propaintersplastererspayment.data.local.model.RoomWithSurfaces
 import com.example.propaintersplastererspayment.feature.job.util.RoomIconUtils
 import com.example.propaintersplastererspayment.feature.job.vm.RoomViewModel
+import com.example.propaintersplastererspayment.ui.components.ConfirmDeleteDialog
+import com.example.propaintersplastererspayment.ui.components.IndustrialCard
 import com.example.propaintersplastererspayment.ui.components.IndustrialFAB
+import com.example.propaintersplastererspayment.ui.theme.BorderColor
+import com.example.propaintersplastererspayment.ui.theme.CharcoalSecondary
 import com.example.propaintersplastererspayment.ui.theme.IndustrialGold
+import com.example.propaintersplastererspayment.ui.theme.OffWhite
 import com.example.propaintersplastererspayment.ui.theme.TextMuted
 
 @Composable
@@ -111,7 +119,6 @@ fun RoomListTab(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RoomCard(
     roomWithSurfaces: RoomWithSurfaces,
@@ -123,17 +130,12 @@ private fun RoomCard(
     val room = roomWithSurfaces.room
     val surfaces = roomWithSurfaces.surfaces
 
-    Card(
+    IndustrialCard(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
+        modifier = modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Room Type Icon
@@ -146,7 +148,7 @@ private fun RoomCard(
                     .padding(end = 12.dp)
             )
 
-            Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1.3f)) {
                 Text(
                     text = room.displayName,
                     style = MaterialTheme.typography.titleLarge,
@@ -164,12 +166,15 @@ private fun RoomCard(
                 SurfaceCountBadge(count = surfaces.size)
             }
 
-            // Action block starting at the "yellow line"
+            // Action block
             Column(
                 modifier = Modifier.weight(0.7f),
-                horizontalAlignment = Alignment.Start
+                horizontalAlignment = Alignment.End
             ) {
-                Row(verticalAlignment = Alignment.Top) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End
+                ) {
                     IconButton(onClick = onEdit) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit", tint = IndustrialGold)
                     }
@@ -182,7 +187,7 @@ private fun RoomCard(
                         )
                     }
                     if (showConfirm) {
-                        com.example.propaintersplastererspayment.ui.components.ConfirmDeleteDialog(
+                        ConfirmDeleteDialog(
                             title = "Delete Room",
                             message = "Are you sure you want to delete '${room.displayName}' and all its surfaces?",
                             onConfirm = {
@@ -198,22 +203,24 @@ private fun RoomCard(
                 roomWithSurfaces.maincoatHexCode?.let { hex ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(start = 12.dp, bottom = 8.dp)
+                        modifier = Modifier.padding(bottom = 4.dp)
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(24.dp)
-                                .clip(RoundedCornerShape(6.dp))
+                                .size(20.dp)
+                                .clip(RoundedCornerShape(4.dp))
                                 .background(parseColor(hex))
+                                .then(if(hex.lowercase() == "#ffffff") Modifier.border(0.5.dp, BorderColor, RoundedCornerShape(4.dp)) else Modifier)
                         )
                         roomWithSurfaces.maincoatPaintName?.let { name ->
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 text = name,
-                                style = MaterialTheme.typography.labelMedium,
+                                style = MaterialTheme.typography.labelSmall,
                                 color = TextMuted,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.End
                             )
                         }
                     }
@@ -226,14 +233,15 @@ private fun RoomCard(
 @Composable
 private fun SurfaceCountBadge(count: Int) {
     Surface(
-        color = IndustrialGold.copy(alpha = 0.1f),
-        shape = MaterialTheme.shapes.small
+        color = CharcoalSecondary,
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, BorderColor)
     ) {
         Text(
             text = if (count == 1) "1 Surface" else "$count Surfaces",
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             style = MaterialTheme.typography.labelSmall,
-            color = IndustrialGold
+            color = OffWhite
         )
     }
 }

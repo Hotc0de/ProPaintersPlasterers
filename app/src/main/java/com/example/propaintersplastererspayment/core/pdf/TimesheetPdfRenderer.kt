@@ -22,16 +22,16 @@ class TimesheetPdfRenderer(
         const val FOOTER_SPACE = 40f
     }
 
-    // Colors synced with PdfExportService
-    private val colorNavy = Color.parseColor("#1E293B")
-    private val colorSlate = Color.parseColor("#2C3E50") // Table Header
-    private val colorGold = Color.parseColor("#9D8560") // Gold Accent
-    private val colorLabel = Color.parseColor("#94A3B8")
-    private val colorBgLight = Color.parseColor("#F8FAFC")
-    private val colorStripe = Color.parseColor("#F1F5F9")
-    private val colorBorder = Color.parseColor("#CBD5E1")
+    // Colors synced with PdfExportService (Industrial Theme)
+    private val colorNavy = Color.parseColor("#1A1A1B") // Charcoal
+    private val colorSlate = Color.parseColor("#334155") // Table Header (Slate-ish Charcoal)
+    private val colorGold = Color.parseColor("#FFB800") // Industrial Gold
+    private val colorLabel = Color.parseColor("#A0A0A0") // TextMuted
+    private val colorBgLight = Color.parseColor("#F5F5F0") // OffWhite
+    private val colorStripe = Color.parseColor("#FAFAF8") // Very light stripe
+    private val colorBorder = Color.parseColor("#E0E0E0")
     private val colorWhite = Color.WHITE
-    private val colorTextNormal = Color.parseColor("#475569")
+    private val colorTextNormal = Color.parseColor("#5A5A5C") // TextSubdued
 
     // Header layout tweak: nudge right by a few points for title and right details
     private val headerRightShift = 10f

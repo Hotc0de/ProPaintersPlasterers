@@ -47,7 +47,7 @@ import com.example.propaintersplastererspayment.data.local.util.Converters
         RoomEntity::class,
         SurfaceEntity::class
     ],
-    version = 23,
+    version = 24,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -359,6 +359,13 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_23_24 = object : Migration(23, 24) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE app_settings ADD COLUMN phoneCountryIso TEXT NOT NULL DEFAULT 'NZ'")
+                db.execSQL("ALTER TABLE app_settings ADD COLUMN phoneCountryDialCode TEXT NOT NULL DEFAULT '+64'")
+            }
+        }
+
         val ALL_MIGRATIONS = arrayOf(
             MIGRATION_11_12,
             MIGRATION_12_13,
@@ -371,7 +378,8 @@ abstract class AppDatabase : RoomDatabase() {
             MIGRATION_19_20,
             MIGRATION_20_21,
             MIGRATION_21_22,
-            MIGRATION_22_23
+            MIGRATION_22_23,
+            MIGRATION_23_24
         )
     }
 }

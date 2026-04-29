@@ -293,7 +293,7 @@ class TimesheetViewModel(
 private fun AppSettingsEntity.toBusinessDetails(): PdfBusinessDetails = PdfBusinessDetails(
     businessName = businessName,
     address = address,
-    phoneNumber = phoneNumber,
+    phoneNumber = businessPhoneDisplay(),
     email = email,
     gstNumber = gstNumber,
     bankAccountNumber = bankAccountNumber,

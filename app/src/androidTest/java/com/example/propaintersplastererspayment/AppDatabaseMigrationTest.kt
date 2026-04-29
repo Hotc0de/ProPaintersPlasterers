@@ -30,10 +30,11 @@ class AppDatabaseMigrationTest {
 
         helper.runMigrationsAndValidate(
             testDbName,
-            23,
+            24,
             true,
             *AppDatabase.ALL_MIGRATIONS
         )
     }
 }
+
 

@@ -54,11 +54,12 @@ class PdfExportService {
     private val invoicePaymentHeight = 92f
 
     // Colors
-    private val colorOffWhite = "#FDFCFB".toColorInt()
-    private val colorGoldAccent = "#9D8560".toColorInt()
-    private val colorMediumGray = "#94A3B8".toColorInt()
-    private val colorTextGray = "#64748B".toColorInt()
-    private val colorBorderGray = "#CBD5E1".toColorInt()
+    private val colorOffWhite = "#F5F5F0".toColorInt()
+    private val colorGoldAccent = "#FFB800".toColorInt()
+    private val colorMediumGray = "#A0A0A0".toColorInt()
+    private val colorTextGray = "#5A5A5C".toColorInt()
+    private val colorBorderGray = "#E0E0E0".toColorInt()
+    private val colorCharcoal = "#1A1A1B".toColorInt()
     private val colorWhite = Color.WHITE
 
     fun exportTimesheetPdf(data: TimesheetPdfData, outputFile: File): File {
@@ -435,12 +436,12 @@ class PdfExportService {
     }
 
     private fun drawInvoiceFirstPageHeader(canvas: Canvas, invoiceData: InvoiceData): Float {
-        val colorNavy = "#1E293B".toColorInt()
+        val colorNavy = colorCharcoal
         val colorNavyLight = "#334155".toColorInt()
-        val colorBronze = "#9D8560".toColorInt()
-        val localTextGray = "#64748B".toColorInt()
-        val localMediumGray = "#94A3B8".toColorInt()
-        val localBorderGray = "#CBD5E1".toColorInt()
+        val colorBronze = colorGoldAccent
+        val localTextGray = colorTextGray
+        val localMediumGray = colorMediumGray
+        val localBorderGray = colorBorderGray
 
         var y = margin
 
@@ -619,9 +620,9 @@ class PdfExportService {
         pageNumber: Int,
         totalPages: Int
     ) {
-        val colorNavy = "#1E293B".toColorInt()
-        val colorBronze = "#9D8560".toColorInt()
-        val localTextGray = "#64748B".toColorInt()
+        val colorNavy = colorCharcoal
+        val colorBronze = colorGoldAccent
+        val localTextGray = colorTextGray
 
         val topBorderPaint = Paint().apply { color = colorNavy; style = Paint.Style.FILL }
         canvas.drawRect(margin, margin, pageWidth - margin, margin + 4f, topBorderPaint)
@@ -645,7 +646,7 @@ class PdfExportService {
 
     private fun drawInvoiceItemsSectionHeader(canvas: Canvas, y: Float) {
         val colorNavyLight = "#334155".toColorInt()
-        val colorBronze = "#9D8560".toColorInt()
+        val colorBronze = colorGoldAccent
 
         val sectionHeaderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = colorNavyLight
@@ -693,7 +694,7 @@ class PdfExportService {
         amount: Double,
         striped: Boolean
     ) {
-        val colorNavy = "#1E293B".toColorInt()
+        val colorNavy = colorCharcoal
 
         val rowItemPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = colorNavy
@@ -734,8 +735,8 @@ class PdfExportService {
     }
 
     private fun drawInvoiceTotals(canvas: Canvas, yStart: Float, invoiceData: InvoiceData) {
-        val colorBronze = "#9D8560".toColorInt()
-        val colorNavy = "#1E293B".toColorInt()
+        val colorBronze = colorGoldAccent
+        val colorNavy = colorCharcoal
         val colorLightGray1 = "#F7F5F2".toColorInt()
 
         var y = yStart + 5f
@@ -797,8 +798,8 @@ class PdfExportService {
     }
 
     private fun drawInvoicePaymentInformation(canvas: Canvas, y: Float, invoiceData: InvoiceData) {
-        val colorBronze = "#9D8560".toColorInt()
-        val colorNavy = "#1E293B".toColorInt()
+        val colorBronze = colorGoldAccent
+        val colorNavy = colorCharcoal
         val colorNavyLight = "#334155".toColorInt()
         val colorLightGray1 = "#F7F5F2".toColorInt()
 
@@ -834,7 +835,7 @@ class PdfExportService {
 
         var payY = boxTop + 20f
         drawTextRight(canvas, "Bank:", labelRightX, payY, paymentLabelPaint)
-        canvas.drawText(invoiceData.accountNumber.ifBlank { "N/A" }, valueX, payY, paymentValuePaint)
+        canvas.drawText(invoiceData.bankName.ifBlank { "N/A" }, valueX, payY, paymentValuePaint)
 
         payY += 19f
         drawTextRight(canvas, "Account Name:", labelRightX, payY, paymentLabelPaint)

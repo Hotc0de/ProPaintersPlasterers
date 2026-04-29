@@ -4,8 +4,9 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.propaintersplastererspayment.core.util.BusinessPhoneCountryCodes
 import com.example.propaintersplastererspayment.core.util.BankAccountFormatUtils
-import com.example.propaintersplastererspayment.core.util.PhoneFormatUtils
+import com.example.propaintersplastererspayment.core.util.SettingsPhoneFormatUtils
 import com.example.propaintersplastererspayment.data.local.entity.AppSettingsEntity
 import com.example.propaintersplastererspayment.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -28,6 +29,8 @@ import kotlinx.coroutines.launch
 data class SettingsFormState(
     val businessName: TextFieldValue = TextFieldValue(""),
     val address: TextFieldValue = TextFieldValue(""),
+    val phoneCountryIso: String = BusinessPhoneCountryCodes.default.isoCode,
+    val phoneCountryDialCode: String = BusinessPhoneCountryCodes.default.dialCode,
     val phoneNumber: TextFieldValue = TextFieldValue(""),
     val email: TextFieldValue = TextFieldValue(""),
     val gstNumber: TextFieldValue = TextFieldValue(""),
@@ -66,8 +69,8 @@ data class SettingsFormState(
         }
 
     val phoneFormatError: String?
-        get() = if (phoneNumber.text.isNotBlank() && !PhoneFormatUtils.isValid(phoneNumber.text)) {
-            "Use format 000-0000000"
+        get() = if (phoneNumber.text.isNotBlank() && !SettingsPhoneFormatUtils.isValid(phoneNumber.text)) {
+            "Use format 000-000-000 or 000-000-0000"
         } else {
             null
         }
@@ -132,7 +135,7 @@ class SettingsViewModel(
         viewModelScope.launch {
             val firstSettings = settingsRepository.observeSettings().first()
             if (firstSettings != null && formState.value.businessName.text.isEmpty()) {
-                val phoneNumber = PhoneFormatUtils.formatInput(firstSettings.phoneNumber)
+                val phoneNumber = SettingsPhoneFormatUtils.formatInput(firstSettings.phoneNumber)
                 val bankAccount = BankAccountFormatUtils.formatInput(firstSettings.bankAccountNumber)
                 val labourRate = if (firstSettings.defaultLabourRate > 0) {
                     firstSettings.defaultLabourRate.toString()
@@ -144,6 +147,8 @@ class SettingsViewModel(
                 formState.value = SettingsFormState(
                     businessName = TextFieldValue(firstSettings.businessName),
                     address = TextFieldValue(firstSettings.address),
+                    phoneCountryIso = firstSettings.phoneCountryIso,
+                    phoneCountryDialCode = firstSettings.phoneCountryDialCode,
                     phoneNumber = TextFieldValue(phoneNumber, selection = androidx.compose.ui.text.TextRange(phoneNumber.length)),
                     email = TextFieldValue(firstSettings.email),
                     gstNumber = TextFieldValue(firstSettings.gstNumber),
@@ -170,7 +175,7 @@ class SettingsViewModel(
     }
 
     fun onPhoneNumberChange(value: TextFieldValue) {
-        val formatted = PhoneFormatUtils.formatInput(value.text)
+        val formatted = SettingsPhoneFormatUtils.formatInput(value.text)
         val selectionOffset = if (value.text.length != formatted.length && value.selection.collapsed) {
             val diff = formatted.length - value.text.length
             (value.selection.start + diff).coerceIn(0, formatted.length)
@@ -181,6 +186,17 @@ class SettingsViewModel(
             phoneNumber = value.copy(text = formatted, selection = androidx.compose.ui.text.TextRange(selectionOffset)),
             errorMessage = null
         ) }
+    }
+
+    fun onPhoneCountryChange(isoCode: String) {
+        val option = BusinessPhoneCountryCodes.findByIsoOrDefault(isoCode)
+        formState.update {
+            it.copy(
+                phoneCountryIso = option.isoCode,
+                phoneCountryDialCode = option.dialCode,
+                errorMessage = null
+            )
+        }
     }
 
     fun onEmailChange(value: TextFieldValue) {
@@ -242,6 +258,8 @@ class SettingsViewModel(
                         settingsId = 1,
                         businessName = current.businessName.text.trim(),
                         address = current.address.text.trim(),
+                        phoneCountryIso = current.phoneCountryIso,
+                        phoneCountryDialCode = current.phoneCountryDialCode,
                         phoneNumber = current.phoneNumber.text.trim(),
                         email = current.email.text.trim(),
                         gstNumber = current.gstNumber.text.trim(),
@@ -277,7 +295,8 @@ class SettingsViewModel(
         form.businessName.text.isBlank() -> "Business name is required."
         form.address.text.isBlank() -> "Address is required."
         form.phoneNumber.text.isBlank() -> "Phone number is required."
-        !PhoneFormatUtils.isValid(form.phoneNumber.text) -> "Phone number must match 000-0000000."
+        !SettingsPhoneFormatUtils.isValid(form.phoneNumber.text) ->
+            "Phone number must match 000-000-000 or 000-000-0000."
         form.email.text.isBlank() -> "Email is required."
         !isValidEmail(form.email.text) -> "Please enter a valid email address."
         form.bankAccountNumber.text.isBlank() -> "Bank account number is required."
