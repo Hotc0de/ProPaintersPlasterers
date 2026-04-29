@@ -28,13 +28,13 @@ import kotlinx.coroutines.launch
 
 private enum class JobDetailTab(val titleRes: Int) {
     PAINT(R.string.job_tab_paint),
-    CALCULATOR(R.string.job_tab_calculator),
     ROOMS(R.string.job_tab_rooms),
     TIMESHEET(R.string.job_tab_timesheet),
     MATERIALS(R.string.job_tab_materials),
     ACCESS(R.string.job_tab_access),
     NOTES(R.string.job_tab_notes),
-    INVOICE(R.string.job_tab_invoice)
+    INVOICE(R.string.job_tab_invoice),
+    CALCULATOR(R.string.job_tab_calculator)
 }
 
 @Composable
@@ -173,7 +173,6 @@ fun JobDetailScreen(
             Box(modifier = Modifier.weight(1f)) {
                 when (tabs[selectedTab]) {
                     JobDetailTab.PAINT -> JobPaintRoute(jobId = jobId)
-                    JobDetailTab.CALCULATOR -> CalculatorRoute(jobId = jobId)
                     JobDetailTab.ROOMS -> {
                         val roomId = selectedRoomId
                         if (roomId != null) {
@@ -207,6 +206,7 @@ fun JobDetailScreen(
                     JobDetailTab.ACCESS -> JobAccessRoute(jobId = jobId)
                     JobDetailTab.NOTES -> JobNotesRoute(jobId = jobId)
                     JobDetailTab.INVOICE -> InvoiceRoute(jobId = jobId)
+                    JobDetailTab.CALCULATOR -> CalculatorRoute(jobId = jobId)
                 }
             }
         }
