@@ -63,3 +63,25 @@ data class InvoicePdfData(
     val notes: String
 )
 
+data class CalculationPdfRow(
+    val areaName: String,
+    val quantity: Double,
+    val unit: String,
+    val costPerUnit: Double,
+    val subtotal: Double,
+    val includeGst: Boolean,
+    val gstAmount: Double,
+    val total: Double
+)
+
+data class CalculationPdfData(
+    val fileName: String,
+    val exportedAt: String,
+    val business: PdfBusinessDetails,
+    val jobName: String,
+    val items: List<CalculationPdfRow>,
+    val subtotal: Double,
+    val gstTotal: Double,
+    val grandTotal: Double
+)
+

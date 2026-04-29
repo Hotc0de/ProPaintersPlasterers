@@ -53,6 +53,9 @@ class PdfExportService {
     private val invoiceTotalsHeightNoGst = 66f
     private val invoicePaymentHeight = 92f
 
+    // Calculation layout tuning
+    private val calculationGapAfterTable = 10f
+
     // Colors
     private val colorOffWhite = "#F5F5F0".toColorInt()
     private val colorGoldAccent = "#FFB800".toColorInt()
@@ -61,6 +64,135 @@ class PdfExportService {
     private val colorBorderGray = "#E0E0E0".toColorInt()
     private val colorCharcoal = "#1A1A1B".toColorInt()
     private val colorWhite = Color.WHITE
+
+    fun exportCalculationPdf(data: CalculationPdfData, outputFile: File): File {
+        val document = PdfDocument()
+        val totalPages = calculateCalculationTotalPages(data)
+        val cursor = startDocument(document, totalPages)
+        val renderer = CalculationPdfRenderer(data, pageWidth, pageHeight, margin)
+
+        drawCalculationHeader(cursor, data, isFirstPage = true)
+
+        renderer.drawSectionTitle(cursor.page.canvas, cursor.y, "Price Estimates")
+        cursor.y += 10f
+
+        drawCalculationTable(cursor, data, renderer)
+
+        drawFooterCalculation(cursor, renderer)
+        finishDocument(cursor)
+        writeDocument(document, outputFile)
+        return outputFile
+    }
+
+    private fun calculateCalculationTotalPages(data: CalculationPdfData): Int {
+        val bottomLimit = pageHeight - margin - CalculationPdfRenderer.FOOTER_SPACE
+        val rowHeight = CalculationPdfRenderer.TABLE_ROW_HEIGHT
+        val headerHeight = CalculationPdfRenderer.TABLE_HEADER_HEIGHT
+        val totalRowHeight = CalculationPdfRenderer.TABLE_TOTAL_HEIGHT
+
+        var pages = 1
+        var currentY = margin + CalculationPdfRenderer.HEADER_HEIGHT_FIRST
+
+        currentY += 10f // gap after title
+        currentY += headerHeight
+
+        data.items.forEach {
+            if (currentY + rowHeight > bottomLimit) {
+                pages++
+                currentY = margin + CalculationPdfRenderer.HEADER_HEIGHT_CONT + headerHeight
+            }
+            currentY += rowHeight
+        }
+
+        if (currentY + totalRowHeight > bottomLimit) {
+            pages++
+        }
+
+        return pages
+    }
+
+    private fun drawCalculationHeader(cursor: PageCursor, data: CalculationPdfData, isFirstPage: Boolean) {
+        val canvas = cursor.page.canvas
+        val renderer = CalculationPdfRenderer(data, pageWidth, pageHeight, margin)
+
+        cursor.y = if (isFirstPage) {
+            renderer.drawHeader(canvas, cursor.y, isFirstPage = true)
+        } else {
+            renderer.drawContinuationHeader(canvas, cursor.y, cursor.pageNumber)
+        }
+    }
+
+    private fun drawCalculationTable(
+        cursor: PageCursor,
+        data: CalculationPdfData,
+        renderer: CalculationPdfRenderer
+    ) {
+        renderer.drawTableHeader(cursor.page.canvas, cursor.y)
+        cursor.y += CalculationPdfRenderer.TABLE_HEADER_HEIGHT
+
+        data.items.forEachIndexed { index, item ->
+            ensureCalculationSpaceWithHeader(cursor, data, renderer) {
+                renderer.drawTableHeader(cursor.page.canvas, cursor.y)
+                cursor.y += CalculationPdfRenderer.TABLE_HEADER_HEIGHT
+            }
+
+            renderer.drawRow(cursor.page.canvas, cursor.y, item, index % 2 != 0)
+            cursor.y += CalculationPdfRenderer.TABLE_ROW_HEIGHT
+        }
+
+        ensureCalculationSpace(cursor, CalculationPdfRenderer.TABLE_TOTAL_HEIGHT + 40f, data, renderer)
+        renderer.drawGrandTotal(cursor.page.canvas, cursor.y, data.subtotal, data.gstTotal, data.grandTotal)
+        cursor.y += CalculationPdfRenderer.TABLE_TOTAL_HEIGHT + calculationGapAfterTable + 40f
+    }
+
+    private fun ensureCalculationSpace(
+        cursor: PageCursor,
+        requiredHeight: Float,
+        data: CalculationPdfData,
+        renderer: CalculationPdfRenderer
+    ) {
+        val bottomLimit = pageHeight - margin - CalculationPdfRenderer.FOOTER_SPACE
+        if (cursor.y + requiredHeight <= bottomLimit) return
+
+        renderer.drawFooter(cursor.page.canvas, cursor.pageNumber, cursor.totalPages)
+        cursor.document.finishPage(cursor.page)
+
+        cursor.pageNumber += 1
+        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, cursor.pageNumber).create()
+        cursor.page = cursor.document.startPage(pageInfo)
+        cursor.page.canvas.drawColor(colorOffWhite)
+        cursor.y = margin
+
+        drawCalculationHeader(cursor, data, isFirstPage = false)
+        cursor.y += 10f
+    }
+
+    private fun ensureCalculationSpaceWithHeader(
+        cursor: PageCursor,
+        data: CalculationPdfData,
+        renderer: CalculationPdfRenderer,
+        onNewPage: () -> Unit
+    ) {
+        val bottomLimit = pageHeight - margin - CalculationPdfRenderer.FOOTER_SPACE
+        if (cursor.y + CalculationPdfRenderer.TABLE_ROW_HEIGHT <= bottomLimit) return
+
+        renderer.drawFooter(cursor.page.canvas, cursor.pageNumber, cursor.totalPages)
+        cursor.document.finishPage(cursor.page)
+
+        cursor.pageNumber += 1
+        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, cursor.pageNumber).create()
+        cursor.page = cursor.document.startPage(pageInfo)
+        cursor.page.canvas.drawColor(colorOffWhite)
+        cursor.y = margin
+
+        drawCalculationHeader(cursor, data, isFirstPage = false)
+        cursor.y += 10f
+        onNewPage()
+    }
+
+    private fun drawFooterCalculation(cursor: PageCursor, renderer: CalculationPdfRenderer) {
+        renderer.drawFooter(cursor.page.canvas, cursor.pageNumber, cursor.totalPages)
+    }
 
     fun exportTimesheetPdf(data: TimesheetPdfData, outputFile: File): File {
         val document = PdfDocument()
