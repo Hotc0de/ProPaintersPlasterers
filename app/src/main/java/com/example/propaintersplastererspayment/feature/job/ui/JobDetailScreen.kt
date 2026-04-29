@@ -2,6 +2,7 @@ package com.example.propaintersplastererspayment.feature.job.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -23,6 +24,7 @@ import com.example.propaintersplastererspayment.feature.materials.ui.MaterialsRo
 import com.example.propaintersplastererspayment.feature.timesheet.ui.TimesheetRoute
 import com.example.propaintersplastererspayment.ui.components.AppLogo
 import com.example.propaintersplastererspayment.ui.theme.*
+import kotlinx.coroutines.launch
 
 private enum class JobDetailTab(val titleRes: Int) {
     PAINT(R.string.job_tab_paint),
@@ -44,6 +46,8 @@ fun JobDetailScreen(
     val job by application.container.jobRepository.observeJob(jobId).collectAsState(initial = null)
     var selectedTab by remember { mutableIntStateOf(0) }
     var selectedRoomId by remember { mutableStateOf<Long?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     
     val tabs = remember { JobDetailTab.entries }
     val screenTitle = job?.clientName?.takeIf { it.isNotBlank() }
@@ -52,6 +56,32 @@ fun JobDetailScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = CharcoalBackground,
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.fillMaxSize()
+            ) { data ->
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Surface(
+                        color = IndustrialGold,
+                        contentColor = CharcoalBackground,
+                        shape = RoundedCornerShape(24.dp),
+                        tonalElevation = 4.dp,
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = data.visuals.message,
+                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        },
         topBar = {
             Column(
                 modifier = Modifier
@@ -152,7 +182,16 @@ fun JobDetailScreen(
                         } else {
                             RoomListTab(
                                 jobId = jobId,
-                                onRoomClick = { id -> selectedRoomId = id }
+                                onRoomClick = { id -> selectedRoomId = id },
+                                onShowPaintName = { name ->
+                                    scope.launch {
+                                        snackbarHostState.currentSnackbarData?.dismiss()
+                                        snackbarHostState.showSnackbar(
+                                            message = "The paint colour is: $name",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                    }
+                                }
                             )
                         }
                     }

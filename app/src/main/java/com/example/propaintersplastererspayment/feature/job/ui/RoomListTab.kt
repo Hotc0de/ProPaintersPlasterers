@@ -1,8 +1,10 @@
 package com.example.propaintersplastererspayment.feature.job.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -43,7 +45,8 @@ import com.example.propaintersplastererspayment.ui.theme.TextMuted
 fun RoomListTab(
     jobId: Long,
     onRoomClick: (Long) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onShowPaintName: (String) -> Unit = {}
 ) {
     val application = LocalContext.current.applicationContext as ProPaintersApplication
     val viewModel: RoomViewModel = viewModel(
@@ -88,7 +91,8 @@ fun RoomListTab(
                         roomWithSurfaces = roomWithSurfaces,
                         onEdit = { viewModel.onEditRoomClick(roomWithSurfaces.room) },
                         onDelete = { viewModel.deleteRoom(roomWithSurfaces.room) },
-                        onClick = { onRoomClick(roomWithSurfaces.room.roomId) }
+                        onClick = { onRoomClick(roomWithSurfaces.room.roomId) },
+                        onShowPaintName = onShowPaintName
                     )
                 }
                 item {
@@ -125,7 +129,8 @@ private fun RoomCard(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onShowPaintName: (String) -> Unit = {}
 ) {
     val room = roomWithSurfaces.room
     val surfaces = roomWithSurfaces.surfaces
@@ -211,6 +216,11 @@ private fun RoomCard(
                                 .clip(RoundedCornerShape(4.dp))
                                 .background(parseColor(hex))
                                 .then(if(hex.lowercase() == "#ffffff") Modifier.border(0.5.dp, BorderColor, RoundedCornerShape(4.dp)) else Modifier)
+                                .clickable {
+                                    roomWithSurfaces.maincoatPaintName?.let { name ->
+                                        onShowPaintName(name)
+                                    }
+                                }
                         )
                         roomWithSurfaces.maincoatPaintName?.let { name ->
                             Spacer(Modifier.width(8.dp))
