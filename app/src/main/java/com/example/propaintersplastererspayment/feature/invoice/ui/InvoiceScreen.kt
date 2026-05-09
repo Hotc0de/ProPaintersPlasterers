@@ -17,6 +17,7 @@ import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -108,6 +109,7 @@ fun InvoiceRoute(
         onDueDateChange = viewModel::onDueDateChange,
         onIncludeDueDateChange = viewModel::onIncludeDueDateChange,
         onIncludeGstChange = viewModel::onIncludeGstChange,
+        onShowAddressChange = viewModel::onShowAddressOnPdfChange,
         onNotesChange = viewModel::onNotesChange,
         onSaveHeader = viewModel::saveHeader,
         onAddLine = viewModel::openAddLine,
@@ -123,6 +125,8 @@ fun InvoiceRoute(
         onAddLabourLine = viewModel::openAddLabourLine,
         onAddMaterialsLine = viewModel::openAddMaterialsLine,
         onMarkAsPaid = viewModel::markAsPaid,
+        onUpdateIncludeGst = viewModel::updateInvoiceIncludeGst,
+        onUpdateShowAddress = viewModel::updateInvoiceShowAddress,
         onMessageShown = viewModel::clearUserMessage
     )
 }
@@ -143,6 +147,7 @@ fun InvoiceScreen(
     onDueDateChange: (TextFieldValue) -> Unit,
     onIncludeDueDateChange: (Boolean) -> Unit,
     onIncludeGstChange: (Boolean) -> Unit,
+    onShowAddressChange: (Boolean) -> Unit,
     onNotesChange: (TextFieldValue) -> Unit,
     onSaveHeader: () -> Unit,
     onAddLine: () -> Unit,
@@ -158,6 +163,8 @@ fun InvoiceScreen(
     onAddLabourLine: () -> Unit,
     onAddMaterialsLine: () -> Unit,
     onMarkAsPaid: () -> Unit,
+    onUpdateIncludeGst: (Boolean) -> Unit,
+    onUpdateShowAddress: (Boolean) -> Unit,
     onMessageShown: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -264,7 +271,9 @@ fun InvoiceScreen(
                                     InvoiceHeaderIndustrialCard(
                                         invoice = uiState.invoice,
                                         onExportPdf = onExportPdf,
-                                        onEdit = { onEditHeader(uiState.invoice) }
+                                        onEdit = { onEditHeader(uiState.invoice) },
+                                        onIncludeGstChange = onUpdateIncludeGst,
+                                        onShowAddressChange = onUpdateShowAddress
                                     )
 
                                     if (uiState.job.status == com.example.propaintersplastererspayment.data.local.entity.JobStatus.WAITING_FOR_PAYMENT) {
@@ -328,6 +337,7 @@ fun InvoiceScreen(
             onDueDateChange = onDueDateChange,
             onIncludeDueDateChange = onIncludeDueDateChange,
             onIncludeGstChange = onIncludeGstChange,
+            onShowAddressChange = onShowAddressChange,
             onNotesChange = onNotesChange,
             onSave = onSaveHeader
         )
@@ -434,7 +444,9 @@ private fun NoInvoiceIndustrialCard(onCreateInvoice: () -> Unit) {
 private fun InvoiceHeaderIndustrialCard(
     invoice: InvoiceEntity,
     onExportPdf: () -> Unit,
-    onEdit: () -> Unit
+    onEdit: () -> Unit,
+    onIncludeGstChange: (Boolean) -> Unit,
+    onShowAddressChange: (Boolean) -> Unit
 ) {
     IndustrialCard(onClick = onEdit) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -471,16 +483,34 @@ private fun InvoiceHeaderIndustrialCard(
             HorizontalDivider(color = BorderColor)
             Spacer(modifier = Modifier.height(16.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Column(modifier = Modifier.weight(1f)) {
+                Column(modifier = Modifier.weight(1.2f)) {
                     Text(text = "Bill To", style = MaterialTheme.typography.bodySmall, color = TextSubdued)
                     Text(text = invoice.billToName, style = MaterialTheme.typography.bodyMedium, color = OffWhite, fontWeight = FontWeight.Bold)
                 }
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "GST Status", style = MaterialTheme.typography.bodySmall, color = TextSubdued)
-                    Text(
-                        text = if (invoice.includeGst) "Registered" else "No GST",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (invoice.includeGst) SuccessGreen else TextMuted
+                
+                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = "GST", style = MaterialTheme.typography.bodySmall, color = TextSubdued)
+                    Switch(
+                        checked = invoice.includeGst,
+                        onCheckedChange = onIncludeGstChange,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = IndustrialGold,
+                            checkedTrackColor = IndustrialGold.copy(alpha = 0.5f)
+                        ),
+                        modifier = Modifier.scale(0.7f)
+                    )
+                }
+
+                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = "Address", style = MaterialTheme.typography.bodySmall, color = TextSubdued)
+                    Switch(
+                        checked = invoice.showAddressOnPdf,
+                        onCheckedChange = onShowAddressChange,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = IndustrialGold,
+                            checkedTrackColor = IndustrialGold.copy(alpha = 0.5f)
+                        ),
+                        modifier = Modifier.scale(0.7f)
                     )
                 }
             }
@@ -566,6 +596,7 @@ fun InvoiceHeaderDialog(
     onDueDateChange: (TextFieldValue) -> Unit,
     onIncludeDueDateChange: (Boolean) -> Unit,
     onIncludeGstChange: (Boolean) -> Unit,
+    onShowAddressChange: (Boolean) -> Unit,
     onNotesChange: (TextFieldValue) -> Unit,
     onSave: () -> Unit
 ) {
@@ -662,6 +693,46 @@ fun InvoiceHeaderDialog(
                         onValueChange = onDueDateChange,
                         label = "Due Date",
                         placeholder = "dd-MM-yyyy"
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Include GST",
+                        color = OffWhite,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Switch(
+                        checked = formState.includeGst,
+                        onCheckedChange = onIncludeGstChange,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = IndustrialGold,
+                            checkedTrackColor = IndustrialGold.copy(alpha = 0.5f)
+                        )
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Show Address on PDF",
+                        color = OffWhite,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Switch(
+                        checked = formState.showAddressOnPdf,
+                        onCheckedChange = onShowAddressChange,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = IndustrialGold,
+                            checkedTrackColor = IndustrialGold.copy(alpha = 0.5f)
+                        )
                     )
                 }
 

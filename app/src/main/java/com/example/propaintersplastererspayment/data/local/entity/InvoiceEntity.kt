@@ -45,6 +45,7 @@ data class InvoiceEntity(
     val gstAmount: Double,
     val totalAmount: Double,
     val notes: String = "",
+    val showAddressOnPdf: Boolean = true,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 ) {

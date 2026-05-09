@@ -58,6 +58,7 @@ data class InvoiceHeaderFormState(
     val includeGst: Boolean = true,
     val gstRate: Double = InvoiceUtils.DEFAULT_GST_RATE,
     val notes: TextFieldValue = TextFieldValue(""),
+    val showAddressOnPdf: Boolean = true,
     val errorMessage: String? = null
 )
 
@@ -314,7 +315,8 @@ class InvoiceViewModel(
                 dueDate = TextFieldValue(dueDate, selection = androidx.compose.ui.text.TextRange(dueDate.length)),
                 includeDueDate = true,
                 includeGst = settings?.gstEnabledByDefault ?: true,
-                gstRate = settings?.defaultGstRate ?: InvoiceUtils.DEFAULT_GST_RATE
+                gstRate = settings?.defaultGstRate ?: InvoiceUtils.DEFAULT_GST_RATE,
+                showAddressOnPdf = true
             )
             selectedBillToClientId.value = selectedClient?.clientId
             isEditingHeader.value = true
@@ -342,7 +344,8 @@ class InvoiceViewModel(
             includeDueDate = invoice.dueDate != null,
             includeGst = invoice.includeGst,
             gstRate = invoice.gstRate,
-            notes = TextFieldValue(invoice.notes, selection = androidx.compose.ui.text.TextRange(invoice.notes.length))
+            notes = TextFieldValue(invoice.notes, selection = androidx.compose.ui.text.TextRange(invoice.notes.length)),
+            showAddressOnPdf = invoice.showAddressOnPdf
         )
         selectedBillToClientId.value = selectedClient?.clientId
         isEditingHeader.value = true
@@ -403,6 +406,10 @@ class InvoiceViewModel(
 
     fun onIncludeGstChange(value: Boolean) {
         headerFormState.update { it.copy(includeGst = value) }
+    }
+
+    fun onShowAddressOnPdfChange(value: Boolean) {
+        headerFormState.update { it.copy(showAddressOnPdf = value) }
     }
 
     fun onNotesChange(value: TextFieldValue) {
@@ -468,6 +475,7 @@ class InvoiceViewModel(
                     gstAmount = gstAmount,
                     totalAmount = totalAmount,
                     notes = form.notes.text.trim(),
+                    showAddressOnPdf = form.showAddressOnPdf,
                     createdAt = existingInvoice?.createdAt ?: now,
                     updatedAt = now
                 )
@@ -484,6 +492,31 @@ class InvoiceViewModel(
         viewModelScope.launch {
             jobRepository.updateJobStatus(jobId, JobStatus.PAID)
             userMessage.value = "Job marked as Paid."
+        }
+    }
+
+    fun updateInvoiceIncludeGst(enabled: Boolean) {
+        val invoice = uiState.value.invoice ?: return
+        viewModelScope.launch {
+            val subtotal = invoice.subtotalExclusiveGst
+            val gstAmount = if (enabled) subtotal * invoice.gstRate else 0.0
+            val total = subtotal + gstAmount
+            invoiceRepository.saveInvoice(invoice.copy(
+                gstEnabled = enabled,
+                gstAmount = gstAmount,
+                totalAmount = total,
+                updatedAt = System.currentTimeMillis()
+            ))
+        }
+    }
+
+    fun updateInvoiceShowAddress(show: Boolean) {
+        val invoice = uiState.value.invoice ?: return
+        viewModelScope.launch {
+            invoiceRepository.saveInvoice(invoice.copy(
+                showAddressOnPdf = show,
+                updatedAt = System.currentTimeMillis()
+            ))
         }
     }
 
@@ -721,7 +754,8 @@ class InvoiceViewModel(
                 gstAmount = snapshot.totals.gstAmount,
                 totalIncGst = snapshot.totals.finalTotal,
                 finalTotal = snapshot.totals.finalTotal,
-                notes = invoice.notes
+                notes = invoice.notes,
+                showAddressOnPdf = invoice.showAddressOnPdf
             )
 
             pdfExportRequests.emit(data)

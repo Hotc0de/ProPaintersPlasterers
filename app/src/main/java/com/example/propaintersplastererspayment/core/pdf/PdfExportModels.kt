@@ -60,7 +60,8 @@ data class InvoicePdfData(
     val gstAmount: Double,
     val totalIncGst: Double,
     val finalTotal: Double,
-    val notes: String
+    val notes: String,
+    val showAddressOnPdf: Boolean = true
 )
 
 data class CalculationPdfRow(

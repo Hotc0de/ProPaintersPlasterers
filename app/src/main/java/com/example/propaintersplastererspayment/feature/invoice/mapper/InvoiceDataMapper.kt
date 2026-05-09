@@ -37,7 +37,8 @@ object InvoiceDataMapper {
             businessPhone = pdfData.business.phoneNumber,
             businessEmail = pdfData.business.email,
             accountNumber = pdfData.business.bankAccountNumber,
-            bankName = pdfData.business.bankName
+            bankName = pdfData.business.bankName,
+            showAddressOnPdf = pdfData.showAddressOnPdf
         )
     }
 

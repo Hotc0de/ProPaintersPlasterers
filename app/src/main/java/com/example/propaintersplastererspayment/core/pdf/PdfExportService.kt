@@ -470,7 +470,8 @@ class PdfExportService {
         val totalsHeight = if (invoiceData.includeGst) invoiceTotalsHeightWithGst else invoiceTotalsHeightNoGst
 
         var pages = 1
-        var currentY = invoiceFirstPageItemsStartY
+        val itemsStartY = if (invoiceData.showAddressOnPdf) invoiceFirstPageItemsStartY else invoiceFirstPageItemsStartY - 51f
+        var currentY = itemsStartY
 
         currentY += invoiceItemsSectionGap + invoiceTableHeaderHeight
 
@@ -634,10 +635,15 @@ class PdfExportService {
             )
             contactY += 20f
         }
-
-        drawContactInfo("Address:", invoiceData.businessAddress)
+        if (invoiceData.showAddressOnPdf) {
+            drawContactInfo("Address:", invoiceData.businessAddress)
+        }
         drawContactInfo("Contact:", invoiceData.businessPhone)
         drawContactInfo("Email:", invoiceData.businessEmail)
+
+//        if (invoiceData.showAddressOnPdf) {
+//            drawContactInfo("Address:", invoiceData.businessAddress)
+//        }
 
         val centerX = pageWidth / 2f
         val invoiceTitlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -709,7 +715,7 @@ class PdfExportService {
 
         val colorLightGray1 = "#F7F5F2".toColorInt()
         val boxTop = y + 14f
-        val billSectionHeight = 56f
+        val billSectionHeight = if (invoiceData.showAddressOnPdf) 56f else 37f
         val sectionBgPaint = Paint().apply { color = colorLightGray1; style = Paint.Style.FILL }
         canvas.drawRect(margin, boxTop, pageWidth - margin, boxTop + billSectionHeight, sectionBgPaint)
 
@@ -731,17 +737,19 @@ class PdfExportService {
         drawTextRight(canvas, "Name:", labelRightX, billY, billToLabelPaint)
         canvas.drawText(invoiceData.billTo.ifBlank { "N/A" }, valueX, billY, billToValuePaint)
 
-        billY += 19f
-        drawTextRight(canvas, "Address:", labelRightX, billY, billToLabelPaint)
-        drawWrappedPlainText(
-            canvas,
-            invoiceData.billToAddress.ifBlank { "N/A" },
-            valueX,
-            billY,
-            (pageWidth - margin) - valueX,
-            billToValuePaint,
-            13f
-        )
+        if (invoiceData.showAddressOnPdf) {
+            billY += 19f
+            drawTextRight(canvas, "Address:", labelRightX, billY, billToLabelPaint)
+            drawWrappedPlainText(
+                canvas,
+                invoiceData.billToAddress.ifBlank { "N/A" },
+                valueX,
+                billY,
+                (pageWidth - margin) - valueX,
+                billToValuePaint,
+                13f
+            )
+        }
 
         return boxTop + billSectionHeight + 28f
     }

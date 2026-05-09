@@ -20,7 +20,8 @@ data class InvoiceData(
     val businessPhone: String = "022-10701719",
     val businessEmail: String = "painters@gmail.com",
     val accountNumber: String = "22-2222-2222222-22",
-    val bankName: String = "ANZ Bank"
+    val bankName: String = "ANZ Bank",
+    val showAddressOnPdf: Boolean = true
 )
 
 data class InvoiceLineItem(

@@ -47,7 +47,7 @@ import com.example.propaintersplastererspayment.data.local.util.Converters
         RoomEntity::class,
         SurfaceEntity::class
     ],
-    version = 24,
+    version = 26,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -65,6 +65,17 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun surfaceDao(): SurfaceDao
 
     companion object {
+        val MIGRATION_24_25 = object : Migration(24, 25) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                addColumnSafely(db, "invoices", "showAddressOnPdf", "INTEGER NOT NULL DEFAULT 1")
+            }
+        }
+
+        val MIGRATION_25_26 = object : Migration(25, 26) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                addColumnSafely(db, "invoices", "showAddressOnPdf", "INTEGER NOT NULL DEFAULT 1")
+            }
+        }
         val MIGRATION_21_22 = object : Migration(21, 22) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE paint_items ADD COLUMN paintScope TEXT NOT NULL DEFAULT ''")
@@ -379,8 +390,18 @@ abstract class AppDatabase : RoomDatabase() {
             MIGRATION_20_21,
             MIGRATION_21_22,
             MIGRATION_22_23,
-            MIGRATION_23_24
+            MIGRATION_23_24,
+            MIGRATION_24_25,
+            MIGRATION_25_26
         )
+
+        private fun addColumnSafely(db: SupportSQLiteDatabase, tableName: String, columnName: String, columnDefinition: String) {
+            try {
+                db.execSQL("ALTER TABLE $tableName ADD COLUMN $columnName $columnDefinition")
+            } catch (e: Exception) {
+                // Column likely already exists, ignore.
+            }
+        }
     }
 }
 
