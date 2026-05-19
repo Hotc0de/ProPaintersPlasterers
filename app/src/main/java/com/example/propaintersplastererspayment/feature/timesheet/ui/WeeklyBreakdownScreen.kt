@@ -60,11 +60,11 @@ fun WeeklyBreakdownRoute(
         containerColor = CharcoalBackground,
         modifier = modifier.fillMaxSize()
     ) { innerPadding ->
-        val weeklyData = remember(uiState.entries) {
-            groupEntriesByWeek(uiState.entries)
+        val breakdown = remember(uiState.entries) {
+            calculateWeeklyLaborBreakdown(uiState.entries)
         }
 
-        if (weeklyData.isEmpty()) {
+        if (breakdown.weeklySummaries.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
                 Text("No labor recorded yet.", color = TextMuted)
             }
@@ -74,8 +74,8 @@ fun WeeklyBreakdownRoute(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(weeklyData) { weekInfo ->
-                    WeeklyBreakdownCard(weekInfo)
+                items(breakdown.weeklySummaries) { summary ->
+                    WeeklyBreakdownCard(summary)
                 }
             }
         }
@@ -83,18 +83,18 @@ fun WeeklyBreakdownRoute(
 }
 
 @Composable
-fun WeeklyBreakdownCard(weekInfo: WeeklyBreakdownInfo) {
+fun WeeklyBreakdownCard(summary: WeeklyLaborSummary) {
     IndustrialCard {
         Column(modifier = Modifier.fillMaxWidth()) {
-            val daysLabel = if (weekInfo.uniqueDaysCount == 1) "day" else "days"
+            val daysLabel = if (summary.uniqueDaysCount == 1) "day" else "days"
             Text(
-                text = "Week ${weekInfo.weekNumber} (${weekInfo.uniqueDaysCount} $daysLabel)",
+                text = "Week ${summary.weekNumber} (${summary.uniqueDaysCount} $daysLabel)",
                 style = MaterialTheme.typography.titleMedium,
                 color = IndustrialGold,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = weekInfo.dateRange,
+                text = summary.dateRange,
                 style = MaterialTheme.typography.bodySmall,
                 color = TextMuted
             )
@@ -102,7 +102,7 @@ fun WeeklyBreakdownCard(weekInfo: WeeklyBreakdownInfo) {
             Spacer(modifier = Modifier.height(16.dp))
             
             Text(
-                text = WorkEntryTimeUtils.formatHours(weekInfo.totalHours),
+                text = WorkEntryTimeUtils.formatHours(summary.totalHours),
                 style = MaterialTheme.typography.displayMedium,
                 fontWeight = FontWeight.Black,
                 color = OffWhite
@@ -117,7 +117,7 @@ fun WeeklyBreakdownCard(weekInfo: WeeklyBreakdownInfo) {
             HorizontalDivider(color = BorderColor, thickness = 0.5.dp)
             Spacer(modifier = Modifier.height(12.dp))
 
-            weekInfo.workerBreakdown.forEach { (worker, hours) ->
+            summary.workerBreakdown.forEach { (worker, hours) ->
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -135,7 +135,7 @@ fun WeeklyBreakdownCard(weekInfo: WeeklyBreakdownInfo) {
     }
 }
 
-data class WeeklyBreakdownInfo(
+data class WeeklyLaborSummary(
     val weekNumber: Int,
     val dateRange: String,
     val totalHours: Double,
@@ -143,12 +143,19 @@ data class WeeklyBreakdownInfo(
     val workerBreakdown: List<Pair<String, Double>>
 )
 
-fun groupEntriesByWeek(entries: List<WorkEntryEntity>): List<WeeklyBreakdownInfo> {
-    if (entries.isEmpty()) return emptyList()
+data class WeeklyLaborBreakdown(
+    val totalDays: Int,
+    val weeklySummaries: List<WeeklyLaborSummary>
+)
+
+fun calculateWeeklyLaborBreakdown(entries: List<WorkEntryEntity>): WeeklyLaborBreakdown {
+    if (entries.isEmpty()) return WeeklyLaborBreakdown(0, emptyList())
+
+    val totalDays = entries.map { it.workDate }.distinct().size
 
     // 1. Sort entries by date
     val sortedEntries = entries.sortedBy { it.workDate }
-    val firstEntryDate = DateFormatUtils.parseStoredDate(sortedEntries.first().workDate) ?: return emptyList()
+    val firstEntryDate = DateFormatUtils.parseStoredDate(sortedEntries.first().workDate) ?: return WeeklyLaborBreakdown(totalDays, emptyList())
 
     // Use Calendar to determine the start of the first week (Monday)
     val calendar = Calendar.getInstance(Locale.getDefault()).apply {
@@ -168,15 +175,13 @@ fun groupEntriesByWeek(entries: List<WorkEntryEntity>): List<WeeklyBreakdownInfo
         return calendar.timeInMillis
     }
 
-    val startOfFirstWeek = getStartOfWeek(firstEntryDate)
-
     // Group entries by their week start
     val entriesByWeekStart = sortedEntries.groupBy { entry ->
         val date = DateFormatUtils.parseStoredDate(entry.workDate) ?: Date(0)
         getStartOfWeek(date)
     }
 
-    return entriesByWeekStart.entries
+    val summaries = entriesByWeekStart.entries
         .sortedBy { it.key }
         .mapIndexed { index, entry ->
             val weekStartLong = entry.key
@@ -195,7 +200,7 @@ fun groupEntriesByWeek(entries: List<WorkEntryEntity>): List<WeeklyBreakdownInfo
                 .toList()
                 .sortedByDescending { it.second }
 
-            WeeklyBreakdownInfo(
+            WeeklyLaborSummary(
                 weekNumber = index + 1,
                 dateRange = dateRange,
                 totalHours = totalHours,
@@ -203,4 +208,6 @@ fun groupEntriesByWeek(entries: List<WorkEntryEntity>): List<WeeklyBreakdownInfo
                 workerBreakdown = workerBreakdown
             )
         }
+
+    return WeeklyLaborBreakdown(totalDays, summaries)
 }
