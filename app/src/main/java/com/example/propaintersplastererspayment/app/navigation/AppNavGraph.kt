@@ -31,6 +31,7 @@ import com.example.propaintersplastererspayment.feature.paint.ui.PaintBrandListS
 import com.example.propaintersplastererspayment.feature.paint.vm.PaintViewModel
 import com.example.propaintersplastererspayment.feature.settings.ui.SettingsRoute
 import com.example.propaintersplastererspayment.feature.setup.ui.InitialSetupRoute
+import com.example.propaintersplastererspayment.feature.timesheet.ui.WeeklyBreakdownRoute
 
 @Composable
 fun AppNavGraph(modifier: Modifier = Modifier) {
@@ -178,6 +179,19 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
             )
         }
 
+        // ── Timesheet Weekly Breakdown ────────────────────────────────────
+        composable(
+            route = AppDestinations.WEEKLY_BREAKDOWN_WITH_ARG,
+            arguments = listOf(navArgument(AppDestinations.JOB_ID_ARG) { type = NavType.LongType })
+        ) { backStackEntry ->
+            val jobId = backStackEntry.arguments?.getLong(AppDestinations.JOB_ID_ARG)
+                ?: return@composable
+            WeeklyBreakdownRoute(
+                jobId = jobId,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
         // ── Home ──────────────────────────────────────────────────────────
         composable(AppDestinations.HOME_ROUTE) {
             HomeRoute(
@@ -221,7 +235,10 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
                 ?: return@composable
             JobDetailScreen(
                 jobId = jobId,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onNavigateToWeeklyBreakdown = { id ->
+                    navController.navigate(AppDestinations.weeklyBreakdownRoute(id))
+                }
             )
         }
 

@@ -2,6 +2,7 @@ package com.example.propaintersplastererspayment.feature.timesheet.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -40,6 +41,7 @@ import com.example.propaintersplastererspayment.ui.theme.*
 @Composable
 fun TimesheetRoute(
     jobId: Long,
+    onViewWeeklyBreakdown: (Long) -> Unit = {},
     onBackPressed: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -91,7 +93,8 @@ fun TimesheetRoute(
         onDeleteEntry = viewModel::deleteEntry,
         onToggleLuxuryPreview = viewModel::toggleLuxuryPreview,
         onExitLuxuryPreview = viewModel::exitLuxuryPreview,
-        onMessageShown = viewModel::clearUserMessage
+        onMessageShown = viewModel::clearUserMessage,
+        onViewWeeklyBreakdown = { onViewWeeklyBreakdown(jobId) }
     )
 }
 
@@ -111,6 +114,7 @@ fun TimesheetScreen(
     onToggleLuxuryPreview: () -> Unit,
     onExitLuxuryPreview: () -> Unit,
     onMessageShown: () -> Unit,
+    onViewWeeklyBreakdown: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -204,7 +208,14 @@ fun TimesheetScreen(
                             modifier = Modifier.fillMaxSize()
                         ) {
                             item {
-                                TotalHoursHeroCard(totalHours = uiState.totalHours)
+                                val totalDays = remember(uiState.entries) {
+                                    uiState.entries.map { it.workDate }.distinct().size
+                                }
+                                TotalHoursHeroCard(
+                                    totalHours = uiState.totalHours,
+                                    totalDays = totalDays,
+                                    onClick = onViewWeeklyBreakdown
+                                )
                             }
 
                             item {
@@ -288,9 +299,11 @@ fun TimesheetScreen(
 }
 
 @Composable
-private fun TotalHoursHeroCard(totalHours: Double) {
+private fun TotalHoursHeroCard(totalHours: Double, totalDays: Int, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         shape = AppShapes.large,
         colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
@@ -314,8 +327,9 @@ private fun TotalHoursHeroCard(totalHours: Double) {
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
+                    val daysLabel = if (totalDays == 1) "day" else "days"
                     Text(
-                        text = stringResource(R.string.timesheet_total_hours),
+                        text = "Total Hours ($totalDays $daysLabel)",
                         style = MaterialTheme.typography.labelLarge,
                         color = CharcoalBackground
                     )

@@ -41,6 +41,7 @@ private enum class JobDetailTab(val titleRes: Int) {
 fun JobDetailScreen(
     jobId: Long,
     onBack: () -> Unit,
+    onNavigateToWeeklyBreakdown: (Long) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val application = LocalContext.current.applicationContext as ProPaintersApplication
@@ -198,6 +199,7 @@ fun JobDetailScreen(
                     }
                     JobDetailTab.TIMESHEET -> TimesheetRoute(
                         jobId = jobId,
+                        onViewWeeklyBreakdown = onNavigateToWeeklyBreakdown,
                         onBackPressed = {
                             // This ensures that when in preview mode, we can go back
                         }

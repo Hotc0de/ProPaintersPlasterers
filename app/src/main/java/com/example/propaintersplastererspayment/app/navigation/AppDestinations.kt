@@ -36,9 +36,15 @@ object AppDestinations {
     const val IS_QUICK_INVOICE_ARG = "isQuickInvoice"
     const val INVOICE_WITH_ARG     = "$INVOICE_ROUTE/{$JOB_ID_ARG}?$IS_QUICK_INVOICE_ARG={$IS_QUICK_INVOICE_ARG}"
 
+    // Timesheet
+    const val WEEKLY_BREAKDOWN_ROUTE = "weekly_breakdown"
+    const val WEEKLY_BREAKDOWN_WITH_ARG = "$WEEKLY_BREAKDOWN_ROUTE/{$JOB_ID_ARG}"
+
     fun invoiceRoute(jobId: Long, isQuickInvoice: Boolean = false): String = 
         "$INVOICE_ROUTE/$jobId?$IS_QUICK_INVOICE_ARG=$isQuickInvoice"
     fun invoiceCreateRoute(): String = INVOICE_CREATE_ROUTE
+
+    fun weeklyBreakdownRoute(jobId: Long): String = "$WEEKLY_BREAKDOWN_ROUTE/$jobId"
 
     // Paint
     const val PAINT_BRAND_DETAIL_ROUTE = "paint_brand_detail"

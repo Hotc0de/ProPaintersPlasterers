@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -75,6 +76,7 @@ fun InitialSetupRoute(
         uiState = uiState,
         onBusinessNameChange = viewModel::onBusinessNameChange,
         onAddressChange = viewModel::onAddressChange,
+        onPhoneCountryChange = viewModel::onPhoneCountryChange,
         onPhoneNumberChange = viewModel::onPhoneNumberChange,
         onEmailChange = viewModel::onEmailChange,
         onGstNumberChange = viewModel::onGstNumberChange,
@@ -93,6 +95,7 @@ fun InitialSetupScreen(
     uiState: SettingsUiState,
     onBusinessNameChange: (TextFieldValue) -> Unit,
     onAddressChange: (TextFieldValue) -> Unit,
+    onPhoneCountryChange: (String) -> Unit,
     onPhoneNumberChange: (TextFieldValue) -> Unit,
     onEmailChange: (TextFieldValue) -> Unit,
     onGstNumberChange: (TextFieldValue) -> Unit,
@@ -176,14 +179,26 @@ fun InitialSetupScreen(
 
                 // Contact
                 SetupSectionCard(title = "Contact Details") {
-                    IndustrialTextField(
-                        value = form.phoneNumber,
-                        onValueChange = onPhoneNumberChange,
-                        label = "Phone Number *",
-                        placeholder = "000-000-000 or 000-000-0000",
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        com.example.propaintersplastererspayment.ui.components.PhoneCountryCodeDropdown(
+                            selectedIsoCode = form.phoneCountryIso,
+                            onCountrySelected = onPhoneCountryChange,
+                            modifier = Modifier.width(110.dp)
+                        )
+                        IndustrialTextField(
+                            value = form.phoneNumber,
+                            onValueChange = onPhoneNumberChange,
+                            label = "Phone Number *",
+                            placeholder = "000-000-000 or 000-000-0000",
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                     if (form.phoneFormatError != null) {
                         Text(
                             text = form.phoneFormatError ?: "",
