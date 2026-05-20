@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
@@ -21,6 +22,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.propaintersplastererspayment.ProPaintersApplication
 import com.example.propaintersplastererspayment.data.local.entity.ClientEntity
 import com.example.propaintersplastererspayment.feature.client.vm.ClientListViewModel
+import com.example.propaintersplastererspayment.feature.client.vm.ClientWithBalance
 import com.example.propaintersplastererspayment.ui.components.IndustrialCard
 import com.example.propaintersplastererspayment.ui.components.IndustrialFAB
 import com.example.propaintersplastererspayment.ui.components.IndustrialTextField
@@ -37,7 +39,12 @@ fun ClientListRoute(
 ) {
     val application = LocalContext.current.applicationContext as ProPaintersApplication
     val viewModel: ClientListViewModel = viewModel(
-        factory = ClientListViewModel.provideFactory(application.container.clientRepository)
+        factory = ClientListViewModel.provideFactory(
+            application.container.clientRepository,
+            application.container.paymentRepository,
+            application.container.invoiceRepository,
+            application.container.jobRepository
+        )
     )
     val uiState by viewModel.uiState.collectAsState()
 
@@ -56,7 +63,7 @@ fun ClientListRoute(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClientListScreen(
-    clients: List<ClientEntity>,
+    clients: List<ClientWithBalance>,
     searchQuery: TextFieldValue,
     onSearchQueryChange: (TextFieldValue) -> Unit,
     onAddClient: () -> Unit,
@@ -156,13 +163,13 @@ fun ClientListScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     contentPadding = PaddingValues(top = 8.dp, bottom = 90.dp)
                 ) {
-                    items(clients, key = { it.clientId }) { client ->
-                        ClientIndustrialCard(
-                            client = client,
-                            onEdit = { onEditClient(client.clientId) },
-                            onDelete = { onDeleteClient(client) }
-                        )
-                    }
+                    items(clients, key = { it.client.clientId }) { item ->
+                    ClientIndustrialCard(
+                        clientWithBalance = item,
+                        onEdit = { onEditClient(item.client.clientId) },
+                        onDelete = { onDeleteClient(item.client) }
+                    )
+                }
                 }
             }
         }
@@ -171,10 +178,13 @@ fun ClientListScreen(
 
 @Composable
 private fun ClientIndustrialCard(
-    client: ClientEntity,
+    clientWithBalance: ClientWithBalance,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val client = clientWithBalance.client
+    val balance = clientWithBalance.balance
+
     IndustrialCard(onClick = onEdit) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -218,7 +228,23 @@ private fun ClientIndustrialCard(
                         )
                     }
                 }
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "Balance",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TextMuted
+                    )
+                    Text(
+                        text = "$${String.format(java.util.Locale.getDefault(), "%.2f", balance)}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Black,
+                        color = if (balance > 0) Color(0xFFCF6679) else if (balance < 0) Color(0xFF81C784) else OffWhite
+                    )
+                }
                 
+                Spacer(modifier = Modifier.width(8.dp))
+
                 var showConfirm by remember { mutableStateOf(false) }
                 IconButton(
                     onClick = { showConfirm = true },

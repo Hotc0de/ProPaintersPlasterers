@@ -6,6 +6,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.propaintersplastererspayment.data.local.entity.ClientEntity
 import com.example.propaintersplastererspayment.domain.repository.ClientRepository
+import com.example.propaintersplastererspayment.domain.repository.InvoiceRepository
+import com.example.propaintersplastererspayment.domain.repository.JobRepository
+import com.example.propaintersplastererspayment.domain.repository.PaymentRepository
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,20 +21,28 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+data class ClientWithBalance(
+    val client: ClientEntity,
+    val balance: Double = 0.0
+)
+
 data class ClientListUiState(
-    val clients: List<ClientEntity> = emptyList(),
+    val clients: List<ClientWithBalance> = emptyList(),
     val searchQuery: TextFieldValue = TextFieldValue(""),
     val isLoading: Boolean = true
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ClientListViewModel(
-    private val clientRepository: ClientRepository
+    private val clientRepository: ClientRepository,
+    private val paymentRepository: PaymentRepository,
+    private val invoiceRepository: InvoiceRepository,
+    private val jobRepository: JobRepository
 ) : ViewModel() {
 
     private val searchQuery = MutableStateFlow(TextFieldValue(""))
 
-    private val filteredClients: StateFlow<List<ClientEntity>> = searchQuery
+    private val filteredClients = searchQuery
         .map { it.text }
         .flatMapLatest { query ->
             if (query.isBlank()) {
@@ -39,18 +51,29 @@ class ClientListViewModel(
                 clientRepository.observeSuggestions(query)
             }
         }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = emptyList()
-        )
 
     val uiState: StateFlow<ClientListUiState> = combine(
         filteredClients,
+        paymentRepository.getAllPaymentsStream(),
+        jobRepository.observeJobsWithInvoices(),
         searchQuery
-    ) { clients, query ->
+    ) { clients, allPayments, allJobsWithInvoices, query ->
+        val clientWithBalances = clients.map { client ->
+            val clientPayments = allPayments.filter { it.clientId == client.clientId }.sumOf { it.amount }
+            
+            val clientInvoices = allJobsWithInvoices
+                .filter { it.job.clientId == client.clientId }
+                .flatMap { it.invoices }
+                .sumOf { it.totalAmount }
+
+            ClientWithBalance(
+                client = client,
+                balance = clientInvoices - clientPayments
+            )
+        }
+
         ClientListUiState(
-            clients = clients,
+            clients = clientWithBalances,
             searchQuery = query,
             isLoading = false
         )
@@ -71,11 +94,21 @@ class ClientListViewModel(
     }
 
     companion object {
-        fun provideFactory(clientRepository: ClientRepository): ViewModelProvider.Factory =
+        fun provideFactory(
+            clientRepository: ClientRepository,
+            paymentRepository: PaymentRepository,
+            invoiceRepository: InvoiceRepository,
+            jobRepository: JobRepository
+        ): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                    ClientListViewModel(clientRepository) as T
+                    ClientListViewModel(
+                        clientRepository,
+                        paymentRepository,
+                        invoiceRepository,
+                        jobRepository
+                    ) as T
             }
     }
 }

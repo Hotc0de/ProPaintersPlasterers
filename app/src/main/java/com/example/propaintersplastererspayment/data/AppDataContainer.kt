@@ -9,6 +9,7 @@ import com.example.propaintersplastererspayment.data.repository.OfflineInvoiceRe
 import com.example.propaintersplastererspayment.data.repository.OfflineJobRepository
 import com.example.propaintersplastererspayment.data.repository.OfflineMaterialRepository
 import com.example.propaintersplastererspayment.data.repository.OfflinePaintRepository
+import com.example.propaintersplastererspayment.data.repository.OfflinePaymentRepository
 import com.example.propaintersplastererspayment.data.repository.OfflineRoomRepository
 import com.example.propaintersplastererspayment.data.repository.OfflineSettingsRepository
 import com.example.propaintersplastererspayment.data.repository.OfflineWorkEntryRepository
@@ -18,6 +19,7 @@ import com.example.propaintersplastererspayment.domain.repository.InvoiceReposit
 import com.example.propaintersplastererspayment.domain.repository.JobRepository
 import com.example.propaintersplastererspayment.domain.repository.MaterialRepository
 import com.example.propaintersplastererspayment.domain.repository.PaintRepository
+import com.example.propaintersplastererspayment.domain.repository.PaymentRepository
 import com.example.propaintersplastererspayment.domain.repository.RoomRepository
 import com.example.propaintersplastererspayment.domain.repository.SettingsRepository
 import com.example.propaintersplastererspayment.domain.repository.WorkEntryRepository
@@ -69,6 +71,10 @@ class AppDataContainer(
 
     override val roomRepository: RoomRepository by lazy {
         OfflineRoomRepository(database.roomDao(), database.surfaceDao())
+    }
+
+    override val paymentRepository: PaymentRepository by lazy {
+        OfflinePaymentRepository(database.paymentDao())
     }
 }
 

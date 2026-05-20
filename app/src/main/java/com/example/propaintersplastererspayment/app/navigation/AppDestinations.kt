@@ -36,6 +36,13 @@ object AppDestinations {
     const val IS_QUICK_INVOICE_ARG = "isQuickInvoice"
     const val INVOICE_WITH_ARG     = "$INVOICE_ROUTE/{$JOB_ID_ARG}?$IS_QUICK_INVOICE_ARG={$IS_QUICK_INVOICE_ARG}"
 
+    // Payment
+    const val PAYMENT_ROUTE = "payment"
+    const val CLIENT_PAYMENT_DETAIL_ROUTE = "client_payment_detail"
+    const val CLIENT_PAYMENT_DETAIL_WITH_ARG = "$CLIENT_PAYMENT_DETAIL_ROUTE/{$CLIENT_ID_ARG}"
+
+    fun clientPaymentDetailRoute(clientId: Long): String = "$CLIENT_PAYMENT_DETAIL_ROUTE/$clientId"
+
     // Timesheet
     const val WEEKLY_BREAKDOWN_ROUTE = "weekly_breakdown"
     const val WEEKLY_BREAKDOWN_WITH_ARG = "$WEEKLY_BREAKDOWN_ROUTE/{$JOB_ID_ARG}"

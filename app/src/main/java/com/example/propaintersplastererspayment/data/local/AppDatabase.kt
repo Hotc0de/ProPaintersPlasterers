@@ -16,7 +16,9 @@ import com.example.propaintersplastererspayment.data.local.dao.JobPaintDao
 import com.example.propaintersplastererspayment.data.local.dao.PaintDao
 import com.example.propaintersplastererspayment.data.local.dao.RoomDao
 import com.example.propaintersplastererspayment.data.local.dao.SurfaceDao
+import com.example.propaintersplastererspayment.data.local.dao.PaymentDao
 import com.example.propaintersplastererspayment.data.local.entity.JobPaintEntity
+import com.example.propaintersplastererspayment.data.local.entity.PaymentEntity
 import com.example.propaintersplastererspayment.data.local.entity.PaintBrandEntity
 import com.example.propaintersplastererspayment.data.local.entity.PaintItemEntity
 import com.example.propaintersplastererspayment.data.local.entity.AccessItemEntity
@@ -45,9 +47,10 @@ import com.example.propaintersplastererspayment.data.local.util.Converters
         PaintItemEntity::class,
         JobPaintEntity::class,
         RoomEntity::class,
-        SurfaceEntity::class
+        SurfaceEntity::class,
+        PaymentEntity::class
     ],
-    version = 26,
+    version = 27,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -63,8 +66,24 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun jobPaintDao(): JobPaintDao
     abstract fun roomDao(): RoomDao
     abstract fun surfaceDao(): SurfaceDao
+    abstract fun paymentDao(): PaymentDao
 
     companion object {
+        val MIGRATION_26_27 = object : Migration(26, 27) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `payments` (
+                        `paymentId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `clientId` INTEGER NOT NULL, 
+                        `amount` REAL NOT NULL, 
+                        `date` INTEGER NOT NULL, 
+                        `notes` TEXT NOT NULL, 
+                        FOREIGN KEY(`clientId`) REFERENCES `clients`(`clientId`) ON UPDATE NO ACTION ON DELETE CASCADE 
+                    )
+                """.trimIndent())
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_payments_clientId` ON `payments` (`clientId`)")
+            }
+        }
         val MIGRATION_24_25 = object : Migration(24, 25) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 addColumnSafely(db, "invoices", "showAddressOnPdf", "INTEGER NOT NULL DEFAULT 1")
@@ -392,7 +411,8 @@ abstract class AppDatabase : RoomDatabase() {
             MIGRATION_22_23,
             MIGRATION_23_24,
             MIGRATION_24_25,
-            MIGRATION_25_26
+            MIGRATION_25_26,
+            MIGRATION_26_27
         )
 
         private fun addColumnSafely(db: SupportSQLiteDatabase, tableName: String, columnName: String, columnDefinition: String) {

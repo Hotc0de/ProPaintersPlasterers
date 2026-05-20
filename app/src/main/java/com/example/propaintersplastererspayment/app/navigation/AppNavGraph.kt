@@ -24,6 +24,8 @@ import com.example.propaintersplastererspayment.feature.job.ui.JobDetailScreen
 import com.example.propaintersplastererspayment.feature.job.ui.JobFormRoute
 import com.example.propaintersplastererspayment.feature.invoice.ui.InvoiceCreateRoute
 import com.example.propaintersplastererspayment.feature.invoice.ui.InvoiceRoute
+import com.example.propaintersplastererspayment.feature.payment.ui.ClientPaymentDetailScreen
+import com.example.propaintersplastererspayment.feature.payment.ui.PaymentScreen
 import com.example.propaintersplastererspayment.feature.selection.ui.MainSelectionScreen
 import com.example.propaintersplastererspayment.feature.paint.ui.AddEditPaintScreen
 import com.example.propaintersplastererspayment.feature.paint.ui.BrandDetailScreen
@@ -91,7 +93,28 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
                 onNavigateToInvoice = { navController.navigate(AppDestinations.invoiceCreateRoute()) },
                 onNavigateToJobs = { navController.navigate(AppDestinations.HOME_ROUTE) },
                 onNavigateToPaint = { navController.navigate(AppDestinations.PAINT_ROUTE) },
-                onNavigateToPayment = { /* TODO: Implement navigation */ }
+                onNavigateToPayment = { navController.navigate(AppDestinations.PAYMENT_ROUTE) }
+            )
+        }
+
+        // ── Payment ──────────────────────────────────────────────────────
+        composable(AppDestinations.PAYMENT_ROUTE) {
+            PaymentScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToClientDetail = { clientId -> 
+                    navController.navigate(AppDestinations.clientPaymentDetailRoute(clientId))
+                }
+            )
+        }
+
+        composable(
+            route = AppDestinations.CLIENT_PAYMENT_DETAIL_WITH_ARG,
+            arguments = listOf(navArgument(AppDestinations.CLIENT_ID_ARG) { type = NavType.LongType })
+        ) { backStackEntry ->
+            val clientId = backStackEntry.arguments?.getLong(AppDestinations.CLIENT_ID_ARG) ?: return@composable
+            ClientPaymentDetailScreen(
+                clientId = clientId,
+                onBack = { navController.popBackStack() }
             )
         }
 

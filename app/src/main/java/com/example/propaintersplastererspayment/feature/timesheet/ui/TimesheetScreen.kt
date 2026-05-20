@@ -208,12 +208,8 @@ fun TimesheetScreen(
                             modifier = Modifier.fillMaxSize()
                         ) {
                             item {
-                                val totalDays = remember(uiState.entries) {
-                                    uiState.entries.map { it.workDate }.distinct().size
-                                }
                                 TotalHoursHeroCard(
                                     totalHours = uiState.totalHours,
-                                    totalDays = totalDays,
                                     onClick = onViewWeeklyBreakdown
                                 )
                             }
@@ -299,7 +295,7 @@ fun TimesheetScreen(
 }
 
 @Composable
-private fun TotalHoursHeroCard(totalHours: Double, totalDays: Int, onClick: () -> Unit) {
+private fun TotalHoursHeroCard(totalHours: Double, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -327,9 +323,8 @@ private fun TotalHoursHeroCard(totalHours: Double, totalDays: Int, onClick: () -
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    val daysLabel = if (totalDays == 1) "day" else "days"
                     Text(
-                        text = "Total Hours ($totalDays $daysLabel)",
+                        text = stringResource(R.string.timesheet_total_hours),
                         style = MaterialTheme.typography.labelLarge,
                         color = CharcoalBackground
                     )
