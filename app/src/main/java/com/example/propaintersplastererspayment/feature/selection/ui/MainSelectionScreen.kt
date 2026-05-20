@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.FormatPaint
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -28,6 +29,7 @@ fun MainSelectionScreen(
     onNavigateToInvoice: () -> Unit,
     onNavigateToJobs: () -> Unit,
     onNavigateToPaint: () -> Unit,
+    onNavigateToPayment: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -126,6 +128,12 @@ fun MainSelectionScreen(
                         text = "PAINT",
                         icon = Icons.Default.FormatPaint,
                         onClick = onNavigateToPaint
+                    )
+
+                    SelectionMenuButton(
+                        text = "PAYMENT",
+                        icon = Icons.Default.Payments,
+                        onClick = onNavigateToPayment
                     )
                 }
 

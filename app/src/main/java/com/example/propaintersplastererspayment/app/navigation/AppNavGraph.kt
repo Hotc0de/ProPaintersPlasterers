@@ -90,7 +90,8 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
             MainSelectionScreen(
                 onNavigateToInvoice = { navController.navigate(AppDestinations.invoiceCreateRoute()) },
                 onNavigateToJobs = { navController.navigate(AppDestinations.HOME_ROUTE) },
-                onNavigateToPaint = { navController.navigate(AppDestinations.PAINT_ROUTE) }
+                onNavigateToPaint = { navController.navigate(AppDestinations.PAINT_ROUTE) },
+                onNavigateToPayment = { /* TODO: Implement navigation */ }
             )
         }
 
