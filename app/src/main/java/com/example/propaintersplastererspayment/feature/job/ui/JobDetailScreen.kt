@@ -22,7 +22,8 @@ import com.example.propaintersplastererspayment.R
 import com.example.propaintersplastererspayment.feature.invoice.ui.InvoiceRoute
 import com.example.propaintersplastererspayment.feature.materials.ui.MaterialsRoute
 import com.example.propaintersplastererspayment.feature.timesheet.ui.TimesheetRoute
-import com.example.propaintersplastererspayment.ui.components.AppLogo
+// Unused: AppLogo component is not rendered on this screen.
+// import com.example.propaintersplastererspayment.ui.components.AppLogo
 import com.example.propaintersplastererspayment.ui.theme.*
 import kotlinx.coroutines.launch
 

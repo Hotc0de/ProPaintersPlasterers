@@ -1,5 +1,9 @@
 package com.example.propaintersplastererspayment.ui.components
 
+/*
+Unused component (no call sites found across app/src/main, app/src/debug, app/src/test, app/src/androidTest).
+Kept commented for safe rollback.
+
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -40,3 +44,4 @@ fun AppLogo(
         }
     }
 }
+*/

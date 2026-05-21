@@ -1,5 +1,10 @@
 package com.example.propaintersplastererspayment.feature.payment.ui
 
+/*
+Unused legacy payment dialog (replaced by PaymentScreen/AddEditClientDebtDialog and
+ClientPaymentDetailScreen/AddClientPaymentDialog).
+Kept commented for safe rollback.
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -188,3 +193,4 @@ fun AddEditPaymentDialog(
         }
     }
 }
+*/
