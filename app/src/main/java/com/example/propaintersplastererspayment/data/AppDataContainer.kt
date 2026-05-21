@@ -2,6 +2,7 @@ package com.example.propaintersplastererspayment.data
 
 import android.content.Context
 import androidx.room.Room
+import com.example.propaintersplastererspayment.data.backup.BackupRestoreService
 import com.example.propaintersplastererspayment.data.local.AppDatabase
 import com.example.propaintersplastererspayment.data.repository.OfflineAccessRepository
 import com.example.propaintersplastererspayment.data.repository.OfflineClientRepository
@@ -76,5 +77,8 @@ class AppDataContainer(
     override val paymentRepository: PaymentRepository by lazy {
         OfflinePaymentRepository(database.paymentDao())
     }
-}
 
+    override val backupRestoreService: BackupRestoreService by lazy {
+        BackupRestoreService(database)
+    }
+}

@@ -8,6 +8,8 @@ object AppDestinations {
     const val PAINT_ROUTE           = "paint"
     const val SETTINGS_ROUTE        = "settings"
     const val INITIAL_SETUP_ROUTE   = "initial_setup"
+    const val STARTUP_CHOICE_ROUTE  = "startup_choice"
+    const val BACKUP_RESTORE_ROUTE  = "backup_restore"
 
     // Jobs
     const val JOB_FORM_ROUTE       = "job_form"

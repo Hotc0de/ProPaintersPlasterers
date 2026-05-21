@@ -509,6 +509,3 @@ private fun SettingsScreenPreview() {
         )
     }
 }
-
-
-

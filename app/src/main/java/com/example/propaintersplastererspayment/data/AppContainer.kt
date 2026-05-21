@@ -10,6 +10,7 @@ import com.example.propaintersplastererspayment.domain.repository.PaintRepositor
 import com.example.propaintersplastererspayment.domain.repository.PaymentRepository
 import com.example.propaintersplastererspayment.domain.repository.RoomRepository
 import com.example.propaintersplastererspayment.domain.repository.WorkEntryRepository
+import com.example.propaintersplastererspayment.data.backup.BackupRestoreService
 
 interface AppContainer {
     val jobRepository: JobRepository
@@ -22,5 +23,5 @@ interface AppContainer {
     val paintRepository: PaintRepository
     val roomRepository: RoomRepository
     val paymentRepository: PaymentRepository
+    val backupRestoreService: BackupRestoreService
 }
-

@@ -135,29 +135,7 @@ class SettingsViewModel(
         viewModelScope.launch {
             val firstSettings = settingsRepository.observeSettings().first()
             if (firstSettings != null && formState.value.businessName.text.isEmpty()) {
-                val phoneNumber = SettingsPhoneFormatUtils.formatInput(firstSettings.phoneNumber)
-                val bankAccount = BankAccountFormatUtils.formatInput(firstSettings.bankAccountNumber)
-                val labourRate = if (firstSettings.defaultLabourRate > 0) {
-                    firstSettings.defaultLabourRate.toString()
-                } else {
-                    ""
-                }
-                val gstPercent = (firstSettings.defaultGstRate * 100).toInt().toString()
-
-                formState.value = SettingsFormState(
-                    businessName = TextFieldValue(firstSettings.businessName),
-                    address = TextFieldValue(firstSettings.address),
-                    phoneCountryIso = firstSettings.phoneCountryIso,
-                    phoneCountryDialCode = firstSettings.phoneCountryDialCode,
-                    phoneNumber = TextFieldValue(phoneNumber, selection = androidx.compose.ui.text.TextRange(phoneNumber.length)),
-                    email = TextFieldValue(firstSettings.email),
-                    gstNumber = TextFieldValue(firstSettings.gstNumber),
-                    bankAccountNumber = TextFieldValue(bankAccount, selection = androidx.compose.ui.text.TextRange(bankAccount.length)),
-                    bankName = TextFieldValue(firstSettings.bankName),
-                    defaultLabourRateText = TextFieldValue(labourRate, selection = androidx.compose.ui.text.TextRange(labourRate.length)),
-                    defaultGstPercentText = TextFieldValue(gstPercent, selection = androidx.compose.ui.text.TextRange(gstPercent.length)),
-                    gstEnabledByDefault = firstSettings.gstEnabledByDefault
-                )
+                loadSettingsIntoForm(firstSettings)
             }
         }
     }
@@ -317,6 +295,32 @@ class SettingsViewModel(
     private fun getCurrentTimeString(): String =
         java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
             .format(java.util.Date())
+
+    private fun loadSettingsIntoForm(settings: AppSettingsEntity) {
+        val phoneNumber = SettingsPhoneFormatUtils.formatInput(settings.phoneNumber)
+        val bankAccount = BankAccountFormatUtils.formatInput(settings.bankAccountNumber)
+        val labourRate = if (settings.defaultLabourRate > 0) {
+            settings.defaultLabourRate.toString()
+        } else {
+            ""
+        }
+        val gstPercent = (settings.defaultGstRate * 100).toInt().toString()
+
+        formState.value = SettingsFormState(
+            businessName = TextFieldValue(settings.businessName),
+            address = TextFieldValue(settings.address),
+            phoneCountryIso = settings.phoneCountryIso,
+            phoneCountryDialCode = settings.phoneCountryDialCode,
+            phoneNumber = TextFieldValue(phoneNumber, selection = androidx.compose.ui.text.TextRange(phoneNumber.length)),
+            email = TextFieldValue(settings.email),
+            gstNumber = TextFieldValue(settings.gstNumber),
+            bankAccountNumber = TextFieldValue(bankAccount, selection = androidx.compose.ui.text.TextRange(bankAccount.length)),
+            bankName = TextFieldValue(settings.bankName),
+            defaultLabourRateText = TextFieldValue(labourRate, selection = androidx.compose.ui.text.TextRange(labourRate.length)),
+            defaultGstPercentText = TextFieldValue(gstPercent, selection = androidx.compose.ui.text.TextRange(gstPercent.length)),
+            gstEnabledByDefault = settings.gstEnabledByDefault
+        )
+    }
 
     // ─────────────────────────────────────────────────────────────────────
     // Factory

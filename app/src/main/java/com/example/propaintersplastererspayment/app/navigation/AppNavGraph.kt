@@ -17,6 +17,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.propaintersplastererspayment.ProPaintersApplication
+import com.example.propaintersplastererspayment.feature.backup.ui.BackupRestoreRoute
+import com.example.propaintersplastererspayment.feature.backup.ui.StartupChoiceRoute
 import com.example.propaintersplastererspayment.feature.client.ui.AddEditClientRoute
 import com.example.propaintersplastererspayment.feature.client.ui.ClientListRoute
 import com.example.propaintersplastererspayment.feature.home.ui.HomeRoute
@@ -49,7 +51,7 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
     LaunchedEffect(setupState) {
         when (setupState) {
             AppStartupViewModel.SetupState.NeedsSetup -> {
-                navController.navigate(AppDestinations.INITIAL_SETUP_ROUTE) {
+                navController.navigate(AppDestinations.STARTUP_CHOICE_ROUTE) {
                     popUpTo(AppDestinations.SPLASH_ROUTE) { inclusive = true }
                     launchSingleTop = true
                 }
@@ -87,13 +89,31 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
             )
         }
 
+        // ── First-run choice ─────────────────────────────────────────────
+        composable(AppDestinations.STARTUP_CHOICE_ROUTE) {
+            StartupChoiceRoute(
+                onStartNew = {
+                    navController.navigate(AppDestinations.INITIAL_SETUP_ROUTE) {
+                        popUpTo(AppDestinations.STARTUP_CHOICE_ROUTE) { inclusive = true }
+                    }
+                },
+                onRestoreComplete = {
+                    navController.navigate(AppDestinations.SELECTION_ROUTE) {
+                        popUpTo(AppDestinations.STARTUP_CHOICE_ROUTE) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         // ── Main Selection ───────────────────────────────────────────────
         composable(AppDestinations.SELECTION_ROUTE) {
             MainSelectionScreen(
                 onNavigateToInvoice = { navController.navigate(AppDestinations.invoiceCreateRoute()) },
                 onNavigateToJobs = { navController.navigate(AppDestinations.HOME_ROUTE) },
                 onNavigateToPaint = { navController.navigate(AppDestinations.PAINT_ROUTE) },
-                onNavigateToPayment = { navController.navigate(AppDestinations.PAYMENT_ROUTE) }
+                onNavigateToPayment = { navController.navigate(AppDestinations.PAYMENT_ROUTE) },
+                onNavigateToSettings = { navController.navigate(AppDestinations.SETTINGS_ROUTE) },
+                onNavigateToBackupRestore = { navController.navigate(AppDestinations.BACKUP_RESTORE_ROUTE) }
             )
         }
 
@@ -269,6 +289,11 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
         // ── Settings (edit existing settings) ─────────────────────────────
         composable(AppDestinations.SETTINGS_ROUTE) {
             SettingsRoute(onBack = { navController.popBackStack() })
+        }
+
+        // ── Backup & Restore ─────────────────────────────────────────────
+        composable(AppDestinations.BACKUP_RESTORE_ROUTE) {
+            BackupRestoreRoute(onBack = { navController.popBackStack() })
         }
 
         // ── Client list ───────────────────────────────────────────────────

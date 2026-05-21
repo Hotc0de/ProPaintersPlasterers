@@ -63,7 +63,9 @@ fun InitialSetupRoute(
 ) {
     val application = LocalContext.current.applicationContext as ProPaintersApplication
     val viewModel: SettingsViewModel = viewModel(
-        factory = SettingsViewModel.provideFactory(application.container.settingsRepository)
+        factory = SettingsViewModel.provideFactory(
+            settingsRepository = application.container.settingsRepository
+        )
     )
     val uiState by viewModel.uiState.collectAsState()
 

@@ -6,12 +6,19 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.FormatPaint
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -30,8 +37,12 @@ fun MainSelectionScreen(
     onNavigateToJobs: () -> Unit,
     onNavigateToPaint: () -> Unit,
     onNavigateToPayment: () -> Unit,
+    onNavigateToSettings: () -> Unit,
+    onNavigateToBackupRestore: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var menuExpanded by remember { mutableStateOf(false) }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = Color(0xFF0D0D0D)
@@ -49,6 +60,46 @@ fun MainSelectionScreen(
                     )
                 )
         ) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+            ) {
+                IconButton(onClick = { menuExpanded = true }) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "Menu",
+                        tint = IndustrialGold
+                    )
+                }
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false },
+                    containerColor = Color(0xFF252527)
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Settings", color = Color.White) },
+                        leadingIcon = {
+                            Icon(Icons.Default.Settings, contentDescription = null, tint = IndustrialGold)
+                        },
+                        onClick = {
+                            menuExpanded = false
+                            onNavigateToSettings()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Backup & Restore", color = Color.White) },
+                        leadingIcon = {
+                            Icon(Icons.Default.Backup, contentDescription = null, tint = IndustrialGold)
+                        },
+                        onClick = {
+                            menuExpanded = false
+                            onNavigateToBackupRestore()
+                        }
+                    )
+                }
+            }
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
