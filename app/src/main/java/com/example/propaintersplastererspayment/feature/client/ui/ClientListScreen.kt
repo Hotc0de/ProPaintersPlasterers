@@ -183,7 +183,6 @@ private fun ClientIndustrialCard(
     onDelete: () -> Unit
 ) {
     val client = clientWithBalance.client
-    val balance = clientWithBalance.balance
 
     IndustrialCard(onClick = onEdit) {
         Column(
@@ -228,22 +227,6 @@ private fun ClientIndustrialCard(
                         )
                     }
                 }
-
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = "Balance",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = TextMuted
-                    )
-                    Text(
-                        text = "$${String.format(java.util.Locale.getDefault(), "%.2f", balance)}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Black,
-                        color = if (balance > 0) Color(0xFFCF6679) else if (balance < 0) Color(0xFF81C784) else OffWhite
-                    )
-                }
-                
-                Spacer(modifier = Modifier.width(8.dp))
 
                 var showConfirm by remember { mutableStateOf(false) }
                 IconButton(
