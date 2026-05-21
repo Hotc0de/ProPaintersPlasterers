@@ -17,6 +17,6 @@ data class ClientEntity(
     val address: String = "",
     val phoneNumber: String = "",
     val email: String = "",
-    val notes: String = ""
+    val notes: String = "",
+    val manualTotalDebt: Double = 0.0
 )
-

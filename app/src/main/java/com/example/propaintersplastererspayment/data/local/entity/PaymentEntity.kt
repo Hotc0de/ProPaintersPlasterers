@@ -23,5 +23,7 @@ data class PaymentEntity(
     val clientId: Long,
     val amount: Double,
     val date: Long = System.currentTimeMillis(),
-    val notes: String = ""
+    val notes: String = "",
+    val reference: String = "",
+    val details: String = ""
 )

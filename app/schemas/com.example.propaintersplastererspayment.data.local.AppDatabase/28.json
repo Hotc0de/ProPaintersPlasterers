@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 28,
-    "identityHash": "ef39cc2cb7fde5b0fa6d4a926f28d96b",
+    "identityHash": "44ceba90d7e6c86c64e25129d55b240d",
     "entities": [
       {
         "tableName": "jobs",
@@ -1214,7 +1214,7 @@
       },
       {
         "tableName": "payments",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`paymentId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `clientId` INTEGER NOT NULL, `amount` REAL NOT NULL, `date` INTEGER NOT NULL, `notes` TEXT NOT NULL, FOREIGN KEY(`clientId`) REFERENCES `clients`(`clientId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`paymentId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `clientId` INTEGER NOT NULL, `amount` REAL NOT NULL, `date` INTEGER NOT NULL, `notes` TEXT NOT NULL, `reference` TEXT NOT NULL, `details` TEXT NOT NULL, FOREIGN KEY(`clientId`) REFERENCES `clients`(`clientId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "paymentId",
@@ -1243,6 +1243,18 @@
           {
             "fieldPath": "notes",
             "columnName": "notes",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reference",
+            "columnName": "reference",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "details",
+            "columnName": "details",
             "affinity": "TEXT",
             "notNull": true
           }
@@ -1277,83 +1289,11 @@
             ]
           }
         ]
-      },
-      {
-        "tableName": "manual_payments",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `clientId` INTEGER NOT NULL, `amount` REAL NOT NULL, `reference` TEXT NOT NULL, `date` TEXT NOT NULL, `details` TEXT NOT NULL, FOREIGN KEY(`clientId`) REFERENCES `clients`(`clientId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
-        "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "clientId",
-            "columnName": "clientId",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "amount",
-            "columnName": "amount",
-            "affinity": "REAL",
-            "notNull": true
-          },
-          {
-            "fieldPath": "reference",
-            "columnName": "reference",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "date",
-            "columnName": "date",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "details",
-            "columnName": "details",
-            "affinity": "TEXT",
-            "notNull": true
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": true,
-          "columnNames": [
-            "id"
-          ]
-        },
-        "indices": [
-          {
-            "name": "index_manual_payments_clientId",
-            "unique": false,
-            "columnNames": [
-              "clientId"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_manual_payments_clientId` ON `${TABLE_NAME}` (`clientId`)"
-          }
-        ],
-        "foreignKeys": [
-          {
-            "table": "clients",
-            "onDelete": "CASCADE",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "clientId"
-            ],
-            "referencedColumns": [
-              "clientId"
-            ]
-          }
-        ]
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'ef39cc2cb7fde5b0fa6d4a926f28d96b')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '44ceba90d7e6c86c64e25129d55b240d')"
     ]
   }
 }

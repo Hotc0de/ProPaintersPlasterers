@@ -28,4 +28,7 @@ interface PaymentDao {
 
     @Query("SELECT * FROM payments WHERE paymentId = :paymentId")
     suspend fun getPaymentById(paymentId: Long): PaymentEntity?
+
+    @Query("DELETE FROM payments WHERE clientId = :clientId")
+    suspend fun deletePaymentsForClient(clientId: Long)
 }

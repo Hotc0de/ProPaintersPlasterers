@@ -18,4 +18,7 @@ class OfflinePaymentRepository(private val paymentDao: PaymentDao) : PaymentRepo
     override suspend fun deletePayment(payment: PaymentEntity) = paymentDao.delete(payment)
 
     override suspend fun updatePayment(payment: PaymentEntity) = paymentDao.update(payment)
+
+    override suspend fun deletePaymentsForClient(clientId: Long) =
+        paymentDao.deletePaymentsForClient(clientId)
 }

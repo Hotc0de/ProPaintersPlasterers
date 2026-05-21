@@ -50,7 +50,7 @@ import com.example.propaintersplastererspayment.data.local.util.Converters
         SurfaceEntity::class,
         PaymentEntity::class
     ],
-    version = 27,
+    version = 28,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -84,6 +84,15 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_payments_clientId` ON `payments` (`clientId`)")
             }
         }
+
+        val MIGRATION_27_28 = object : Migration(27, 28) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                addColumnSafely(db, "clients", "manualTotalDebt", "REAL NOT NULL DEFAULT 0")
+                addColumnSafely(db, "payments", "reference", "TEXT NOT NULL DEFAULT ''")
+                addColumnSafely(db, "payments", "details", "TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
         val MIGRATION_24_25 = object : Migration(24, 25) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 addColumnSafely(db, "invoices", "showAddressOnPdf", "INTEGER NOT NULL DEFAULT 1")
@@ -412,7 +421,8 @@ abstract class AppDatabase : RoomDatabase() {
             MIGRATION_23_24,
             MIGRATION_24_25,
             MIGRATION_25_26,
-            MIGRATION_26_27
+            MIGRATION_26_27,
+            MIGRATION_27_28
         )
 
         private fun addColumnSafely(db: SupportSQLiteDatabase, tableName: String, columnName: String, columnDefinition: String) {
@@ -424,5 +434,3 @@ abstract class AppDatabase : RoomDatabase() {
         }
     }
 }
-
-

@@ -10,4 +10,5 @@ interface PaymentRepository {
     suspend fun insertPayment(payment: PaymentEntity): Long
     suspend fun deletePayment(payment: PaymentEntity)
     suspend fun updatePayment(payment: PaymentEntity)
+    suspend fun deletePaymentsForClient(clientId: Long)
 }
