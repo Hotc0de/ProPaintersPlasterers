@@ -100,7 +100,18 @@ fun JobAccessScreen(
 ) {
     if (accessItems.isEmpty()) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(text = "No access details added yet.", color = TextMuted)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(24.dp)
+            ) {
+                Text(text = "No access details added yet.", color = TextMuted)
+                Text(
+                    text = "Details added here will be saved for future jobs at this property.",
+                    color = TextMuted,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
         }
     } else {
         LazyColumn(
@@ -108,6 +119,14 @@ fun JobAccessScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            item {
+                Text(
+                    text = "Saved for this property and reused for future jobs.",
+                    color = TextMuted,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+            }
             items(accessItems, key = { it.accessId }) { item ->
                 AccessItemCard(item, onDelete = { onDelete(item) }, onEdit = { onEdit(item) })
             }

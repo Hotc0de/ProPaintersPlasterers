@@ -1,5 +1,6 @@
 package com.example.propaintersplastererspayment.data.repository
 
+import com.example.propaintersplastererspayment.core.util.AddressKeyUtils
 import com.example.propaintersplastererspayment.data.local.dao.JobDao
 import com.example.propaintersplastererspayment.data.local.entity.JobEntity
 import com.example.propaintersplastererspayment.data.local.entity.JobStatus
@@ -20,7 +21,14 @@ class OfflineJobRepository(
 
     override suspend fun saveJob(job: JobEntity): Long {
         return if (job.jobId == 0L) {
-            jobDao.insertJob(job)
+            if (job.isQuickInvoice) {
+                jobDao.insertJob(job)
+            } else {
+                jobDao.insertJobWithReusableAccess(
+                    job = job,
+                    addressKey = AddressKeyUtils.normalize(job.propertyAddress)
+                )
+            }
         } else {
             jobDao.updateJob(job)
             job.jobId
@@ -55,4 +63,3 @@ class OfflineJobRepository(
         return jobDao.getPropertyAddressesForClient(clientId)
     }
 }
-

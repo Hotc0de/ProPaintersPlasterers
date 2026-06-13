@@ -21,6 +21,8 @@ import com.example.propaintersplastererspayment.data.local.entity.JobPaintEntity
 import com.example.propaintersplastererspayment.data.local.entity.PaymentEntity
 import com.example.propaintersplastererspayment.data.local.entity.PaintBrandEntity
 import com.example.propaintersplastererspayment.data.local.entity.PaintItemEntity
+import com.example.propaintersplastererspayment.data.local.entity.PropertyAccessItemEntity
+import com.example.propaintersplastererspayment.data.local.entity.PropertyAccessProfileEntity
 import com.example.propaintersplastererspayment.data.local.entity.AccessItemEntity
 import com.example.propaintersplastererspayment.data.local.entity.AppSettingsEntity
 import com.example.propaintersplastererspayment.data.local.entity.ClientEntity
@@ -48,9 +50,11 @@ import com.example.propaintersplastererspayment.data.local.util.Converters
         JobPaintEntity::class,
         RoomEntity::class,
         SurfaceEntity::class,
-        PaymentEntity::class
+        PaymentEntity::class,
+        PropertyAccessProfileEntity::class,
+        PropertyAccessItemEntity::class
     ],
-    version = 28,
+    version = 29,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -69,6 +73,44 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun paymentDao(): PaymentDao
 
     companion object {
+        val MIGRATION_28_29 = object : Migration(28, 29) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `property_access_profiles` (
+                        `profileId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `addressKey` TEXT NOT NULL,
+                        `displayAddress` TEXT NOT NULL,
+                        `updatedAt` INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS `index_property_access_profiles_addressKey` " +
+                        "ON `property_access_profiles` (`addressKey`)"
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `property_access_items` (
+                        `propertyAccessItemId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `profileId` INTEGER NOT NULL,
+                        `type` TEXT NOT NULL,
+                        `code` TEXT NOT NULL,
+                        `instructions` TEXT NOT NULL,
+                        FOREIGN KEY(`profileId`) REFERENCES `property_access_profiles`(`profileId`)
+                            ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_property_access_items_profileId` " +
+                        "ON `property_access_items` (`profileId`)"
+                )
+
+                rebuildPropertyAccessProfilesFromJobs(db)
+            }
+        }
+
         val MIGRATION_26_27 = object : Migration(26, 27) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("""
@@ -422,8 +464,85 @@ abstract class AppDatabase : RoomDatabase() {
             MIGRATION_24_25,
             MIGRATION_25_26,
             MIGRATION_26_27,
-            MIGRATION_27_28
+            MIGRATION_27_28,
+            MIGRATION_28_29
         )
+
+        fun rebuildPropertyAccessProfilesFromJobs(db: SupportSQLiteDatabase) {
+            db.execSQL("DELETE FROM property_access_items")
+            db.execSQL("DELETE FROM property_access_profiles")
+
+            val normalizedAddress = normalizedAddressSql("j.propertyAddress")
+            val normalizedCandidateAddress = normalizedAddressSql("candidate.propertyAddress")
+
+            db.execSQL(
+                """
+                INSERT INTO property_access_profiles (addressKey, displayAddress, updatedAt)
+                SELECT
+                    $normalizedAddress,
+                    j.propertyAddress,
+                    j.createdAt
+                FROM jobs AS j
+                WHERE TRIM(j.propertyAddress) != ''
+                  AND EXISTS (
+                      SELECT 1 FROM access_items AS current_access
+                      WHERE current_access.jobId = j.jobId
+                  )
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM jobs AS candidate
+                      WHERE $normalizedCandidateAddress = $normalizedAddress
+                        AND EXISTS (
+                            SELECT 1 FROM access_items AS candidate_access
+                            WHERE candidate_access.jobId = candidate.jobId
+                        )
+                        AND (
+                            candidate.createdAt > j.createdAt
+                            OR (
+                                candidate.createdAt = j.createdAt
+                                AND candidate.jobId > j.jobId
+                            )
+                        )
+                  )
+                """.trimIndent()
+            )
+
+            val normalizedProfileJobAddress = normalizedAddressSql("profile_job.propertyAddress")
+            val normalizedLatestJobAddress = normalizedAddressSql("latest_job.propertyAddress")
+            db.execSQL(
+                """
+                INSERT INTO property_access_items (profileId, type, code, instructions)
+                SELECT
+                    profile.profileId,
+                    access.type,
+                    access.code,
+                    access.instructions
+                FROM property_access_profiles AS profile
+                JOIN jobs AS profile_job
+                  ON $normalizedProfileJobAddress = profile.addressKey
+                JOIN access_items AS access
+                  ON access.jobId = profile_job.jobId
+                WHERE profile_job.jobId = (
+                    SELECT latest_job.jobId
+                    FROM jobs AS latest_job
+                    WHERE $normalizedLatestJobAddress = profile.addressKey
+                      AND EXISTS (
+                          SELECT 1 FROM access_items AS latest_access
+                          WHERE latest_access.jobId = latest_job.jobId
+                      )
+                    ORDER BY latest_job.createdAt DESC, latest_job.jobId DESC
+                    LIMIT 1
+                )
+                """.trimIndent()
+            )
+        }
+
+        private fun normalizedAddressSql(column: String): String =
+            "LOWER(TRIM(" +
+                "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(" +
+                "$column, CHAR(9), ' '), CHAR(10), ' '), CHAR(13), ' '), " +
+                "'  ', ' '), '  ', ' '), '  ', ' ')" +
+                "))"
 
         private fun addColumnSafely(db: SupportSQLiteDatabase, tableName: String, columnName: String, columnDefinition: String) {
             try {

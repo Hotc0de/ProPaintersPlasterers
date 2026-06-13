@@ -12,15 +12,10 @@ class OfflineAccessRepository(
         accessDao.observeAccessItems(jobId)
 
     override suspend fun saveAccessItem(item: AccessItemEntity): Long {
-        return if (item.accessId == 0L) {
-            accessDao.insertAccessItem(item)
-        } else {
-            accessDao.updateAccessItem(item)
-            item.accessId
-        }
+        return accessDao.saveAccessItemAndSyncProperty(item)
     }
 
     override suspend fun deleteAccessItem(item: AccessItemEntity) {
-        accessDao.deleteAccessItem(item)
+        accessDao.deleteAccessItemAndSyncProperty(item)
     }
 }

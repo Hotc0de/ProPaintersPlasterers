@@ -63,6 +63,7 @@ class BackupRestoreService(
 
         val backupTables = json.optJSONObject("tables")
             ?: throw IllegalArgumentException("Backup file is missing table data.")
+        val containsPropertyAccessProfiles = backupTables.has("property_access_profiles")
 
         val db = database.openHelper.writableDatabase
         val insertedCounts = linkedMapOf<String, Int>()
@@ -82,6 +83,14 @@ class BackupRestoreService(
                     db.insert(table, android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE, row.toContentValues(currentColumns))
                 }
                 insertedCounts[table] = rows.length()
+            }
+
+            if (!containsPropertyAccessProfiles) {
+                AppDatabase.rebuildPropertyAccessProfilesFromJobs(db)
+                insertedCounts["property_access_profiles"] =
+                    db.rowCount("property_access_profiles")
+                insertedCounts["property_access_items"] =
+                    db.rowCount("property_access_items")
             }
 
             db.setTransactionSuccessful()
@@ -143,6 +152,11 @@ class BackupRestoreService(
         }
     }
 
+    private fun SupportSQLiteDatabase.rowCount(table: String): Int =
+        query("SELECT COUNT(*) FROM $table").use { cursor ->
+            if (cursor.moveToFirst()) cursor.getInt(0) else 0
+        }
+
     private fun JSONObject.toContentValues(currentColumns: Set<String>): ContentValues {
         val values = ContentValues()
         keys().forEach { key ->
@@ -165,7 +179,7 @@ class BackupRestoreService(
 
     companion object {
         const val BACKUP_VERSION = 1
-        const val DATABASE_VERSION = 28
+        const val DATABASE_VERSION = 29
 
         val BACKUP_TABLES = listOf(
             "clients",
@@ -181,10 +195,14 @@ class BackupRestoreService(
             "job_paints",
             "rooms",
             "surfaces",
-            "payments"
+            "payments",
+            "property_access_profiles",
+            "property_access_items"
         )
 
         private val DELETE_TABLES = listOf(
+            "property_access_items",
+            "property_access_profiles",
             "payments",
             "surfaces",
             "rooms",

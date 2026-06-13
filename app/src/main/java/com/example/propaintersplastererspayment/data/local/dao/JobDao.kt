@@ -7,8 +7,10 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
+import com.example.propaintersplastererspayment.data.local.entity.AccessItemEntity
 import com.example.propaintersplastererspayment.data.local.entity.JobEntity
 import com.example.propaintersplastererspayment.data.local.entity.JobStatus
+import com.example.propaintersplastererspayment.data.local.entity.PropertyAccessItemEntity
 import com.example.propaintersplastererspayment.data.local.model.JobWithInvoices
 import com.example.propaintersplastererspayment.data.local.model.JobWithMaterials
 import com.example.propaintersplastererspayment.data.local.model.JobWithWorkEntries
@@ -45,6 +47,35 @@ interface JobDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertJob(job: JobEntity): Long
 
+    @Query("SELECT profileId FROM property_access_profiles WHERE addressKey = :addressKey LIMIT 1")
+    suspend fun getPropertyAccessProfileId(addressKey: String): Long?
+
+    @Query("SELECT * FROM property_access_items WHERE profileId = :profileId ORDER BY propertyAccessItemId")
+    suspend fun getPropertyAccessItems(profileId: Long): List<PropertyAccessItemEntity>
+
+    @Insert
+    suspend fun insertAccessItems(items: List<AccessItemEntity>)
+
+    @Transaction
+    suspend fun insertJobWithReusableAccess(job: JobEntity, addressKey: String): Long {
+        val jobId = insertJob(job)
+        val profileId = getPropertyAccessProfileId(addressKey) ?: return jobId
+        val reusableItems = getPropertyAccessItems(profileId)
+        if (reusableItems.isNotEmpty()) {
+            insertAccessItems(
+                reusableItems.map { item ->
+                    AccessItemEntity(
+                        jobId = jobId,
+                        type = item.type,
+                        code = item.code,
+                        instructions = item.instructions
+                    )
+                }
+            )
+        }
+        return jobId
+    }
+
     @Update
     suspend fun updateJob(job: JobEntity)
 
@@ -69,4 +100,3 @@ interface JobDao {
     @Query("SELECT DISTINCT propertyAddress FROM jobs WHERE clientId = :clientId AND propertyAddress != ''")
     suspend fun getPropertyAddressesForClient(clientId: Long): List<String>
 }
-
