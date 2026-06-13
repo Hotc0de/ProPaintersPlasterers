@@ -360,7 +360,7 @@ fun InvoiceItemsSection(invoiceData: InvoiceData) {
                     modifier = Modifier.weight(2f)
                 )
                 Text(
-                    text = if (item.isLabour) "${item.quantity} hrs" else item.quantity.toString(),
+                    text = if (item.isLabour) "${formatInvoiceQuantity(item.quantity)} hrs" else formatInvoiceQuantity(item.quantity),
                     fontSize = 13.sp,
                     color = InvoiceColors.DarkSlate,
                     textAlign = TextAlign.End,
@@ -529,5 +529,13 @@ fun InvoiceFooter() {
             fontSize = 10.sp,
             color = InvoiceColors.MediumGray
         )
+    }
+}
+
+private fun formatInvoiceQuantity(quantity: Double): String {
+    return if (quantity % 1.0 == 0.0) {
+        quantity.toInt().toString()
+    } else {
+        String.format(Locale.US, "%.2f", quantity).trimEnd('0').trimEnd('.')
     }
 }

@@ -26,9 +26,8 @@ data class InvoiceData(
 
 data class InvoiceLineItem(
     val description: String,
-    val quantity: Int,
+    val quantity: Double,
     val rate: Double,
     val amount: Double,
     val isLabour: Boolean = false
 )
-

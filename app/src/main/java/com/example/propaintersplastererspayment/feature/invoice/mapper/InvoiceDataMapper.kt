@@ -20,7 +20,7 @@ object InvoiceDataMapper {
             lineItems = pdfData.lines.map { line ->
                 InvoiceLineItem(
                     description = line.description,
-                    quantity = line.qty.toInt().coerceAtLeast(1),
+                    quantity = line.qty,
                     rate = line.rate,
                     amount = line.amount,
                     isLabour = line.description.contains("labour", ignoreCase = true)
@@ -51,4 +51,3 @@ object InvoiceDataMapper {
         return DateFormatUtils.formatTimestampToDisplay(calendar.timeInMillis)
     }
 }
-

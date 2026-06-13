@@ -14,6 +14,7 @@ import com.example.propaintersplastererspayment.feature.invoice.mapper.InvoiceDa
 import com.example.propaintersplastererspayment.feature.invoice.ui.luxury.InvoiceData
 import java.io.File
 import java.io.FileOutputStream
+import java.util.Locale
 import kotlin.math.max
 
 class PdfExportService {
@@ -828,7 +829,7 @@ class PdfExportService {
         canvas: Canvas,
         y: Float,
         description: String,
-        quantity: Number,
+        quantity: Double,
         isLabour: Boolean,
         rate: Double,
         amount: Double,
@@ -859,7 +860,8 @@ class PdfExportService {
         }
 
         val baselineY = y + 18f
-        val qtyText = if (isLabour) "${quantity} hrs" else quantity.toString()
+        val formattedQuantity = formatInvoiceQuantity(quantity)
+        val qtyText = if (isLabour) "$formattedQuantity hrs" else formattedQuantity
 
         canvas.drawText(
             ellipsizeToWidth(description.ifBlank { "-" }, rowItemPaint, 290f),
@@ -872,6 +874,14 @@ class PdfExportService {
         drawTextRight(canvas, CurrencyFormatUtils.formatCurrency(amount), colAmount, baselineY, rowItemPaint)
 
         canvas.drawLine(margin, y + invoiceRowHeight, pageWidth - margin, y + invoiceRowHeight, dividerPaint)
+    }
+
+    private fun formatInvoiceQuantity(quantity: Double): String {
+        return if (quantity % 1.0 == 0.0) {
+            quantity.toInt().toString()
+        } else {
+            String.format(Locale.US, "%.2f", quantity).trimEnd('0').trimEnd('.')
+        }
     }
 
     private fun drawInvoiceTotals(canvas: Canvas, yStart: Float, invoiceData: InvoiceData) {
